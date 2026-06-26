@@ -71,6 +71,75 @@ def test_build_and_validate_full_coverage():
     assert doc["authority"] is False
 
 
+def _decision(sk, fp, roles, owned_role=None):
+    return {"source_key": sk, "whole_atlas_fingerprint": fp,
+            "asserted_original_roles": sorted(roles),
+            "owned_role": owned_role or ";".join(sorted(roles))}
+
+
+def _composite_packet():
+    return {"reviewed": [_row("attack-0001-L2", family="attack", li=2, is_overlay=False,
+                              fp="FPC", roles=["attack_body", "attack_weapon_sword"])]}
+
+
+def test_composite_owned_at_contract_happy_path():
+    dec = {"attack-0001-L2": _decision("attack-0001-L2", "FPC",
+                                       ["attack_body", "attack_weapon_sword"])}
+    doc = tc.build_contracts(_composite_packet(), dec)
+    card = doc["contracts"]["attack"]["per_card"][0]
+    assert card["classification"] == "owned"
+    assert card["composite_owned_at_contract"] is True
+    assert card["owned_role"] == "attack_body;attack_weapon_sword"
+    assert card["original_composite_roles"] == ["attack_body", "attack_weapon_sword"]
+    assert doc["composite_owned_at_contract_count"] == 1
+
+
+def test_composite_decision_fingerprint_mismatch_fails_closed():
+    dec = {"attack-0001-L2": _decision("attack-0001-L2", "WRONGFP",
+                                       ["attack_body", "attack_weapon_sword"])}
+    with pytest.raises(tc.TopologyContractError, match="fingerprint mismatch"):
+        tc.build_contracts(_composite_packet(), dec)
+
+
+def test_composite_decision_role_drift_fails_closed():
+    dec = {"attack-0001-L2": _decision("attack-0001-L2", "FPC", ["attack_body", "other_role"])}
+    with pytest.raises(tc.TopologyContractError, match="asserted roles"):
+        tc.build_contracts(_composite_packet(), dec)
+
+
+def test_composite_decision_on_non_composite_fails_closed():
+    # A single-role (owned) row may NOT be changed by this artifact (req 5/6).
+    rows = {"reviewed": [_row("attack-0001-L2", family="attack", li=2, fp="FPC",
+                              roles=["attack_body"])]}
+    dec = {"attack-0001-L2": _decision("attack-0001-L2", "FPC", ["attack_body"])}
+    with pytest.raises(tc.TopologyContractError, match="only composite rows"):
+        tc.build_contracts(rows, dec)
+
+
+def test_unconsumed_composite_decision_fails_closed():
+    dec = {"attack-9999-L2": _decision("attack-9999-L2", "FPC",
+                                       ["attack_body", "attack_weapon_sword"])}
+    with pytest.raises(tc.TopologyContractError, match="not matched"):
+        tc.build_contracts(_composite_packet(), dec)
+
+
+def test_missing_composite_decision_keeps_blocker():
+    doc = tc.build_contracts(_composite_packet(), {})
+    card = doc["contracts"]["attack"]["per_card"][0]
+    assert card["classification"] == "composite"
+    assert "composite_owned_at_contract" not in card
+
+
+def test_load_composite_decisions_requires_authority_false(tmp_path):
+    import json as _json
+    p = tmp_path / "dec.json"
+    p.write_text(_json.dumps({"authority": True, "decisions": []}))
+    with pytest.raises(tc.TopologyContractError, match="authority:false"):
+        tc.load_composite_decisions(p)
+    # Absent file -> empty mapping (missing decision keeps the composite blocker).
+    assert tc.load_composite_decisions(tmp_path / "nope.json") == {}
+
+
 def test_validate_fails_closed_when_a_card_is_dropped():
     rows = [
         _row("player-0100-L3", li=3, roles=["helmet"]),

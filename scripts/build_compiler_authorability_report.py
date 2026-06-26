@@ -117,7 +117,13 @@ def build_report(contracts_doc: dict[str, Any], requirements_doc: dict[str, Any]
             if cls in CLASS_BLOCKER:
                 reason, plan_class = CLASS_BLOCKER[cls]
                 content_blockers.append({"reason": reason, "plan_rejection_class": plan_class})
+            # FL-4162: the contract is the SINGLE owner of composite-vs-owned. When a
+            # reviewed composite-ownership decision owned this card at the contract
+            # boundary, the requirements doc's composite blocker is superseded (Law 1).
+            owned_at_contract = bool(card.get("composite_owned_at_contract"))
             for blk in sorted(blockers_by_key.get(cid, set()) & set(CONTENT_BLOCKER_MAP)):
+                if blk == "composite_layer_requires_family_contract" and owned_at_contract:
+                    continue
                 reason, plan_class = CONTENT_BLOCKER_MAP[blk]
                 content_blockers.append({"reason": reason, "plan_rejection_class": plan_class})
 
@@ -130,14 +136,21 @@ def build_report(contracts_doc: dict[str, Any], requirements_doc: dict[str, Any]
                 if cb["plan_rejection_class"]:
                     plan_class_counts[cb["plan_rejection_class"]] += 1
 
-            layers.append({
+            layer_record = {
                 "card_id": cid,
                 "family": family,
                 "classification": cls,
                 "content_status": "content_clean" if authorable else "content_blocked",
                 "content_blockers": content_blockers,
                 "phase_gated": True,
-            })
+            }
+            # FL-4162: carry the contract's composite-ownership decision downstream so
+            # the entries builder authors the single owned_role (not the multi-role list).
+            if card.get("composite_owned_at_contract"):
+                layer_record["composite_owned_at_contract"] = True
+                layer_record["owned_role"] = card.get("owned_role")
+                layer_record["original_composite_roles"] = card.get("original_composite_roles")
+            layers.append(layer_record)
         if declared is not None and seen != declared:
             raise AuthorabilityReportError(
                 f"{family}: covered {seen} layers but contract declares {declared}"

@@ -93,11 +93,31 @@ def build_entries(report: dict[str, Any], requirements: dict[str, Any]) -> dict[
                 raise EntryAuthoringError(
                     f"{cid}: marked content_clean yet has content_blockers — report inconsistent"
                 )
-            roles = list(req.get("composite_roles") or [])
+            # FL-4162: a composite layer owned at the contract boundary authors its
+            # single reviewed owned_role; its original composite roles are kept as
+            # provenance. Otherwise a content_clean layer must carry exactly one role.
+            composite_owned = bool(layer.get("composite_owned_at_contract"))
+            if composite_owned:
+                owned_role = layer.get("owned_role")
+                if not owned_role:
+                    raise EntryAuthoringError(
+                        f"{cid}: composite_owned_at_contract but report carries no owned_role"
+                    )
+                roles = [owned_role]
+            else:
+                roles = list(req.get("composite_roles") or [])
             if len(roles) != 1:
                 raise EntryAuthoringError(
                     f"{cid}: content_clean layer must have exactly one role, got {roles}"
                 )
+            layer_entry = {
+                "role": roles[0],
+                "source_layer_index": req.get("raw_layer_index"),
+                "xp_ref": req.get("source_xp_path"),
+            }
+            if composite_owned:
+                layer_entry["composite_owned_at_contract"] = True
+                layer_entry["original_composite_roles"] = layer.get("original_composite_roles")
             authored.append({
                 "entry_id": f"avp_entry:{cid}",
                 "authority": False,
@@ -107,11 +127,7 @@ def build_entries(report: dict[str, Any], requirements: dict[str, Any]) -> dict[
                 "family": req.get("family"),
                 "presentation_kind_candidates": req.get("presentation_kind_candidates"),
                 "slot_candidates": req.get("slot_candidates"),
-                "layer": {
-                    "role": roles[0],
-                    "source_layer_index": req.get("raw_layer_index"),
-                    "xp_ref": req.get("source_xp_path"),
-                },
+                "layer": layer_entry,
                 "review_decision_ref": req.get("review_decision_ref", {}),
                 "remaining_phase_gates": phase_gates,
             })
