@@ -229,6 +229,37 @@ class ViewerState:
         return self.layer_keys[self.layer_idx]
 
 
+def _layer_is_cyan_swoosh(layer) -> bool:
+    """A final layer is the weapon_swoosh when its occupied cells are predominantly
+    cyan-fg (upstream sprite.cpp:361 special-case). Read-only check."""
+    occ = cyan = 0
+    for row in getattr(layer, "data", []):
+        for glyph, fg, _bg in row:
+            if glyph not in (0, 32):
+                occ += 1
+                if tuple(fg) == (0, 255, 255):
+                    cyan += 1
+    return occ > 0 and cyan / occ >= 0.5
+
+
+def _engine_ref(idx, n_layers: int, layer) -> str:
+    """Map a raw layer index to its upstream engine role (sprite.cpp @ upstream/master
+    8ff75d0c; see ENGINE_REFS.json). Pure annotation; the viewer authors nothing."""
+    if not isinstance(idx, int):
+        return "metadata / non-visual layer"
+    if idx == 0:
+        return "L0 color key (bg) -- sprite.cpp:350"
+    if idx == 1:
+        return "L1 height channel -- sprite.cpp:351"
+    if idx == 2:
+        return "L2 image base accumulator (overlays fold into this) -- sprite.cpp:352"
+    if idx == n_layers - 1:
+        if layer is not None and _layer_is_cyan_swoosh(layer):
+            return "final layer, cyan-fg -> weapon_swoosh special-case -- sprite.cpp:361"
+        return "final merge layer -> folds into L2 -- sprite.cpp:354-360"
+    return "merge overlay -> folds into L2 in order -- sprite.cpp:354-360"
+
+
 def compose_screen(state: ViewerState, data: ContractData, xp: "xp_core.XPFile") -> str:
     key = state.current_key
     info = data.join(key)
@@ -255,12 +286,30 @@ def compose_screen(state: ViewerState, data: ContractData, xp: "xp_core.XPFile")
     out.append("")
     out.append("-- CONTRACT (authority:false proposal) --")
     out.append(f"hand[{info['hand_status']}]: {info['hand_label']!r}")
+    if info["hand_note"] and info["hand_note"] != info["hand_label"]:
+        out.append(f"hand_note: {info['hand_note']!r}")
     out.append(f"machine_guess: {info['machine_guess']!r} ({info['machine_guess_source']})")
     out.append(f"PROPOSED ROLE: {';'.join(info['proposed_roles']) or '<none>'}"
                f"   topology_class: {info['topology_class']}   queue: {info['queue_class']}")
     out.append(f"blockers: {', '.join(info['blockers']) or 'none'}")
-    out.append(f"glyph exact-match peers: {len(info['exact_matches'])}"
-               f"   near-match peers: {len(info['near_matches'])}")
+    # Engine anchor: which sprite.cpp role this raw layer plays (read-only annotation).
+    out.append(f"engine: {_engine_ref(idx, len(xp.layers), layer)}")
+    # Neighboring-layer patterns: adjacent raw layers + their proposed roles, for
+    # convention comparison (is this the base, an overlay, the swoosh?).
+    by_idx = {data.join(k)["raw_layer_index"]: k for k in state.layer_keys}
+    neigh = []
+    for d in (idx - 1, idx + 1) if isinstance(idx, int) else ():
+        if d < 2:
+            neigh.append(f"L{d}=<metadata>")
+        elif d in by_idx:
+            nj = data.join(by_idx[d])
+            neigh.append(f"L{d}={';'.join(nj['proposed_roles']) or '<none>'}[{nj['topology_class']}]")
+    out.append(f"neighbors: {', '.join(neigh) or 'none'}")
+    ex, nr = info["exact_matches"], info["near_matches"]
+    out.append(f"glyph exact-match peers ({len(ex)}): "
+               f"{', '.join(map(str, ex[:6]))}{' ...' if len(ex) > 6 else ''}")
+    out.append(f"glyph near-match peers ({len(nr)}): "
+               f"{', '.join(map(str, nr[:6]))}{' ...' if len(nr) > 6 else ''}")
     if info["contradictions"]:
         out.append(f"contradiction: {info['contradictions'][0]}")
     if info["topology_note"]:

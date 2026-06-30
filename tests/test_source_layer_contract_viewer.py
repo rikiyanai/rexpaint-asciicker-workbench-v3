@@ -103,3 +103,44 @@ def test_viewer_module_writes_nothing_to_disk():
     src = (PIPELINE_V3 / "scripts" / "source_layer_contract_viewer.py").read_text()
     for forbidden in ("open(", "json.dump", "mkstemp", "os.replace", "Path.write_text", ".write_text("):
         assert forbidden not in src, f"viewer must not write: found {forbidden!r}"
+
+
+# --- FL-4162 microscope: engine refs, neighbors, hand_note, match ids in one panel ---
+def _screen_for(stem, layer_index=0):
+    data = v.ContractData(SM)
+    xp = v.load_xp_for_stem(stem, SPRITES)
+    st = v.ViewerState(stem, data.layer_keys_for_stem(stem))
+    st.layer_idx = layer_index
+    return v.compose_screen(st, data, xp)
+
+
+def test_engine_refs_anchor_each_wolack_layer():
+    """The microscope shows the upstream sprite.cpp role for each raw layer:
+    L2 base accumulator, L3 merge overlay, L4 final cyan-fg swoosh special-case."""
+    keys = ["wolack-0001-L2", "wolack-0001-L3", "wolack-0001-L4"]
+    screens = [_screen_for("wolack-0001", i) for i in range(len(keys))]
+    assert "L2 image base accumulator" in screens[0] and "sprite.cpp:352" in screens[0]
+    assert "folds into L2" in screens[1] and "sprite.cpp:354-360" in screens[1]
+    assert "weapon_swoosh special-case" in screens[2] and "sprite.cpp:361" in screens[2]
+
+
+def test_engine_ref_helper_classifies_layers():
+    """_engine_ref / _layer_is_cyan_swoosh are pure and classify by index + cyan-fg."""
+    xp = v.load_xp_for_stem("wolack-0001", SPRITES)
+    n = len(xp.layers)
+    assert "L2 image base accumulator" in v._engine_ref(2, n, xp.layers[2])
+    assert "weapon_swoosh special-case" in v._engine_ref(n - 1, n, xp.layers[n - 1])
+    assert v._layer_is_cyan_swoosh(xp.layers[n - 1])      # final layer is the swoosh
+    assert not v._layer_is_cyan_swoosh(xp.layers[2])      # the body base is not
+
+
+def test_microscope_shows_neighbors_and_matches():
+    """One panel surfaces neighboring-layer roles and glyph match peers so a contract
+    hypothesis is checked against raw evidence (the wolack-0001-L3 false-clean: it
+    byte-matches its sibling composites)."""
+    screen = _screen_for("wolack-0001", 1)   # wolack-0001-L3
+    assert "neighbors:" in screen
+    assert "L2=mount_body_wolf" in screen and "L4=weapon_swoosh" in screen
+    assert "engine:" in screen
+    # the false-clean evidence: near-match peers point at the sibling L3 composites
+    assert "near-match peers" in screen and "wolack-0011-L3" in screen
