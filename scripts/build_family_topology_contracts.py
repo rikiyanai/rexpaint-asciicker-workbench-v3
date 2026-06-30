@@ -56,6 +56,9 @@ DEFAULT_OUT = SM / "family_topology_contracts.json"
 # Reclassifies a composite source layer to 'owned' without touching the hand
 # evidence. authority:false; fail-closed (see _apply_composite_decision).
 DEFAULT_COMPOSITE_DECISIONS = SM / "composite_ownership_decisions.json"
+# FL-4162: reviewed owned->composite reconciliations consumed at THIS build boundary.
+# Corrects a single-role card to its true multi-role set without touching the corpus.
+DEFAULT_OWNED_COMPOSITE_RECONCILIATIONS = SM / "owned_to_composite_reconciliations.json"
 SCHEMA = "family_topology_contracts/v1"
 FAMILIES = ("attack", "bigbee", "player", "plydie", "wolack", "wolfie")
 CLASSES = ("owned", "composite", "rejected", "unresolved")
@@ -107,6 +110,77 @@ def load_composite_decisions(path: Path | None) -> dict[str, dict[str, Any]]:
             raise TopologyContractError(f"composite-ownership: duplicate decision for {sk}")
         out[sk] = dec
     return out
+
+
+def load_owned_composite_reconciliations(path: Path | None) -> dict[str, dict[str, Any]]:
+    """FL-4162: index reviewed owned->composite reconciliations by source_key.
+
+    Corrects a single-role card whose fingerprint proves it is a multi-role
+    composite, without changing the hand corpus. Returns {} when absent.
+    authority:false required."""
+    if path is None or not Path(path).is_file():
+        return {}
+    doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    if doc.get("authority") is not False:
+        raise TopologyContractError(
+            f"{path}: owned->composite reconciliations must be authority:false (FL-4162)")
+    out: dict[str, dict[str, Any]] = {}
+    for rec in doc.get("reconciliations", []):
+        sk = str(rec["source_key"])
+        if sk in out:
+            raise TopologyContractError(f"owned->composite: duplicate reconciliation for {sk}")
+        out[sk] = rec
+    return out
+
+
+def _apply_owned_to_composite_reconciliation(
+    row: dict[str, Any],
+    reconciliations: dict[str, dict[str, Any]], consumed: set[str],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """FL-4162: fingerprint-bound correction of a single-role card to its true
+    multi-role set, leaving the hand corpus untouched.
+
+    Fail-closed: only a single-role card may be reconciled; the fingerprint must
+    match; the asserted current role must equal the recorded role; the corrected
+    set must have >1 role. Returns a build-time copy carrying the corrected roles
+    (the source file is never written) plus provenance keeping the original role
+    and status."""
+    sk = str(row.get("source_key") or row.get("card_id"))
+    rec = reconciliations.get(sk)
+    if rec is None:
+        return row, {}
+    cur = list(_roles(row))
+    if len(cur) != 1:
+        raise TopologyContractError(
+            f"{sk}: owned->composite reconciliation targets a {len(cur)}-role card {cur}; "
+            f"only a single-role card may be reconciled (FL-4162)")
+    fp = str(row.get("whole_atlas_fingerprint"))
+    if str(rec.get("whole_atlas_fingerprint")) != fp:
+        raise TopologyContractError(
+            f"{sk}: reconciliation fingerprint mismatch "
+            f"(corpus {fp[:12]}.. vs reconciliation {str(rec.get('whole_atlas_fingerprint'))[:12]}..) "
+            f"- failing closed (FL-4162)")
+    if str(rec.get("asserted_current_role")) != cur[0]:
+        raise TopologyContractError(
+            f"{sk}: reconciliation asserted_current_role {rec.get('asserted_current_role')!r} "
+            f"!= corpus role {cur[0]!r} - failing closed (FL-4162)")
+    corrected = list(rec.get("corrected_roles") or [])
+    if len(corrected) < 2:
+        raise TopologyContractError(
+            f"{sk}: owned->composite reconciliation must supply >1 corrected role, got {corrected}")
+    consumed.add(sk)
+    eff = dict(row)
+    verdict = dict(eff.get("agent_verdict") or {})
+    verdict["proposed_roles"] = corrected
+    eff["agent_verdict"] = verdict
+    provenance = {
+        "owned_to_composite_reconciled": True,
+        "original_reviewed_role": cur[0],
+        "original_hand_status": row.get("hand_status"),
+        "reconciled_roles": corrected,
+        "reconciliation_fingerprint": fp,
+    }
+    return eff, provenance
 
 
 def _apply_composite_decision(
@@ -171,11 +245,14 @@ def _family_conflicts(report: dict[str, Any], family: str) -> list[dict[str, Any
 
 
 def build_contracts(packet: dict[str, Any],
-                    decisions: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+                    decisions: dict[str, dict[str, Any]] | None = None,
+                    reconciliations: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     rows = packet["reviewed"]
     report = cr.build_report(packet)
     decisions = decisions or {}
+    reconciliations = reconciliations or {}
     consumed: set[str] = set()
+    consumed_recon: set[str] = set()
     composite_owned_count = 0
 
     by_family: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -192,6 +269,10 @@ def build_contracts(packet: dict[str, Any],
         base_indices = set()
         index_roles: dict[int, Counter] = defaultdict(Counter)
         for row in sorted(fam_rows, key=lambda r: str(r.get("card_id"))):
+            # FL-4162: a reviewed owned->composite reconciliation may first correct a
+            # single-role card to its true multi-role set (fail-closed; corpus untouched).
+            row, recon_prov = _apply_owned_to_composite_reconciliation(
+                row, reconciliations, consumed_recon)
             base_cls = classify_card(row)
             # FL-4162: a reviewed composite-ownership decision may reclassify a
             # composite row to 'owned' here (fail-closed; evidence untouched).
@@ -216,6 +297,7 @@ def build_contracts(packet: dict[str, Any],
                 "queue_class": row.get("queue_class"),
             }
             entry.update(provenance)
+            entry.update(recon_prov)
             per_card.append(entry)
 
         # Evidence that overlay role is variant-dependent: any overlay index whose
@@ -259,6 +341,13 @@ def build_contracts(packet: dict[str, Any],
         raise TopologyContractError(
             f"composite-ownership decisions not matched to any composite row: "
             f"{unconsumed} (FL-4162 - wrong source_key or evidence drift)")
+    # FL-4162: every owned->composite reconciliation MUST have matched a single-role
+    # card -> fail closed on a stale/duplicate/wrong-key reconciliation.
+    unconsumed_recon = sorted(set(reconciliations) - consumed_recon)
+    if unconsumed_recon:
+        raise TopologyContractError(
+            f"owned->composite reconciliations not matched to any single-role card: "
+            f"{unconsumed_recon} (FL-4162 - wrong source_key or evidence drift)")
 
     return {
         "schema": SCHEMA,
@@ -353,6 +442,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--composite-decisions", type=Path, default=DEFAULT_COMPOSITE_DECISIONS,
                         help="FL-4162 reviewed composite-ownership decisions (authority:false); "
                              "absent file => no composite is owned")
+    parser.add_argument("--owned-composite-reconciliations", type=Path,
+                        default=DEFAULT_OWNED_COMPOSITE_RECONCILIATIONS,
+                        help="FL-4162 reviewed owned->composite reconciliations (authority:false); "
+                             "absent file => no single-role card is reclassified")
     parser.add_argument("--write", action="store_true")
     parser.add_argument("--validate", action="store_true",
                         help="re-check completeness against the packet and print the result")
@@ -364,7 +457,8 @@ def main(argv: list[str]) -> int:
     try:
         packet = cr.load_packet(args.packet)
         decisions = load_composite_decisions(args.composite_decisions)
-        contracts = build_contracts(packet, decisions)
+        reconciliations = load_owned_composite_reconciliations(args.owned_composite_reconciliations)
+        contracts = build_contracts(packet, decisions, reconciliations)
         validation = validate_contracts(contracts, packet)
     except (cr.ContradictionReportError, TopologyContractError) as exc:
         print(f"FAIL: {exc}", file=sys.stderr)

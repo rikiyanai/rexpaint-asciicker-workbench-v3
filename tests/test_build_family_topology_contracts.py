@@ -151,3 +151,80 @@ def test_validate_fails_closed_when_a_card_is_dropped():
     doc["contracts"]["player"]["per_card"] = doc["contracts"]["player"]["per_card"][:1]
     with pytest.raises(tc.TopologyContractError, match="validation FAILED"):
         tc.validate_contracts(doc, packet)
+
+
+# --- FL-4162 Surface A: owned->composite reconciliation (fingerprint-bound) ---
+def _recon(sk, fp, current, corrected, status="accept"):
+    return {"source_key": sk, "whole_atlas_fingerprint": fp,
+            "asserted_current_role": current, "corrected_roles": corrected,
+            "original_hand_status": status}
+
+
+def _owned_single_role_packet():
+    # wolack-0001-L3 hand-recorded as a single 'wolack_weapon_sword' role (owned-class).
+    return {"reviewed": [_row("wolack-0001-L3", family="wolack", li=3, fp="WFP",
+                              roles=["wolack_weapon_sword"])]}
+
+
+def test_owned_to_composite_reconciliation_happy_path():
+    rec = {"wolack-0001-L3": _recon("wolack-0001-L3", "WFP", "wolack_weapon_sword",
+                                    ["mount_body_wolf", "rider_torso", "sword"])}
+    doc = tc.build_contracts(_owned_single_role_packet(), {}, rec)
+    card = doc["contracts"]["wolack"]["per_card"][0]
+    assert card["classification"] == "composite"
+    assert card["proposed_roles"] == ["mount_body_wolf", "rider_torso", "sword"]
+    assert card["owned_to_composite_reconciled"] is True
+    assert card["original_reviewed_role"] == "wolack_weapon_sword"      # provenance kept
+
+
+def test_reconciliation_fingerprint_mismatch_fails_closed():
+    rec = {"wolack-0001-L3": _recon("wolack-0001-L3", "WRONG", "wolack_weapon_sword",
+                                    ["mount_body_wolf", "rider_torso", "sword"])}
+    with pytest.raises(tc.TopologyContractError, match="fingerprint mismatch"):
+        tc.build_contracts(_owned_single_role_packet(), {}, rec)
+
+
+def test_reconciliation_wrong_current_role_fails_closed():
+    rec = {"wolack-0001-L3": _recon("wolack-0001-L3", "WFP", "NOT_THE_ROLE",
+                                    ["mount_body_wolf", "rider_torso", "sword"])}
+    with pytest.raises(tc.TopologyContractError, match="asserted_current_role"):
+        tc.build_contracts(_owned_single_role_packet(), {}, rec)
+
+
+def test_reconciliation_on_multi_role_card_fails_closed():
+    rows = {"reviewed": [_row("wolack-0011-L3", family="wolack", li=3, fp="WFP",
+                              roles=["mount_body_wolf", "rider_torso", "sword"])]}
+    rec = {"wolack-0011-L3": _recon("wolack-0011-L3", "WFP", "mount_body_wolf",
+                                    ["mount_body_wolf", "rider_torso", "sword"])}
+    with pytest.raises(tc.TopologyContractError, match="only a single-role card"):
+        tc.build_contracts(rows, {}, rec)
+
+
+def test_unconsumed_reconciliation_fails_closed():
+    rec = {"nonexistent-L3": _recon("nonexistent-L3", "WFP", "x", ["a", "b"])}
+    with pytest.raises(tc.TopologyContractError, match="not matched"):
+        tc.build_contracts(_owned_single_role_packet(), {}, rec)
+
+
+def test_reconciled_card_then_takes_composite_decision():
+    """The reconciled composite is eligible for a composite-ownership decision: the
+    full chain owned -> composite -> owned_at_contract (what wolack-0001-L3 needs)."""
+    rec = {"wolack-0001-L3": _recon("wolack-0001-L3", "WFP", "wolack_weapon_sword",
+                                    ["mount_body_wolf", "rider_torso", "sword"])}
+    dec = {"wolack-0001-L3": _decision("wolack-0001-L3", "WFP",
+                                       ["mount_body_wolf", "rider_torso", "sword"])}
+    doc = tc.build_contracts(_owned_single_role_packet(), dec, rec)
+    card = doc["contracts"]["wolack"]["per_card"][0]
+    assert card["classification"] == "owned"
+    assert card["composite_owned_at_contract"] is True
+    assert card["owned_to_composite_reconciled"] is True
+    assert card["owned_role"] == "mount_body_wolf;rider_torso;sword"
+
+
+def test_load_reconciliations_requires_authority_false(tmp_path):
+    import json as _json
+    p = tmp_path / "recon.json"
+    p.write_text(_json.dumps({"authority": True, "reconciliations": []}))
+    with pytest.raises(tc.TopologyContractError, match="authority:false"):
+        tc.load_owned_composite_reconciliations(p)
+    assert tc.load_owned_composite_reconciliations(tmp_path / "nope.json") == {}
