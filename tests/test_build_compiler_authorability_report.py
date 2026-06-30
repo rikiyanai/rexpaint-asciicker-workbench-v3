@@ -89,3 +89,65 @@ def test_coverage_mismatch_fails_closed():
 def test_missing_input_fails_closed(tmp_path):
     with pytest.raises(ar.AuthorabilityReportError, match="required topology contracts missing"):
         ar._load_json(tmp_path / "nope.json", "topology contracts")
+
+
+# --- FL-4162 Surface B: contract-bound hand-status reconciliation (fingerprint-bound) ---
+def _hs_recon(sk, fp, orig="partial"):
+    return {"source_key": sk, "whole_atlas_fingerprint": fp,
+            "asserted_original_status": orig, "reconciled_status": "accept"}
+
+
+def test_hand_status_reconciliation_clears_non_accept_blocker():
+    contracts = _contracts([{"card_id": "wolack-0001-L2", "classification": "owned",
+                             "whole_atlas_fingerprint": "WFP", "hand_status": "partial"}],
+                           family="wolack")
+    reqs = _reqs([{"source_key": "wolack-0001-L2",
+                   "promotion_blockers": [*ar.PHASE_GATES, "decision_from_non_accept_hand_status"]}])
+    recon = {"wolack-0001-L2": _hs_recon("wolack-0001-L2", "WFP", "partial")}
+    report = ar.build_report(contracts, reqs, recon)
+    assert report["summary"]["content_clean"] == 1            # blocker cleared
+    layer = report["layers"][0]
+    assert layer["content_status"] == "content_clean"
+    assert layer["hand_status_reconciled"] is True
+    assert layer["original_hand_status"] == "partial"         # provenance kept
+
+
+def test_hand_status_reconciliation_fingerprint_mismatch_fails_closed():
+    contracts = _contracts([{"card_id": "wolack-0001-L2", "classification": "owned",
+                             "whole_atlas_fingerprint": "WFP", "hand_status": "partial"}],
+                           family="wolack")
+    reqs = _reqs([{"source_key": "wolack-0001-L2",
+                   "promotion_blockers": ["decision_from_non_accept_hand_status"]}])
+    recon = {"wolack-0001-L2": _hs_recon("wolack-0001-L2", "WRONG", "partial")}
+    with pytest.raises(ar.AuthorabilityReportError, match="fingerprint mismatch"):
+        ar.build_report(contracts, reqs, recon)
+
+
+def test_hand_status_reconciliation_wrong_asserted_status_fails_closed():
+    contracts = _contracts([{"card_id": "wolack-0001-L2", "classification": "owned",
+                             "whole_atlas_fingerprint": "WFP", "hand_status": "partial"}],
+                           family="wolack")
+    reqs = _reqs([{"source_key": "wolack-0001-L2",
+                   "promotion_blockers": ["decision_from_non_accept_hand_status"]}])
+    recon = {"wolack-0001-L2": _hs_recon("wolack-0001-L2", "WFP", "accept")}  # wrong
+    with pytest.raises(ar.AuthorabilityReportError, match="asserted_original_status"):
+        ar.build_report(contracts, reqs, recon)
+
+
+def test_unconsumed_hand_status_reconciliation_fails_closed():
+    contracts = _contracts([{"card_id": "wolack-0001-L2", "classification": "owned",
+                             "whole_atlas_fingerprint": "WFP", "hand_status": "partial"}],
+                           family="wolack")
+    reqs = _reqs([{"source_key": "wolack-0001-L2", "promotion_blockers": []}])
+    recon = {"nope-L2": _hs_recon("nope-L2", "X")}
+    with pytest.raises(ar.AuthorabilityReportError, match="not matched"):
+        ar.build_report(contracts, reqs, recon)
+
+
+def test_load_hand_status_reconciliations_requires_authority_false(tmp_path):
+    import json as _json
+    p = tmp_path / "hs.json"
+    p.write_text(_json.dumps({"authority": True, "reconciliations": []}))
+    with pytest.raises(ar.AuthorabilityReportError, match="authority:false"):
+        ar.load_hand_status_reconciliations(p)
+    assert ar.load_hand_status_reconciliations(tmp_path / "nope.json") == {}

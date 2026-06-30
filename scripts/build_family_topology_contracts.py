@@ -295,6 +295,10 @@ def build_contracts(packet: dict[str, Any],
                 "classification": cls,
                 "proposed_roles": _roles(row),
                 "queue_class": row.get("queue_class"),
+                # FL-4162: carry the evidence fingerprint so downstream fingerprint-bound
+                # surfaces (e.g. hand-status reconciliation) can bind to this card.
+                "whole_atlas_fingerprint": row.get("whole_atlas_fingerprint"),
+                "hand_status": row.get("hand_status"),
             }
             entry.update(provenance)
             entry.update(recon_prov)

@@ -43,6 +43,10 @@ SM = REPO_ROOT / "docs/research/ascii/semantic_maps"
 DEFAULT_CONTRACTS = SM / "family_topology_contracts.json"
 DEFAULT_REQUIREMENTS = SM / "actor_visual_profile_requirements.json"
 DEFAULT_OUT = SM / "compiler_authorability_report.json"
+# FL-4162: reviewed contract-boundary hand-status reconciliations. Clears the
+# proposal_from_non_accept_hand_status blocker for a fingerprint-matched card,
+# preserving the original status as provenance, without editing the hand corpus.
+DEFAULT_HAND_STATUS_RECONCILIATIONS = SM / "hand_status_reconciliations.json"
 SCHEMA = "compiler_authorability_report/v1"
 
 PHASE_GATES = (
@@ -85,11 +89,63 @@ def _load_json(path: Path, label: str) -> dict[str, Any]:
         raise AuthorabilityReportError(f"malformed {label} {path}: {exc}") from exc
 
 
-def build_report(contracts_doc: dict[str, Any], requirements_doc: dict[str, Any]) -> dict[str, Any]:
+def load_hand_status_reconciliations(path: Path | None) -> dict[str, dict[str, Any]]:
+    """FL-4162: index reviewed contract-boundary hand-status reconciliations by
+    source_key. Returns {} when absent (the non-accept blocker stays). authority:false
+    required; the hand corpus is never edited."""
+    if path is None or not Path(path).is_file():
+        return {}
+    doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    if doc.get("authority") is not False:
+        raise AuthorabilityReportError(
+            f"{path}: hand-status reconciliations must be authority:false (FL-4162)")
+    out: dict[str, dict[str, Any]] = {}
+    for rec in doc.get("reconciliations", []):
+        sk = str(rec["source_key"])
+        if sk in out:
+            raise AuthorabilityReportError(f"hand-status: duplicate reconciliation for {sk}")
+        out[sk] = rec
+    return out
+
+
+def _match_hand_status_reconciliation(
+    card: dict[str, Any], reconciliations: dict[str, dict[str, Any]], consumed: set[str],
+) -> dict[str, Any] | None:
+    """FL-4162: fingerprint-bound clearance of the non-accept hand-status blocker for
+    one card. Fail-closed: fingerprint must match; an asserted original status (if
+    given) must match the card's recorded status. Returns provenance or None."""
+    cid = str(card["card_id"])
+    rec = reconciliations.get(cid)
+    if rec is None:
+        return None
+    fp = str(card.get("whole_atlas_fingerprint"))
+    if str(rec.get("whole_atlas_fingerprint")) != fp:
+        raise AuthorabilityReportError(
+            f"{cid}: hand-status reconciliation fingerprint mismatch "
+            f"(card {fp[:12]}.. vs reconciliation {str(rec.get('whole_atlas_fingerprint'))[:12]}..) "
+            f"- failing closed (FL-4162)")
+    asserted = rec.get("asserted_original_status")
+    if asserted is not None and str(asserted) != str(card.get("hand_status")):
+        raise AuthorabilityReportError(
+            f"{cid}: hand-status reconciliation asserted_original_status {asserted!r} "
+            f"!= card hand_status {card.get('hand_status')!r} - failing closed (FL-4162)")
+    consumed.add(cid)
+    return {
+        "hand_status_reconciled": True,
+        "original_hand_status": card.get("hand_status"),
+        "reconciled_status": rec.get("reconciled_status", "accept"),
+        "hand_status_reconciliation_fingerprint": fp,
+    }
+
+
+def build_report(contracts_doc: dict[str, Any], requirements_doc: dict[str, Any],
+                 hand_status_reconciliations: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     blockers_by_key: dict[str, set[str]] = {
         str(r["source_key"]): set(r.get("promotion_blockers") or [])
         for r in requirements_doc.get("requirements", [])
     }
+    hand_status_reconciliations = hand_status_reconciliations or {}
+    consumed_hs: set[str] = set()
 
     layers: list[dict[str, Any]] = []
     reason_counts = Counter()
@@ -121,8 +177,15 @@ def build_report(contracts_doc: dict[str, Any], requirements_doc: dict[str, Any]
             # reviewed composite-ownership decision owned this card at the contract
             # boundary, the requirements doc's composite blocker is superseded (Law 1).
             owned_at_contract = bool(card.get("composite_owned_at_contract"))
+            # FL-4162: a reviewed, fingerprint-bound hand-status reconciliation clears
+            # the non-accept blocker at the contract boundary (original status kept as
+            # provenance; the hand corpus is untouched -- Law 1, fail-closed).
+            hs_recon = _match_hand_status_reconciliation(
+                card, hand_status_reconciliations, consumed_hs)
             for blk in sorted(blockers_by_key.get(cid, set()) & set(CONTENT_BLOCKER_MAP)):
                 if blk == "composite_layer_requires_family_contract" and owned_at_contract:
+                    continue
+                if blk == "decision_from_non_accept_hand_status" and hs_recon:
                     continue
                 reason, plan_class = CONTENT_BLOCKER_MAP[blk]
                 content_blockers.append({"reason": reason, "plan_rejection_class": plan_class})
@@ -150,11 +213,21 @@ def build_report(contracts_doc: dict[str, Any], requirements_doc: dict[str, Any]
                 layer_record["composite_owned_at_contract"] = True
                 layer_record["owned_role"] = card.get("owned_role")
                 layer_record["original_composite_roles"] = card.get("original_composite_roles")
+            if hs_recon:
+                layer_record.update(hs_recon)
             layers.append(layer_record)
         if declared is not None and seen != declared:
             raise AuthorabilityReportError(
                 f"{family}: covered {seen} layers but contract declares {declared}"
             )
+
+    # FL-4162: every hand-status reconciliation MUST have matched a card -> fail closed
+    # on a stale/duplicate/wrong-key reconciliation.
+    unconsumed_hs = sorted(set(hand_status_reconciliations) - consumed_hs)
+    if unconsumed_hs:
+        raise AuthorabilityReportError(
+            f"hand-status reconciliations not matched to any card: {unconsumed_hs} "
+            f"(FL-4162 - wrong source_key or evidence drift)")
 
     return {
         "schema": SCHEMA,
@@ -218,6 +291,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--contracts", type=Path, default=DEFAULT_CONTRACTS)
     parser.add_argument("--requirements", type=Path, default=DEFAULT_REQUIREMENTS)
+    parser.add_argument("--hand-status-reconciliations", type=Path,
+                        default=DEFAULT_HAND_STATUS_RECONCILIATIONS,
+                        help="FL-4162 reviewed contract-boundary hand-status reconciliations "
+                             "(authority:false); absent file => non-accept blockers stay")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--write", action="store_true")
     return parser.parse_args(argv)
@@ -228,7 +305,8 @@ def main(argv: list[str]) -> int:
     try:
         contracts = _load_json(args.contracts, "topology contracts")
         requirements = _load_json(args.requirements, "requirements")
-        report = build_report(contracts, requirements)
+        hs_recon = load_hand_status_reconciliations(args.hand_status_reconciliations)
+        report = build_report(contracts, requirements, hs_recon)
     except AuthorabilityReportError as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 2
