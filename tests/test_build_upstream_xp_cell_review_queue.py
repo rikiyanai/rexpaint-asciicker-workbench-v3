@@ -87,3 +87,29 @@ def test_unknown_review_state_fails_closed():
     }
     with pytest.raises(queue.ReviewQueueError, match="unknown review state"):
         queue.build_queue(records, _similarity(list(records)))
+
+
+def test_decision_must_cover_every_contract_cell_once():
+    record = _record(
+        "player-a-L1", "a" * 64, "engine_metadata_semantics_unverified",
+        "engine_metadata", "engine_height_channel",
+    )
+    record["cell_values"] = [{"raw": {"glyph": 48}, "cell_type": "height_digit"}]
+    record["cell_spans"] = [[0, 0, 0, 0, 2, 0], [0, 0, 1, 0, 2, 0]]
+    records = {record["source_key"]: record}
+    doc = queue.build_queue(records, _similarity(list(records)))
+    unit = doc["review_units"][0]
+    decision = {
+        "schema": "fl4162.upstream_xp_cell_role_decision.v1",
+        "authority": False,
+        "is_proposal": True,
+        "review_unit_id": unit["review_unit_id"],
+        "source_layer_sha256": unit["source_layer_sha256"],
+        "frame_geometry": unit["frame_geometry"],
+        "member_source_keys": unit["member_source_keys"],
+        "visible_cell_assignments": [[0, 0, 0, 0, 2, ["height"]]],
+        "composition_review": {"verified_against_upstream_ref": True},
+        "review_provenance": {"evidence_refs": ["sprite.cpp:351"], "decision": "height"},
+    }
+    with pytest.raises(queue.ReviewQueueError, match="assignment coverage mismatch"):
+        queue.apply_decisions(doc, {unit["review_unit_id"]: decision}, records)

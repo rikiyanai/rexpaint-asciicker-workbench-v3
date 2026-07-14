@@ -15,6 +15,7 @@ import compare_upstream_xp_cell_contracts as comparison
 REPO = Path(__file__).resolve().parents[2]
 DEFAULT_LEDGER = REPO / "docs/research/ascii/semantic_maps/upstream_xp_cell_contract"
 DEFAULT_SIMILARITY = DEFAULT_LEDGER / "similarity_index.json"
+DEFAULT_DECISIONS = DEFAULT_LEDGER / "cell_role_decisions.jsonl"
 DEFAULT_OUT = DEFAULT_LEDGER / "review_queue.json"
 SCHEMA = "fl4162.upstream_xp_cell_review_queue.v1"
 
@@ -44,6 +45,101 @@ def load_similarity(path: Path, expected_keys: set[str]) -> dict[str, dict[str, 
     if set(by_key) != expected_keys:
         raise ReviewQueueError("similarity index source keys do not match the ledger")
     return by_key
+
+
+def load_decisions(path: Path) -> dict[str, dict[str, Any]]:
+    if not path.exists():
+        return {}
+    decisions: dict[str, dict[str, Any]] = {}
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise ReviewQueueError(f"cannot read cell decisions: {exc}") from exc
+    for lineno, line in enumerate(lines, 1):
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError as exc:
+            raise ReviewQueueError(f"cell decisions line {lineno}: malformed JSON: {exc}") from exc
+        unit_id = str(row.get("review_unit_id") or "")
+        if not unit_id or unit_id in decisions:
+            raise ReviewQueueError(f"cell decisions line {lineno}: missing or duplicate review_unit_id")
+        decisions[unit_id] = row
+    return decisions
+
+
+def _assignment_coordinates(assignments: list[Any]) -> set[tuple[int, int, int, int]]:
+    coordinates: set[tuple[int, int, int, int]] = set()
+    for assignment in assignments:
+        if not isinstance(assignment, list) or len(assignment) != 6:
+            raise ReviewQueueError("cell decision contains malformed assignment")
+        angle, frame, y, x_start, length = (int(value) for value in assignment[:5])
+        roles = assignment[5]
+        if length < 1 or not isinstance(roles, list) or not roles or not all(
+            isinstance(role, str) and role for role in roles
+        ):
+            raise ReviewQueueError("cell decision assignment has invalid length or roles")
+        for x in range(x_start, x_start + length):
+            coordinate = (angle, frame, y, x)
+            if coordinate in coordinates:
+                raise ReviewQueueError(f"cell decision overlaps coordinate {coordinate}")
+            coordinates.add(coordinate)
+    return coordinates
+
+
+def apply_decisions(
+    doc: dict[str, Any], decisions: dict[str, dict[str, Any]],
+    records: dict[str, dict[str, Any]],
+) -> None:
+    units = {unit["review_unit_id"]: unit for unit in doc["review_units"]}
+    unknown = sorted(set(decisions) - set(units))
+    if unknown:
+        raise ReviewQueueError(f"cell decisions reference unknown review units: {unknown}")
+    for unit_id, decision in decisions.items():
+        unit = units[unit_id]
+        if decision.get("schema") != "fl4162.upstream_xp_cell_role_decision.v1":
+            raise ReviewQueueError(f"{unit_id}: wrong decision schema")
+        if decision.get("authority") is not False or decision.get("is_proposal") is not True:
+            raise ReviewQueueError(f"{unit_id}: decision must be authority:false proposal")
+        if decision.get("source_layer_sha256") != unit["source_layer_sha256"]:
+            raise ReviewQueueError(f"{unit_id}: source layer fingerprint mismatch")
+        if decision.get("frame_geometry") != unit["frame_geometry"]:
+            raise ReviewQueueError(f"{unit_id}: frame geometry mismatch")
+        if sorted(decision.get("member_source_keys") or []) != unit["member_source_keys"]:
+            raise ReviewQueueError(f"{unit_id}: exact-match member set mismatch")
+        representative = records[unit["representative_source_key"]]
+        expected = {
+            coord for coord, value in comparison.expand_cells(representative).items()
+            if value.get("cell_type") != "transparent"
+        }
+        assigned = _assignment_coordinates(decision.get("visible_cell_assignments") or [])
+        if assigned != expected:
+            raise ReviewQueueError(
+                f"{unit_id}: assignment coverage mismatch missing={len(expected-assigned)} "
+                f"extra={len(assigned-expected)}"
+            )
+        composition = decision.get("composition_review") or {}
+        if composition.get("verified_against_upstream_ref") is not True:
+            raise ReviewQueueError(f"{unit_id}: upstream composition review not verified")
+        provenance = decision.get("review_provenance") or {}
+        if not provenance.get("evidence_refs") or not provenance.get("decision"):
+            raise ReviewQueueError(f"{unit_id}: review provenance incomplete")
+        unit["decision_record"] = {
+            "schema": decision["schema"],
+            "decision": provenance["decision"],
+            "reviewer": provenance.get("reviewer"),
+            "reviewed_at": provenance.get("reviewed_at"),
+            "evidence_refs": provenance["evidence_refs"],
+            "assignment_spans": len(decision["visible_cell_assignments"]),
+            "assigned_coordinates": len(assigned),
+        }
+    decided = sum(unit["decision_record"] is not None for unit in doc["review_units"])
+    doc["coverage"]["decided_units"] = decided
+    doc["coverage"]["pending_units"] = len(doc["review_units"]) - decided
+    doc["freeze_gate"]["ready"] = decided == len(doc["review_units"])
+    if doc["freeze_gate"]["ready"]:
+        doc["freeze_gate"]["reason"] = "every unique layer unit has a reviewed full-cell decision"
 
 
 def _geometry_key(record: dict[str, Any]) -> str:
@@ -178,6 +274,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ledger", type=Path, default=DEFAULT_LEDGER)
     parser.add_argument("--similarity", type=Path, default=DEFAULT_SIMILARITY)
+    parser.add_argument("--decisions", type=Path, default=DEFAULT_DECISIONS)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
@@ -185,6 +282,7 @@ def main(argv: list[str] | None = None) -> int:
         records = comparison.load_records(args.ledger)
         similarity = load_similarity(args.similarity, set(records))
         doc = build_queue(records, similarity)
+        apply_decisions(doc, load_decisions(args.decisions), records)
         if not args.check:
             atomic_write(args.out, doc)
     except (comparison.ComparisonError, ReviewQueueError) as exc:
