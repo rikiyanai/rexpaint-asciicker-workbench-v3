@@ -230,10 +230,13 @@ def render_cells_ansi(grid) -> list[str]:
 # View state + frame composition (text, no terminal control — testable)
 # --------------------------------------------------------------------------- #
 class ViewerState:
-    def __init__(self, stem: str, layer_keys: list[str], microscope: "MicroscopeGroup | None" = None):
+    def __init__(self, stem: str, layer_keys: list[str], microscope: "MicroscopeGroup | None" = None,
+                 sprites: Path = SPRITES):
         self.stem = stem
         self.layer_keys = layer_keys
         self.microscope = microscope
+        self.sprites = sprites
+        self._xp_cache: dict[str, "xp_core.XPFile"] = {}
         self.layer_idx = 0
         self.angle = 0
         self.frame = 0
@@ -245,6 +248,14 @@ class ViewerState:
     @property
     def current_key(self) -> str:
         return self.layer_keys[self.layer_idx]
+
+    def current_stem(self) -> str:
+        return self.current_key.rsplit("-L", 1)[0]
+
+    def xp_for(self, stem: str) -> "xp_core.XPFile":
+        if stem not in self._xp_cache:
+            self._xp_cache[stem] = load_xp_for_stem(stem, self.sprites)
+        return self._xp_cache[stem]
 
 
 def _layer_is_cyan_swoosh(layer) -> bool:
@@ -261,26 +272,47 @@ def _layer_is_cyan_swoosh(layer) -> bool:
 
 
 def _engine_ref(idx, n_layers: int, layer) -> str:
-    """Map a raw layer index to live engine/sprite.cpp line refs. Read-only annotation."""
+    """Upstream annotation pinned to upstream/master @ 8ff75d0c (ENGINE_REFS.json).
+    Local correspondence is separate and live; see local_engine_correspondence()."""
     if not isinstance(idx, int):
         return "metadata / non-visual layer"
     if idx == 0:
-        return "L0 color key (bg) -- engine/sprite.cpp:618"
+        return "L0 color key (bg) -- upstream sprite.cpp:350"
     if idx == 1:
-        return "L1 height channel glyph -- engine/sprite.cpp:619"
+        return "L1 height channel glyph -- upstream sprite.cpp:351"
     if idx == 2:
-        return "L2 primary visual / base accumulator -- engine/sprite.cpp:620"
+        return "L2 primary visual / base accumulator -- upstream sprite.cpp:352"
     if idx == n_layers - 1:
         if layer is not None and _layer_is_cyan_swoosh(layer):
-            return "final layer fg==cyan -> swoosh composition -- engine/sprite.cpp:1034-1185"
-        return "final non-swoosh overlay -> overwrites L2 -- engine/sprite.cpp:1029-1044"
-    return f"overlay L{idx} -> overwrites L2 in ordinal order -- engine/sprite.cpp:1029-1044"
+            return "final layer fg==cyan -> swoosh composition -- upstream sprite.cpp:361"
+        return "final overlay -> folds into L2 -- upstream sprite.cpp:354-360"
+    return f"overlay L{idx} -> folds into L2 in ordinal order -- upstream sprite.cpp:354-360"
 
 
-def compose_screen(state: ViewerState, data: ContractData, xp: "xp_core.XPFile") -> str:
+def local_engine_correspondence(idx: int, n_layers: int, layer) -> str:
+    """Live Y9-2 engine/sprite.cpp line ranges that implement the upstream contract.
+    These are mutable; the upstream refs above are the authority surface."""
+    if not isinstance(idx, int):
+        return "metadata / non-visual layer"
+    if idx == 0:
+        return "L0 color key (bg) -- local engine/sprite.cpp:619"
+    if idx == 1:
+        return "L1 height channel glyph -- local engine/sprite.cpp:620"
+    if idx == 2:
+        return "L2 primary visual / base accumulator -- local engine/sprite.cpp:621"
+    if idx == n_layers - 1:
+        if layer is not None and _layer_is_cyan_swoosh(layer):
+            return "final layer fg==cyan -> swoosh composition -- local engine/sprite.cpp:1034-1200"
+        return "final overlay overwrites L2 -- local engine/sprite.cpp:1029-1044, 1201-1203"
+    return f"overlay L{idx} overwrites L2 -- local engine/sprite.cpp:1029-1044, 1201-1203"
+
+
+def compose_screen(state: ViewerState, data: ContractData) -> str:
     key = state.current_key
     info = data.join(key)
     idx = info["raw_layer_index"]
+    stem = state.current_stem()
+    xp = state.xp_for(stem)
     layer = xp.layers[idx] if isinstance(idx, int) and 0 <= idx < len(xp.layers) else None
 
     out: list[str] = []
@@ -314,22 +346,32 @@ def compose_screen(state: ViewerState, data: ContractData, xp: "xp_core.XPFile")
         mcard = state.microscope.cards.get(key)
         if mcard:
             out.append(f"group: {state.microscope.group_name}")
-            out.append(f"all_atlas_visible_count: {mcard.get('all_atlas_visible_count')}")
+            out.append(f"dump_scope: frame 0 / angle 0 only; all_atlas_visible_count: {mcard.get('all_atlas_visible_count')} (full atlas)")
             dump = mcard.get("frame_dump", {})
             out.append(f"frame_dump: angle {dump.get('angle')}/{dump.get('angle_count')}, "
                        f"frame {dump.get('frame')}/{dump.get('frame_count')}, "
                        f"size {dump.get('fw')}x{dump.get('fh')}, "
                        f"visible_cells {len(dump.get('visible_cells', []))}")
             out.append(f"visible_glyph_set: {mcard.get('visible_glyph_set')}")
-        out.append("engine_refs:")
-        for ref_name, ref in state.microscope.engine_refs.items():
-            out.append(f"  {ref_name}: {ref['cite']} {', '.join(ref['ranges'])} — {ref['summary']}")
+        refs = state.microscope.engine_refs
+        upstream = refs.get("upstream_engine_ref", {})
+        local = refs.get("local_engine_correspondence", {})
+        if upstream:
+            out.append("upstream_engine_ref (pinned @ 8ff75d0c):")
+            for ref_name, ref in upstream.items():
+                out.append(f"  {ref_name}: sprite.cpp {', '.join(ref['ranges'])} — {ref['summary']}")
+        if local:
+            out.append("local_engine_correspondence (mutable Y9-2 implementation):")
+            for ref_name, ref in local.items():
+                out.append(f"  {ref_name}: engine/sprite.cpp {', '.join(ref['ranges'])} — {ref['summary']}")
     out.append(f"blockers: {', '.join(info['blockers']) or 'none'}")
     # Engine anchor: which sprite.cpp role this raw layer plays (read-only annotation).
-    out.append(f"engine: {_engine_ref(idx, len(xp.layers), layer)}")
+    out.append(f"engine (upstream 8ff75d0c): {_engine_ref(idx, len(xp.layers), layer)}")
+    out.append(f"engine (local Y9-2): {local_engine_correspondence(idx, len(xp.layers), layer)}")
     # Neighboring-layer patterns: adjacent raw layers + their proposed roles, for
-    # convention comparison (is this the base, an overlay, the swoosh?).
-    by_idx = {data.join(k)["raw_layer_index"]: k for k in state.layer_keys}
+    # convention comparison (is this the base, an overlay, the swoosh?). Only same stem.
+    same_stem_keys = [k for k in state.layer_keys if k.rsplit("-L", 1)[0] == stem]
+    by_idx = {data.join(k)["raw_layer_index"]: k for k in same_stem_keys}
     neigh = []
     for d in (idx - 1, idx + 1) if isinstance(idx, int) else ():
         if d < 2:
@@ -349,7 +391,10 @@ def compose_screen(state: ViewerState, data: ContractData, xp: "xp_core.XPFile")
         out.append(f"topology_note: {info['topology_note']}")
 
     out.append("")
-    out.append("-- ROLE GRID (this stem's visual layers) --")
+    if state.microscope is not None:
+        out.append("-- ROLE GRID (group members; current stem highlighted) --")
+    else:
+        out.append("-- ROLE GRID (this stem's visual layers) --")
     for k in state.layer_keys:
         ji = data.join(k)
         role = ";".join(ji["proposed_roles"]) or "<none>"
@@ -378,9 +423,10 @@ def compose_screen(state: ViewerState, data: ContractData, xp: "xp_core.XPFile")
 # --------------------------------------------------------------------------- #
 # Interactive loop (autoplay via select timeout — no sleep)
 # --------------------------------------------------------------------------- #
-def _advance_autoplay(state: ViewerState, data: ContractData, xp: "xp_core.XPFile") -> None:
+def _advance_autoplay(state: ViewerState, data: ContractData) -> None:
     info = data.join(state.current_key)
     idx = info["raw_layer_index"]
+    xp = state.xp_for(state.current_stem())
     layer = xp.layers[idx] if isinstance(idx, int) and 0 <= idx < len(xp.layers) else None
     if layer is None or not info["frame_wh"]:
         return
@@ -437,7 +483,7 @@ def run_interactive(state: ViewerState, data: ContractData, xp: "xp_core.XPFile"
                 if not handle_key(state, ch, data):
                     break
             elif state.autoplay:
-                _advance_autoplay(state, data, xp)
+                _advance_autoplay(state, data)
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
     return 0
@@ -496,9 +542,9 @@ def main(argv: list[str]) -> int:
         return 2
     state = ViewerState(stem, layer_keys, microscope=microscope)
     if args.once or not sys.stdin.isatty():
-        print(compose_screen(state, data, xp))
+        print(compose_screen(state, data))
         return 0
-    return run_interactive(state, data, xp)
+    return run_interactive(state, data)
 
 
 if __name__ == "__main__":
