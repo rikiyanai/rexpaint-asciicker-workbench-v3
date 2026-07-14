@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fl4162.upstream_xp_cell_role_decision.v1",
+  "title": "FL-4162 reviewed upstream XP cell-role decision",
+  "type": "object",
+  "required": [
+    "schema",
+    "authority",
+    "is_proposal",
+    "review_unit_id",
+    "source_layer_sha256",
+    "frame_geometry",
+    "member_source_keys",
+    "visible_cell_assignments",
+    "composition_review",
+    "exceptions",
+    "review_provenance"
+  ],
+  "properties": {
+    "schema": {"const": "fl4162.upstream_xp_cell_role_decision.v1"},
+    "authority": {"const": false},
+    "is_proposal": {"const": true},
+    "review_unit_id": {"type": "string"},
+    "source_layer_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "frame_geometry": {"type": "object"},
+    "member_source_keys": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "pattern": "-L[0-9]+$"}
+    },
+    "visible_cell_assignments": {
+      "type": "array",
+      "description": "Reviewed spans [angle, frame, local_y, local_x_start, length, role_ids]. Every visible coordinate must be covered exactly once.",
+      "items": {
+        "type": "array",
+        "minItems": 6,
+        "maxItems": 6
+      }
+    },
+    "composition_review": {
+      "type": "object",
+      "required": ["engine_rule", "verified_against_upstream_ref", "effect_on_l2_accumulator"]
+    },
+    "exceptions": {"type": "array"},
+    "review_provenance": {
+      "type": "object",
+      "required": ["reviewer", "reviewed_at", "evidence_refs", "decision"]
+    }
+  }
+}
