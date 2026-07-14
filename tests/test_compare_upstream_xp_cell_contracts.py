@@ -13,10 +13,11 @@ if str(PIPELINE / "scripts") not in sys.path:
 import compare_upstream_xp_cell_contracts as compare  # noqa: E402
 
 
-def _record(key, values, spans, role="helmet"):
+def _record(key, values, spans, role="helmet", family="plydie"):
     return {
         "source_key": key,
-        "family": "plydie",
+        "family": family,
+        "raw_layer_index": int(key.rsplit("-L", 1)[1]),
         "frame_geometry": {"frame_width": 3, "frame_height": 1,
                            "angles": 1, "frames_per_angle": 1},
         "coverage": {"raw_cells": 3},
@@ -42,6 +43,9 @@ def test_expand_and_compare_exact_coordinates():
     assert result["metrics"]["common_visible_coordinates"] == 2
     assert result["metrics"]["exact_raw_coordinates"] == 2
     assert result["metrics"]["occupancy_jaccard"] == 1.0
+    assert result["metrics"]["count_similarity"] == 1.0
+    assert result["metrics"]["coordinate_similarity"] == 1.0
+    assert result["metrics"]["combined_similarity"] == 1.0
 
 
 def test_compare_preserves_coordinate_level_differences():
@@ -60,3 +64,44 @@ def test_geometry_mismatch_fails_closed():
     right["frame_geometry"]["frame_width"] = 4
     with pytest.raises(compare.ComparisonError, match="geometry mismatch"):
         compare.compare_records(left, right)
+
+
+def test_corpus_ranking_covers_all_layers_and_crosses_families():
+    records = {
+        "plydie-a-L3": _record(
+            "plydie-a-L3", [TRANSPARENT, HELMET],
+            [[0, 0, 0, 0, 1, 0], [0, 0, 0, 1, 2, 1]],
+        ),
+        "player-a-L3": _record(
+            "player-a-L3", [TRANSPARENT, HELMET],
+            [[0, 0, 0, 0, 1, 0], [0, 0, 0, 1, 2, 1]], family="player",
+        ),
+        "attack-a-L3": _record(
+            "attack-a-L3", [TRANSPARENT, SHIELD],
+            [[0, 0, 0, 0, 2, 0], [0, 0, 0, 2, 1, 1]], family="attack",
+        ),
+    }
+    result = compare.build_corpus_ranking(records, top=2)
+    assert result["coverage"]["ledger_layers"] == 3
+    assert result["coverage"]["ranked_layers"] == 3
+    assert result["coverage"]["compatible_pairs_ranked"] == 3
+    by_key = {row["source_key"]: row for row in result["rankings"]}
+    assert by_key["plydie-a-L3"]["nearest_neighbors"][0]["peer"] == "player-a-L3"
+    assert by_key["plydie-a-L3"]["nearest_neighbors"][0]["peer_family"] == "player"
+
+
+def test_corpus_ranking_fails_when_a_layer_has_no_geometry_peer():
+    records = {
+        "plydie-a-L3": _record(
+            "plydie-a-L3", [TRANSPARENT], [[0, 0, 0, 0, 3, 0]],
+        ),
+        "player-a-L3": _record(
+            "player-a-L3", [TRANSPARENT], [[0, 0, 0, 0, 3, 0]], family="player",
+        ),
+        "attack-a-L3": _record(
+            "attack-a-L3", [TRANSPARENT], [[0, 0, 0, 0, 3, 0]], family="attack",
+        ),
+    }
+    records["attack-a-L3"]["frame_geometry"]["frame_width"] = 4
+    with pytest.raises(compare.ComparisonError, match="without compatible geometry peers"):
+        compare.build_corpus_ranking(records)
