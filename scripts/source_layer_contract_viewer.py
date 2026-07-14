@@ -148,6 +148,23 @@ class ContractData:
         }
 
 
+class MicroscopeGroup:
+    """FL-4162 microscope packet: per-group raw XP dumps + engine refs. READ-ONLY."""
+
+    def __init__(self, path: Path):
+        if not path.is_file():
+            raise ContractDataError(f"missing microscope packet: {path}")
+        try:
+            self.packet = json.loads(path.read_text(encoding="utf-8"))
+        except ValueError as exc:
+            raise ContractDataError(f"malformed microscope packet {path}: {exc}") from exc
+        if self.packet.get("authority"):
+            raise ContractDataError(f"microscope packet claims authority (must be false): {path}")
+        self.cards = {c["source_key"]: c for c in self.packet.get("cards", [])}
+        self.engine_refs = self.packet.get("engine_refs", {})
+        self.group_name = self.packet.get("group_name", path.stem)
+
+
 # --------------------------------------------------------------------------- #
 # Frame slicing (card geometry) + pure rendering
 # --------------------------------------------------------------------------- #
@@ -213,9 +230,10 @@ def render_cells_ansi(grid) -> list[str]:
 # View state + frame composition (text, no terminal control — testable)
 # --------------------------------------------------------------------------- #
 class ViewerState:
-    def __init__(self, stem: str, layer_keys: list[str]):
+    def __init__(self, stem: str, layer_keys: list[str], microscope: "MicroscopeGroup | None" = None):
         self.stem = stem
         self.layer_keys = layer_keys
+        self.microscope = microscope
         self.layer_idx = 0
         self.angle = 0
         self.frame = 0
@@ -291,6 +309,22 @@ def compose_screen(state: ViewerState, data: ContractData, xp: "xp_core.XPFile")
     out.append(f"machine_guess: {info['machine_guess']!r} ({info['machine_guess_source']})")
     out.append(f"PROPOSED ROLE: {';'.join(info['proposed_roles']) or '<none>'}"
                f"   topology_class: {info['topology_class']}   queue: {info['queue_class']}")
+    if state.microscope is not None:
+        out.append("")
+        out.append("-- MICROSCOPE PACKET (authority:false) --")
+        mcard = state.microscope.cards.get(key)
+        if mcard:
+            out.append(f"group: {state.microscope.group_name}")
+            out.append(f"all_atlas_visible_count: {mcard.get('all_atlas_visible_count')}")
+            dump = mcard.get("frame_dump", {})
+            out.append(f"frame_dump: angle {dump.get('angle')}/{dump.get('angle_count')}, "
+                       f"frame {dump.get('frame')}/{dump.get('frame_count')}, "
+                       f"size {dump.get('fw')}x{dump.get('fh')}, "
+                       f"visible_cells {len(dump.get('visible_cells', []))}")
+            out.append(f"visible_glyph_set: {mcard.get('visible_glyph_set')}")
+        out.append("engine_refs:")
+        for ref_name, ref in state.microscope.engine_refs.items():
+            out.append(f"  {ref_name}: {ref['cite']} {', '.join(ref['ranges'])} — {ref['summary']}")
     out.append(f"blockers: {', '.join(info['blockers']) or 'none'}")
     # Engine anchor: which sprite.cpp role this raw layer plays (read-only annotation).
     out.append(f"engine: {_engine_ref(idx, len(xp.layers), layer)}")
@@ -412,12 +446,20 @@ def run_interactive(state: ViewerState, data: ContractData, xp: "xp_core.XPFile"
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("stem", help="XP stem, e.g. bigbee-0000")
+    p.add_argument("stem", nargs="?", default="", help="XP stem, e.g. bigbee-0000 (ignored when --group is provided)")
     p.add_argument("--sprites", type=Path, default=SPRITES)
     p.add_argument("--sm", type=Path, default=SM)
+    p.add_argument("--group", type=Path, default=None,
+                   help="Optional microscope packet JSON (read-only); when supplied, layer keys come from the packet and stem is ignored")
     p.add_argument("--once", action="store_true",
                    help="compose one screen to stdout and exit (no terminal control)")
     return p.parse_args(argv)
+
+
+def load_microscope_group(args) -> "MicroscopeGroup | None":
+    if args.group is None:
+        return None
+    return MicroscopeGroup(args.group)
 
 
 def load_xp_for_stem(stem: str, sprites: Path) -> "xp_core.XPFile":
@@ -439,15 +481,21 @@ def main(argv: list[str]) -> int:
     args = parse_args(argv)
     try:
         data = ContractData(args.sm)
-        layer_keys = data.layer_keys_for_stem(args.stem)
+        microscope = load_microscope_group(args)
+        if microscope is not None:
+            layer_keys = sorted(microscope.cards.keys(), key=lambda k: int(k.rsplit("-L", 1)[1]))
+            stem = layer_keys[0].rsplit("-L", 1)[0]
+        else:
+            layer_keys = data.layer_keys_for_stem(args.stem)
+            stem = args.stem
         if not layer_keys:
             print(f"FAIL: no evidence-card layers for stem {args.stem}", file=sys.stderr)
             return 2
-        xp = load_xp_for_stem(args.stem, args.sprites)
+        xp = load_xp_for_stem(stem, args.sprites)
     except ContractDataError as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 2
-    state = ViewerState(args.stem, layer_keys)
+    state = ViewerState(stem, layer_keys, microscope=microscope)
     if args.once or not sys.stdin.isatty():
         print(compose_screen(state, data, xp))
         return 0
