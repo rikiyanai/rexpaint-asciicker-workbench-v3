@@ -130,9 +130,16 @@ def topology_index(doc: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 def candidate_roles(manual: dict[str, Any], decision: dict[str, Any] | None,
                     topology: dict[str, Any]) -> list[str]:
-    roles = list((decision or {}).get("composite_roles") or [])
+    # The reviewed family contract is the later, fingerprint-bound role owner.
+    # Earlier source-layer decisions remain provenance and must not resurrect a
+    # false-clean label after owned->composite reconciliation.
+    roles = list(topology.get("reconciled_roles") or [])
     if not roles and topology.get("owned_role"):
         roles = [part for part in str(topology["owned_role"]).split(";") if part]
+    if not roles:
+        roles = list(topology.get("proposed_roles") or [])
+    if not roles:
+        roles = list((decision or {}).get("composite_roles") or [])
     if not roles:
         roles = list((manual.get("agent_verdict") or {}).get("proposed_roles") or [])
     return list(dict.fromkeys(str(role) for role in roles if str(role)))

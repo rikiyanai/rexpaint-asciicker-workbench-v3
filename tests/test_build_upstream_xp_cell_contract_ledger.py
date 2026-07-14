@@ -98,6 +98,19 @@ def test_composite_cells_remain_unsegmented(tmp_path):
     assert contributions == {"none", "composite_layer_unsegmented"}
 
 
+def test_topology_reconciliation_owns_roles_over_earlier_false_clean_decision():
+    roles = ledger.candidate_roles(
+        _manual(["player_weapon_sword"]),
+        {"composite_roles": ["player_weapon_sword"]},
+        {
+            "classification": "owned",
+            "owned_role": "player_body;player_weapon_sword",
+            "reconciled_roles": ["player_body", "player_weapon_sword"],
+        },
+    )
+    assert roles == ["player_body", "player_weapon_sword"]
+
+
 def test_unresolved_hand_evidence_stays_unresolved(tmp_path):
     source = tmp_path / "player-0000.xp"
     source.write_bytes(b"fixture")
