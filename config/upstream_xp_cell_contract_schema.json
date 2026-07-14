@@ -38,7 +38,7 @@
         "layer_count": {"type": "integer", "minimum": 3}
       }
     },
-    "raw_layer_index": {"type": "integer", "minimum": 2},
+    "raw_layer_index": {"type": "integer", "minimum": 0},
     "frame_geometry": {
       "type": "object",
       "required": ["frame_width", "frame_height", "angles", "frames_per_angle"],

@@ -124,6 +124,22 @@ def test_final_cyan_cell_uses_swoosh_composition(tmp_path):
     assert visible[0]["composition_rule"] == "final_cyan_swoosh_context_composite"
 
 
+def test_metadata_layers_are_covered_as_engine_contract_cells(tmp_path):
+    source = tmp_path / "player-0000.xp"
+    source.write_bytes(b"fixture")
+    for layer_index, cell_type, rule in (
+        (0, "color_key", "define_per_cell_color_key_and_frame_metadata"),
+        (1, "height_digit", "define_height_channel"),
+    ):
+        record = ledger.build_metadata_layer_record(_card(source), source, _xp(), layer_index)
+        ledger.validate_record(record)
+        assert record["raw_layer_index"] == layer_index
+        assert record["coverage"]["raw_cells"] == 8
+        assert record["coverage"]["cell_type_histogram"] == {cell_type: 8}
+        assert {value["composition_rule"] for value in record["cell_values"]} == {rule}
+        assert record["layer_semantics"]["review_state"] == "engine_metadata_semantics_unverified"
+
+
 def test_state_final_fingerprint_mismatch_fails_closed(tmp_path):
     source = tmp_path / "player-0000.xp"
     source.write_bytes(b"fixture")

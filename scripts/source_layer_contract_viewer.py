@@ -284,12 +284,12 @@ def classify_cell(glyph: int, fg: tuple[int, int, int] | list[int], bg: tuple[in
     """
     bg_t = tuple(bg) if not isinstance(bg, tuple) else bg
     fg_t = tuple(fg) if not isinstance(fg, tuple) else fg
-    if bg_t == MAGENTA_KEY or glyph == 0:
-        return "transparent"
     if layer_idx == 0:
         return "color_key"
     if layer_idx == 1:
         return "height_digit"
+    if bg_t == MAGENTA_KEY or glyph == 0:
+        return "transparent"
     if layer_idx == 2:
         return "body_pixel"
     if layer_idx == n_layers - 1 and fg_t == (0, 255, 255):

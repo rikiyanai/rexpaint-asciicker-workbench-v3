@@ -2,10 +2,11 @@
 """Build the FL-4162 / RQ-200 full-cell upstream XP contract ledger.
 
 The ledger is deterministic evidence, never runtime authority. Every raw atlas
-coordinate in every hand-reviewed L2+ layer is represented by a horizontal span
-with exact XP bytes, frame/angle-local coordinates, engine composition behavior,
-and an honest role-assignment state. Composite layers remain unsegmented until a
-reviewed cell-level decision exists.
+coordinate in every source XP layer is represented by a horizontal span with exact
+XP bytes, frame/angle-local coordinates, engine composition behavior, and an honest
+role-assignment state. L0/L1 carry engine-derived metadata evidence; hand evidence
+begins at L2. Composite visual layers remain unsegmented until a reviewed cell-level
+decision exists.
 """
 from __future__ import annotations
 
@@ -152,6 +153,10 @@ def semantic_state(manual: dict[str, Any], topology: dict[str, Any], roles: list
 
 
 def composition_rule(cell_type: str, layer_index: int) -> str:
+    if layer_index == 0:
+        return "define_per_cell_color_key_and_frame_metadata"
+    if layer_index == 1:
+        return "define_height_channel"
     if cell_type == "transparent":
         return "no_visual_contribution"
     if layer_index == 2:
@@ -309,6 +314,99 @@ def build_layer_record(card: dict[str, Any], manual: dict[str, Any],
     }
 
 
+def build_metadata_layer_record(
+    card: dict[str, Any], xp_path: Path, xp: xp_core.XPFile, layer_index: int
+) -> dict[str, Any]:
+    if layer_index not in (0, 1):
+        raise CellContractError(f"metadata layer index must be L0/L1, got L{layer_index}")
+    frame_wh = (card.get("cells") or {}).get("frame_wh")
+    if not isinstance(frame_wh, list) or len(frame_wh) != 2:
+        raise CellContractError(f"{card.get('source_key')}: missing frame geometry")
+    fw, fh = (int(frame_wh[0]), int(frame_wh[1]))
+    layer = xp.layers[layer_index]
+    role = "engine_color_key_frame_metadata" if layer_index == 0 else "engine_height_channel"
+    values, spans, histogram = build_spans(
+        layer, layer_index, len(xp.layers), fw, fh, "engine_metadata_contract"
+    )
+    raw_cells = layer.width * layer.height
+    if sum(histogram.values()) != raw_cells:
+        raise CellContractError(f"{card.get('source_key')}: metadata span coverage mismatch")
+    stem = Path(str(card["source_xp_path"])).stem
+    source_key = f"{stem}-L{layer_index}"
+    return {
+        "schema": SCHEMA,
+        "authority": False,
+        "is_proposal": True,
+        "source_key": source_key,
+        "family": str(card["family"]),
+        "ahsw": card.get("ahsw"),
+        "source_xp": {
+            "path": str(card["source_xp_path"]),
+            "sha256": sha256_path(xp_path),
+            "raw_layer_sha256": raw_layer_sha256(layer),
+            "width": layer.width,
+            "height": layer.height,
+            "layer_count": len(xp.layers),
+        },
+        "raw_layer_index": layer_index,
+        "frame_geometry": {
+            "frame_width": fw,
+            "frame_height": fh,
+            "angles": layer.height // fh,
+            "frames_per_angle": layer.width // fw,
+        },
+        "hand_evidence": {
+            "status": "not_applicable_engine_metadata",
+            "corrected_label": None,
+            "note": "No hand-label row exists for L0/L1; meaning derives from pinned upstream engine behavior.",
+            "pre_guess": None,
+            "pre_source": "upstream_engine_contract",
+            "source_row_verbatim": None,
+        },
+        "layer_semantics": {
+            "topology_class": "engine_metadata",
+            "candidate_roles": [role],
+            "cell_role_state": "engine_metadata_contract",
+            "review_state": "engine_metadata_semantics_unverified",
+        },
+        "coverage": {
+            "raw_cells": raw_cells,
+            "spans": len(spans),
+            "visible_cells": raw_cells,
+            "transparent_cells": 0,
+            "cell_type_histogram": dict(sorted(histogram.items())),
+        },
+        "cell_values": values,
+        "cell_spans": spans,
+        "exceptions": {
+            "contradictions": [],
+            "topology_note": "L0/L1 are engine metadata channels, not visual semantic slots.",
+            "glyph_exact_matches": [],
+            "glyph_near_matches": [],
+        },
+        "actor_visual_profile_implication": {
+            "state": "source_engine_metadata_not_profile_role",
+            "candidate_roles": [role],
+            "decision_present": False,
+        },
+        "traceability": {
+            "source_final_sha256": EXPECTED_STATE_FINAL_SHA256,
+            "source_card_fingerprint": None,
+            "evidence_card": None,
+            "manual_review": None,
+            "family_contract": None,
+            "upstream_engine_ref": (
+                "sprite.cpp@8ff75d0c:350" if layer_index == 0
+                else "sprite.cpp@8ff75d0c:351"
+            ),
+            "local_engine_correspondence": (
+                "engine/sprite.cpp:619" if layer_index == 0
+                else "engine/sprite.cpp:620"
+            ),
+        },
+    }
+
+
 def validate_record(record: dict[str, Any]) -> None:
     key = record.get("source_key", "<missing>")
     if record.get("schema") != SCHEMA or record.get("authority") is not False:
@@ -388,6 +486,7 @@ def build_all(state_final: Path = DEFAULT_STATE_FINAL) -> tuple[dict[str, list[d
         raise CellContractError("review decisions contain unknown source keys")
 
     xp_cache: dict[str, tuple[Path, xp_core.XPFile]] = {}
+    representative_card_by_xp: dict[str, dict[str, Any]] = {}
     by_family: dict[str, list[dict[str, Any]]] = defaultdict(list)
     totals: Counter[str] = Counter()
     review_states: Counter[str] = Counter()
@@ -398,6 +497,7 @@ def build_all(state_final: Path = DEFAULT_STATE_FINAL) -> tuple[dict[str, list[d
         if source_rel not in xp_cache:
             path = REPO / source_rel
             xp_cache[source_rel] = (path, load_xp(path))
+            representative_card_by_xp[source_rel] = card
         path, xp = xp_cache[source_rel]
         record = build_layer_record(
             card, manual_by_key[source_key], decision_by_key.get(source_key),
@@ -415,6 +515,24 @@ def build_all(state_final: Path = DEFAULT_STATE_FINAL) -> tuple[dict[str, list[d
         if state == "unresolved_hand_evidence":
             unresolved.append(source_key)
 
+    for source_rel in sorted(xp_cache):
+        path, xp = xp_cache[source_rel]
+        card = representative_card_by_xp[source_rel]
+        for layer_index in (0, 1):
+            record = build_metadata_layer_record(card, path, xp, layer_index)
+            validate_record(record)
+            by_family[record["family"]].append(record)
+            totals["layers"] += 1
+            totals["engine_metadata_layers"] += 1
+            totals["raw_cells"] += record["coverage"]["raw_cells"]
+            totals["visible_cells"] += record["coverage"]["visible_cells"]
+            totals["transparent_cells"] += record["coverage"]["transparent_cells"]
+            totals["spans"] += record["coverage"]["spans"]
+            review_states[record["layer_semantics"]["review_state"]] += 1
+
+    for rows in by_family.values():
+        rows.sort(key=lambda row: row["source_key"])
+
     manifest = {
         "schema": MANIFEST_SCHEMA,
         "authority": False,
@@ -425,6 +543,7 @@ def build_all(state_final: Path = DEFAULT_STATE_FINAL) -> tuple[dict[str, list[d
         "cell_span_encoding": ["angle", "frame", "local_y", "local_x_start", "length", "cell_value_index"],
         "source_final": {"path": str(state_final), "sha256": EXPECTED_STATE_FINAL_SHA256},
         "input_counts": {
+            "source_xp_files": len(xp_cache),
             "state_final_rows": len(state_rows),
             "evidence_cards": len(cards),
             "manual_reviews": len(manual_by_key),

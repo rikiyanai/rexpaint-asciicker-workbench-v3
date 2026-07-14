@@ -19,6 +19,7 @@ DEFAULT_OUT = DEFAULT_LEDGER / "review_queue.json"
 SCHEMA = "fl4162.upstream_xp_cell_review_queue.v1"
 
 STATE_PRIORITY = {
+    "engine_metadata_semantics_unverified": 0,
     "rejected_fragment_needs_contract": 0,
     "reviewed_composite_cell_assignment_pending": 1,
     "layer_role_reviewed_cell_semantics_unverified": 2,
@@ -55,6 +56,8 @@ def _unit_id(raw_sha: str, geometry_key: str) -> str:
 
 
 def _decision_state(review_states: set[str]) -> str:
+    if "engine_metadata_semantics_unverified" in review_states:
+        return "needs_engine_metadata_cell_confirmation"
     if "rejected_fragment_needs_contract" in review_states:
         return "needs_source_contract"
     if "reviewed_composite_cell_assignment_pending" in review_states:
