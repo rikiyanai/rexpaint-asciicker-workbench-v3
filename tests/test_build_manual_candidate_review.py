@@ -138,3 +138,30 @@ def test_ambig_class_is_unresolved_even_with_text_label():
     v = b._unresolved_verdict(card)
     assert v["unresolved"] is True and v["supported"] is False
     assert v["roles"] == []  # never proposed, despite the text label
+
+
+def test_full_cell_resolutions_cover_the_original_ten_without_mutating_hand_evidence():
+    assert set(b.FULL_CELL_RESOLUTIONS) == {
+        "attack-0101-L4", "attack-0111-L4", "attack-1001-L4",
+        "bigbee-0012-L5", "player-1112-L3", "plydie-1101-L3",
+        "plydie-1102-L3", "plydie-1110-L3", "plydie-1111-L3",
+        "plydie-1112-L3",
+    }
+    assert all(v["supported"] and not v["unresolved"]
+               for v in b.FULL_CELL_RESOLUTIONS.values())
+    assert all(v["resolution_evidence"] == b.FULL_CELL_RESOLUTION_REPORT
+               for v in b.FULL_CELL_RESOLUTIONS.values())
+
+
+def test_full_cell_resolution_provenance_names_the_coordinate_report():
+    card = _card_for("ambig")
+    verdict = b.FULL_CELL_RESOLUTIONS["player-1112-L3"]
+    provenance = b._provenance_for(card, verdict)
+    assert provenance["review_kind"] == "agent_manual_full_cell_ambiguity_resolution"
+    assert provenance["evidence"] == b.FULL_CELL_RESOLUTION_REPORT
+
+
+def test_plydie_1102_preserves_crossbow_reflection_exception():
+    verdict = b.FULL_CELL_RESOLUTIONS["plydie-1102-L3"]
+    assert verdict["roles"] == ["plydie_helmet_regular", "crossbow_reflection_fragment"]
+    assert "reflection" in verdict["topology"]

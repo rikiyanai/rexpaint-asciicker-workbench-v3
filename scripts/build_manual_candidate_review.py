@@ -62,11 +62,19 @@ REVIEW_PROVENANCE = {
 }
 
 
-def _provenance_for(card: dict) -> dict:
+def _provenance_for(card: dict, verdict: dict | None = None) -> dict:
     """Per-row review provenance. `batch` reflects THIS card's queue class
     ('rejects-first/<queue_class>'), so audit can tell batch-1 wrong_guess_reject
     review apart from batch-2 reject review by provenance alone."""
     qc = (card.get("review", {}) or {}).get("queue_class_name", "unknown")
+    if verdict and verdict.get("resolution_evidence"):
+        return {
+            "tool": "build_manual_candidate_review",
+            "review_kind": "agent_manual_full_cell_ambiguity_resolution",
+            "recorded_at": "2026-07-14",
+            "batch": "rq200/full-cell-unresolved-review",
+            "evidence": verdict["resolution_evidence"],
+        }
     return {**REVIEW_PROVENANCE, "batch": f"rejects-first/{qc}"}
 
 
@@ -413,6 +421,92 @@ PASSTHROUGH_CLASSES = {"clean_accept"}
 # empty-string luck: an ambig card that happened to carry text must still hold.)
 UNRESOLVED_CLASSES = {"ambig"}
 
+# FL-4162 / RQ-200: deliberate review of the ten previously unresolved rows against
+# the complete raw-atlas cell ledger. Original state_FINAL status/label/note remain
+# immutable. These proposal verdicts are pinned by decision_capture to each evidence
+# card and cite the full-cell coordinate report that supports the resolution.
+FULL_CELL_RESOLUTION_REPORT = (
+    "docs/research/ascii/verification/fl4162/"
+    "2026-07-14-rq200-unresolved-full-cell-comparison.json"
+)
+
+
+def _resolved(roles, support, topology, contradictions=None):
+    return {
+        "roles": roles,
+        "supported": True,
+        "unresolved": False,
+        "support": support,
+        "topology": topology,
+        "contradictions": list(contradictions or []),
+        "resolution_evidence": FULL_CELL_RESOLUTION_REPORT,
+    }
+
+
+FULL_CELL_RESOLUTIONS = {
+    "attack-0101-L4": _resolved(
+        ["weapon_swoosh"],
+        "full atlas: 546/546 occupied cells are final-layer cyan swoosh pixels; "
+        "97-99% occupied-coordinate overlap with accepted attack weapon_swoosh peers",
+        "attack final cyan layer; shape differences are AHSW-context art deltas",
+    ),
+    "attack-0111-L4": _resolved(
+        ["weapon_swoosh"],
+        "full atlas: 534/534 occupied cells are final-layer cyan swoosh pixels; "
+        "99.6% occupancy overlap with accepted attack-1111-L5 weapon_swoosh",
+        "attack final cyan layer; shape differences are AHSW-context art deltas",
+    ),
+    "attack-1001-L4": _resolved(
+        ["weapon_swoosh"],
+        "full atlas: 554/554 occupied cells are final-layer cyan swoosh pixels; "
+        "99.3% occupancy overlap with accepted attack-0001-L3 weapon_swoosh",
+        "attack final cyan layer; shape differences are AHSW-context art deltas",
+    ),
+    "bigbee-0012-L5": _resolved(
+        ["rider_torso", "crossbow", "shield"],
+        "full atlas: 727/730 occupied coordinates overlap bigbee-0112-L5, whose hand "
+        "evidence identifies rider torso + crossbow + shield; AHSW 0012 carries S=1,W=2",
+        "bigbee animation/reflection context composite above clean L3 rider and L4 crossbow deltas",
+        ["original machine guess 'shield' omitted rider/crossbow; original hand note omitted the S=1 shield context"],
+    ),
+    "player-1112-L3": _resolved(
+        ["composite_source:armor_shield_context"],
+        "full raw layer is byte-identical at all 1300 visible coordinates to "
+        "player-1010-L3, player-1012-L3, and player-1110-L3",
+        "non-standalone armor/shield context fragment; remains rejected-fragment class",
+    ),
+    "plydie-1101-L3": _resolved(
+        ["plydie_helmet_regular"],
+        "full atlas overlaps accepted plydie-1100-L3 helmet at 435/448 occupied coordinates "
+        "with identical glyphs at all common coordinates",
+        "death-pose H-bit helmet context delta; shoulder pixels are part of the authored helmet-context art",
+    ),
+    "plydie-1110-L3": _resolved(
+        ["plydie_helmet_regular"],
+        "full atlas overlaps accepted plydie-1100-L3 helmet at 434/445 union coordinates; "
+        "all 434 common coordinates are raw-byte identical",
+        "death-pose H-bit helmet context delta; shoulder pixels are part of the authored helmet-context art",
+    ),
+    "plydie-1111-L3": _resolved(
+        ["plydie_helmet_regular"],
+        "full atlas overlaps accepted plydie-1100-L3 helmet at 435/445 occupied coordinates "
+        "with identical glyphs at all common coordinates",
+        "death-pose H-bit helmet context delta; shoulder pixels are part of the authored helmet-context art",
+    ),
+    "plydie-1112-L3": _resolved(
+        ["plydie_helmet_regular"],
+        "full atlas matches accepted plydie-1100-L3 helmet at 434/435 occupied coordinates "
+        "and all 434 common coordinates are raw-byte identical",
+        "death-pose H-bit helmet context delta; shoulder pixels are part of the authored helmet-context art",
+    ),
+    "plydie-1102-L3": _resolved(
+        ["plydie_helmet_regular", "crossbow_reflection_fragment"],
+        "full atlas contains the accepted helmet coordinate set plus 144 occupied cells; "
+        "the hand note independently identifies crossbow parts in reflection",
+        "death-pose helmet context delta with W=2 reflection-only crossbow contamination; clean crossbow remains L4",
+    ),
+}
+
 
 def _unresolved_verdict(card: dict) -> dict:
     """Fail-closed-by-class verdict for an UNRESOLVED_CLASSES card (FL-4162): never a
@@ -523,14 +617,24 @@ def main() -> int:
             "contradictions": list(verdict["contradictions"]),
             "topology_note": verdict["topology"],
         }
+        if verdict.get("resolution_evidence"):
+            row["agent_verdict"]["resolution_evidence"] = verdict["resolution_evidence"]
         packet_rows.append(row)
         reviewed_ids.add(card["card_id"])
         if verdict["supported"] and not verdict["unresolved"]:
             supported_records.append(dc.build_decision_record(
                 card, approved_role=";".join(roles), composite_roles=roles,
-                provenance=_provenance_for(card), topology_note=verdict["topology"],
+                provenance=_provenance_for(card, verdict), topology_note=verdict["topology"],
                 contradictions=verdict["contradictions"], reviewer_note=verdict["support"],
             ))
+
+    missing_resolutions = [cid for cid in FULL_CELL_RESOLUTIONS if cid not in cards]
+    if missing_resolutions:
+        print(f"ERROR: full-cell resolution card_ids absent from cards file: {missing_resolutions}",
+              file=sys.stderr)
+        return 2
+    for cid, verdict in FULL_CELL_RESOLUTIONS.items():
+        apply_verdict(cards[cid], verdict)
 
     # Batch 1 — card-keyed wrong_guess_reject verdicts.
     missing = [cid for cid in REVIEWED if cid not in cards]
@@ -538,6 +642,8 @@ def main() -> int:
         print(f"ERROR: reviewed card_ids absent from cards file: {missing}", file=sys.stderr)
         return 2
     for cid, verdict in REVIEWED.items():
+        if cid in reviewed_ids:
+            continue
         apply_verdict(cards[cid], verdict)
 
     # Batches 2+ — each queue class with label-clustered verdicts. Cards are grouped
@@ -550,7 +656,8 @@ def main() -> int:
                   file=sys.stderr)
             return 2
         batch_cards = [c for c in cards.values()
-                       if (c.get("review", {}) or {}).get("queue_class_name") == queue_class]
+                       if (c.get("review", {}) or {}).get("queue_class_name") == queue_class
+                       and c["card_id"] not in reviewed_ids]
         rep_to_verdict = {cl["rep"]: cl for cl in clusters}
         groups: dict[str, list] = {}
         for c in batch_cards:
