@@ -271,6 +271,32 @@ def _layer_is_cyan_swoosh(layer) -> bool:
     return occ > 0 and cyan / occ >= 0.5
 
 
+def classify_cell(glyph: int, fg: tuple[int, int, int] | list[int], bg: tuple[int, int, int] | list[int], layer_idx: int, n_layers: int) -> str:
+    """FL-4162 read-only cell taxonomy tied to the upstream sprite.cpp contract.
+
+    Cell types:
+      transparent   - magenta bg or zero glyph (REXPaint / engine hard-transparent key).
+      color_key     - L0 bg carries the per-cell transparency key.
+      height_digit  - L1 glyph encodes height/ID (sprite.cpp:351).
+      body_pixel    - L2 primary visual base accumulator (sprite.cpp:352).
+      swoosh_pixel  - final layer with cyan fg (upstream sprite.cpp:361 special-case).
+      overlay_pixel - any other L3+ occupied cell.
+    """
+    bg_t = tuple(bg) if not isinstance(bg, tuple) else bg
+    fg_t = tuple(fg) if not isinstance(fg, tuple) else fg
+    if bg_t == MAGENTA_KEY or glyph == 0:
+        return "transparent"
+    if layer_idx == 0:
+        return "color_key"
+    if layer_idx == 1:
+        return "height_digit"
+    if layer_idx == 2:
+        return "body_pixel"
+    if layer_idx == n_layers - 1 and fg_t == (0, 255, 255):
+        return "swoosh_pixel"
+    return "overlay_pixel"
+
+
 def _engine_ref(idx, n_layers: int, layer) -> str:
     """Upstream annotation pinned to upstream/master @ 8ff75d0c (ENGINE_REFS.json).
     Local correspondence is separate and live; see local_engine_correspondence()."""
@@ -317,7 +343,7 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
 
     out: list[str] = []
     foc = f"  ROLE-FOCUS={state.role_focus}" if state.role_focus else ""
-    out.append(f"== SOURCE LAYER CONTRACT VIEWER (READ-ONLY) :: {state.stem} =="
+    out.append(f"== SOURCE LAYER CONTRACT VIEWER (READ-ONLY) :: {state.current_stem()} =="
                f"  layer {state.layer_idx + 1}/{len(state.layer_keys)}"
                f"  angle {state.angle}  frame {state.frame}"
                f"  autoplay={'ON:' + state.autoplay_axis if state.autoplay else 'OFF'}{foc}")
@@ -353,6 +379,13 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
                        f"size {dump.get('fw')}x{dump.get('fh')}, "
                        f"visible_cells {len(dump.get('visible_cells', []))}")
             out.append(f"visible_glyph_set: {mcard.get('visible_glyph_set')}")
+            hist = mcard.get("cell_type_histogram", {})
+            if hist:
+                non_empty = {k: v for k, v in hist.items() if v > 0 and k != "transparent"}
+                out.append(f"cell_type_histogram: {non_empty}")
+            coord_index = mcard.get("coordinate_index", {})
+            occupied_coords = [k for k, v in coord_index.items() if v.get("cell_type") != "transparent"]
+            out.append(f"coordinate_index_size: {len(coord_index)}  occupied_coords: {len(occupied_coords)}")
         refs = state.microscope.engine_refs
         upstream = refs.get("upstream_engine_ref", {})
         local = refs.get("local_engine_correspondence", {})

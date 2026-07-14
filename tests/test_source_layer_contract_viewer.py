@@ -39,6 +39,47 @@ def test_render_blanks_magenta_key_and_zero_glyph():
     assert "B" in lines[0] and "38;2;10;20;30" in lines[0]  # opaque cell rendered truecolor
 
 
+def test_cell_classifier_taxonomy():
+    """Every cell in a frame dump is typed according to the upstream sprite.cpp contract."""
+    assert v.classify_cell(0, (0, 0, 0), (255, 0, 255), 2, 4) == "transparent"
+    assert v.classify_cell(65, (0, 0, 0), (255, 0, 255), 2, 4) == "transparent"
+    assert v.classify_cell(65, (1, 2, 3), (4, 5, 6), 0, 4) == "color_key"
+    assert v.classify_cell(ord("5"), (1, 2, 3), (4, 5, 6), 1, 4) == "height_digit"
+    assert v.classify_cell(118, (170, 0, 170), (255, 255, 85), 2, 4) == "body_pixel"
+    assert v.classify_cell(220, (0, 255, 255), (255, 85, 85), 3, 4) == "swoosh_pixel"
+    assert v.classify_cell(220, (170, 0, 170), (255, 85, 85), 3, 5) == "overlay_pixel"
+
+
+def test_microscope_card_has_coordinate_index_and_histogram():
+    """Generated microscope cards expose coordinate-level cell type and aggregate stats."""
+    packet_path = SM.parent / "verification/fl4162/2026-07-14-source-contract-discovery-reframing/microscope_packets/bigbee-L3_limbless_rider_torso.json"
+    if not packet_path.exists():
+        pytest.skip("microscope packet not present")
+    microscope = v.MicroscopeGroup(packet_path)
+    for key, card in microscope.cards.items():
+        idx = card.get("coordinate_index", {})
+        assert idx, f"{key}: missing coordinate_index"
+        assert len(idx) == card["frame_dump"]["fw"] * card["frame_dump"]["fh"], f"{key}: coordinate_index size mismatch"
+        hist = card.get("cell_type_histogram", {})
+        assert set(hist.keys()) == {"transparent", "color_key", "height_digit", "body_pixel", "overlay_pixel", "swoosh_pixel"}
+        assert hist["body_pixel"] > 0 or hist["overlay_pixel"] > 0 or hist["swoosh_pixel"] > 0
+
+
+def test_cell_comparison_report_is_read_only_and_authority_false():
+    """The cell-coordinate comparison artifact is authority:false and JSON-serializable."""
+    import json, subprocess, sys
+    script = Path(__file__).resolve().parents[2] / "scripts" / "adhoc" / "2026-07-14-FL-4162-cell-coordinate-comparison-report.py"
+    if not script.exists():
+        pytest.skip("comparison report script not present")
+    result = subprocess.run([sys.executable, str(script)], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    out_dir = script.parents[2] / "docs/research/ascii/verification/fl4162/2026-07-14-source-contract-discovery-reframing/cell_comparisons"
+    report = json.loads((out_dir / "bigbee-L3_limbless_rider_torso_cell_comparison.json").read_text())
+    assert report.get("authority") is False
+    assert report.get("schema") == "fl4162.cell_comparison_report.v1"
+    assert len(report.get("pair_comparisons", [])) > 0
+
+
 def test_handle_key_transitions():
     st = v.ViewerState("bigbee-0000", ["bigbee-0000-L2", "bigbee-0000-L3"])
     data = v.ContractData(SM)
