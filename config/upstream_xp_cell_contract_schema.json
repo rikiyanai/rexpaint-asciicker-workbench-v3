@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fl4162.upstream_xp_cell_contract.layer.v1",
+  "title": "FL-4162 upstream XP cell contract layer record",
+  "type": "object",
+  "required": [
+    "schema",
+    "authority",
+    "is_proposal",
+    "source_key",
+    "family",
+    "source_xp",
+    "raw_layer_index",
+    "frame_geometry",
+    "hand_evidence",
+    "layer_semantics",
+    "coverage",
+    "cell_values",
+    "cell_spans",
+    "traceability"
+  ],
+  "properties": {
+    "schema": {"const": "fl4162.upstream_xp_cell_contract.layer.v1"},
+    "authority": {"const": false},
+    "is_proposal": {"const": true},
+    "source_key": {"type": "string", "pattern": "-L[0-9]+$"},
+    "family": {"type": "string"},
+    "ahsw": {"type": ["object", "null"]},
+    "source_xp": {
+      "type": "object",
+      "required": ["path", "sha256", "raw_layer_sha256", "width", "height", "layer_count"],
+      "properties": {
+        "path": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "raw_layer_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "layer_count": {"type": "integer", "minimum": 3}
+      }
+    },
+    "raw_layer_index": {"type": "integer", "minimum": 2},
+    "frame_geometry": {
+      "type": "object",
+      "required": ["frame_width", "frame_height", "angles", "frames_per_angle"],
+      "properties": {
+        "frame_width": {"type": "integer", "minimum": 1},
+        "frame_height": {"type": "integer", "minimum": 1},
+        "angles": {"type": "integer", "minimum": 1},
+        "frames_per_angle": {"type": "integer", "minimum": 1}
+      }
+    },
+    "hand_evidence": {"type": "object"},
+    "layer_semantics": {
+      "type": "object",
+      "required": ["topology_class", "candidate_roles", "cell_role_state", "review_state"],
+      "properties": {
+        "topology_class": {"type": ["string", "null"]},
+        "candidate_roles": {"type": "array", "items": {"type": "string"}},
+        "cell_role_state": {"type": "string"},
+        "review_state": {"type": "string"}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "required": ["raw_cells", "spans", "visible_cells", "transparent_cells", "cell_type_histogram"],
+      "properties": {
+        "raw_cells": {"type": "integer", "minimum": 1},
+        "spans": {"type": "integer", "minimum": 1},
+        "visible_cells": {"type": "integer", "minimum": 0},
+        "transparent_cells": {"type": "integer", "minimum": 0},
+        "cell_type_histogram": {"type": "object"}
+      }
+    },
+    "cell_values": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["raw", "cell_type", "composition_rule", "role_contribution"],
+        "properties": {
+          "raw": {
+            "type": "object",
+            "required": ["glyph", "fg", "bg"],
+            "properties": {
+              "glyph": {"type": "integer", "minimum": 0, "maximum": 255},
+              "fg": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "integer", "minimum": 0, "maximum": 255}},
+              "bg": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "integer", "minimum": 0, "maximum": 255}}
+            }
+          },
+          "cell_type": {"type": "string"},
+          "composition_rule": {"type": "string"},
+          "role_contribution": {"type": "string"}
+        }
+      }
+    },
+    "cell_spans": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Each span is [angle, frame, local_y, local_x_start, length, cell_value_index]. Atlas coordinates derive from frame_geometry.",
+      "items": {
+        "type": "array",
+        "minItems": 6,
+        "maxItems": 6,
+        "items": {"type": "integer", "minimum": 0}
+      }
+    },
+    "exceptions": {"type": "object"},
+    "actor_visual_profile_implication": {"type": "object"},
+    "traceability": {"type": "object"}
+  }
+}
