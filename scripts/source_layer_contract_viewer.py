@@ -261,21 +261,20 @@ def _layer_is_cyan_swoosh(layer) -> bool:
 
 
 def _engine_ref(idx, n_layers: int, layer) -> str:
-    """Map a raw layer index to its upstream engine role (sprite.cpp @ upstream/master
-    8ff75d0c; see ENGINE_REFS.json). Pure annotation; the viewer authors nothing."""
+    """Map a raw layer index to live engine/sprite.cpp line refs. Read-only annotation."""
     if not isinstance(idx, int):
         return "metadata / non-visual layer"
     if idx == 0:
-        return "L0 color key (bg) -- sprite.cpp:350"
+        return "L0 color key (bg) -- engine/sprite.cpp:618"
     if idx == 1:
-        return "L1 height channel -- sprite.cpp:351"
+        return "L1 height channel glyph -- engine/sprite.cpp:619"
     if idx == 2:
-        return "L2 image base accumulator (overlays fold into this) -- sprite.cpp:352"
+        return "L2 primary visual / base accumulator -- engine/sprite.cpp:620"
     if idx == n_layers - 1:
         if layer is not None and _layer_is_cyan_swoosh(layer):
-            return "final layer, cyan-fg -> weapon_swoosh special-case -- sprite.cpp:361"
-        return "final merge layer -> folds into L2 -- sprite.cpp:354-360"
-    return "merge overlay -> folds into L2 in order -- sprite.cpp:354-360"
+            return "final layer fg==cyan -> swoosh composition -- engine/sprite.cpp:1034-1185"
+        return "final non-swoosh overlay -> overwrites L2 -- engine/sprite.cpp:1029-1044"
+    return f"overlay L{idx} -> overwrites L2 in ordinal order -- engine/sprite.cpp:1029-1044"
 
 
 def compose_screen(state: ViewerState, data: ContractData, xp: "xp_core.XPFile") -> str:

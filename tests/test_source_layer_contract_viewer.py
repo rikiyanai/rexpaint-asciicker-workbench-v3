@@ -119,17 +119,17 @@ def test_engine_refs_anchor_each_wolack_layer():
     L2 base accumulator, L3 merge overlay, L4 final cyan-fg swoosh special-case."""
     keys = ["wolack-0001-L2", "wolack-0001-L3", "wolack-0001-L4"]
     screens = [_screen_for("wolack-0001", i) for i in range(len(keys))]
-    assert "L2 image base accumulator" in screens[0] and "sprite.cpp:352" in screens[0]
-    assert "folds into L2" in screens[1] and "sprite.cpp:354-360" in screens[1]
-    assert "weapon_swoosh special-case" in screens[2] and "sprite.cpp:361" in screens[2]
+    assert "L2 primary visual / base accumulator" in screens[0] and "engine/sprite.cpp:620" in screens[0]
+    assert "overlay L3" in screens[1] and "engine/sprite.cpp:1029-1044" in screens[1]
+    assert "swoosh composition" in screens[2] and "engine/sprite.cpp:1034-1185" in screens[2]
 
 
 def test_engine_ref_helper_classifies_layers():
     """_engine_ref / _layer_is_cyan_swoosh are pure and classify by index + cyan-fg."""
     xp = v.load_xp_for_stem("wolack-0001", SPRITES)
     n = len(xp.layers)
-    assert "L2 image base accumulator" in v._engine_ref(2, n, xp.layers[2])
-    assert "weapon_swoosh special-case" in v._engine_ref(n - 1, n, xp.layers[n - 1])
+    assert "L2 primary visual / base accumulator" in v._engine_ref(2, n, xp.layers[2])
+    assert "swoosh composition" in v._engine_ref(n - 1, n, xp.layers[n - 1])
     assert v._layer_is_cyan_swoosh(xp.layers[n - 1])      # final layer is the swoosh
     assert not v._layer_is_cyan_swoosh(xp.layers[2])      # the body base is not
 
