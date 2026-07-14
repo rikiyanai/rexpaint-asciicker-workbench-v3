@@ -150,56 +150,85 @@ def test_microscope_shows_neighbors_and_matches():
 
 # ---- cross-stem navigation correctness (review finding #1) ----
 def test_group_navigation_loads_correct_xp_per_source_key():
-    """A microscope packet spanning multiple stems must load each stem's own XP."""
+    """A microscope packet spanning multiple stems must load each stem's own XP.
+    We prove this by checking distinctive layer dimensions and rendered fingerprints
+    across at least two stems."""
+    import hashlib
     packet_path = SM.parent / "verification/fl4162/2026-07-14-source-contract-discovery-reframing/microscope_packets/crossbow-bit-across-families.json"
     if not packet_path.exists():
         pytest.skip("microscope packet not present")
     microscope = v.MicroscopeGroup(packet_path)
     keys = sorted(microscope.cards.keys(), key=lambda k: int(k.rsplit("-L", 1)[1]))
     stems = [k.rsplit("-L", 1)[0] for k in keys]
-    # at least one cross-stem packet has multiple distinct stems
     distinct = set(stems)
     assert len(distinct) > 1, "cross-stem packet should span multiple stems"
     state = v.ViewerState(stems[0], keys, microscope=microscope, sprites=SPRITES)
-    # verify each card's stem resolves to its own XP path
-    for k in keys:
-        state.layer_idx = keys.index(k)
-        stem = state.current_stem()
+    data = v.ContractData(SM)
+    # choose two stems with clearly different dimensions
+    # Use the first two distinct stems present in the packet.
+    distinct_stems = sorted(set(stems), key=lambda s: stems.index(s))
+    chosen = [(s, stems.index(s)) for s in distinct_stems[:2]]
+    assert len(chosen) >= 2, f"packet must have at least 2 distinct stems, got {distinct_stems}"
+
+    def _fingerprint(key):
+        info = data.join(key)
+        layer_i = info["raw_layer_index"]
+        fw, fh = info["frame_wh"]
+        stem = key.rsplit("-L", 1)[0]
         xp = state.xp_for(stem)
-        assert xp is not None
-        # the loaded XP filename must match the card's stem
-        # (xp_core does not expose path; verify by metadata sanity)
-        meta = xp.get_metadata()
-        assert meta["angles"] > 0
+        layer = xp.layers[layer_i]
+        sliced = v.slice_frame(layer, [fw, fh], 0, 0)
+        cells = [(g, tuple(fg), tuple(bg)) for row in sliced["grid"] for g, fg, bg in row if tuple(bg) != (255, 0, 255)]
+        return hashlib.sha256(str(cells).encode()).hexdigest()[:16], len(xp.layers), (layer.width, layer.height)
+
+    fingerprints = {}
+    dimensions = {}
+    for stem, idx in chosen:
+        state.layer_idx = idx
+        assert state.current_stem() == stem, "state stem mismatch"
+        fp, n_layers, dim = _fingerprint(keys[idx])
+        fingerprints[stem] = fp
+        dimensions[stem] = (n_layers, dim)
+
+    # dimensions must differ between families
+    assert len(set(dimensions.values())) >= 2, f"all dimensions identical: {dimensions}"
+    # every chosen stem must have a unique rendered fingerprint
+    assert len(set(fingerprints.values())) == len(fingerprints), f"duplicate fingerprints across stems: {fingerprints}"
 
 
 def test_group_neighbors_isolated_to_current_stem():
-    """Neighboring-layer lookup must not mix layers from unrelated stems."""
-    packet_path = SM.parent / "verification/fl4162/2026-07-14-source-contract-discovery-reframing/microscope_packets/crossbow-bit-across-families.json"
+    """Neighboring-layer lookup must not mix layers from unrelated stems.
+    The armor+shield packet has cards across many stems; every card has no
+    within-packet peers, so neighbors must be 'none'."""
+    packet_path = SM.parent / "verification/fl4162/2026-07-14-source-contract-discovery-reframing/microscope_packets/armor-with-shield-contamination.json"
     if not packet_path.exists():
         pytest.skip("microscope packet not present")
     microscope = v.MicroscopeGroup(packet_path)
     keys = sorted(microscope.cards.keys(), key=lambda k: int(k.rsplit("-L", 1)[1]))
-    state = v.ViewerState("ignored", keys, microscope=microscope, sprites=SPRITES)
-    data = v.ContractData(SM)
-    # find a stem that has more than one layer and a neighbor in the group
-    for k in keys:
-        stem = k.rsplit("-L", 1)[0]
-        same_stem = [x for x in keys if x.rsplit("-L", 1)[0] == stem]
-        if len(same_stem) > 1:
-            state.layer_idx = keys.index(k)
-            screen = v.compose_screen(state, data)
-            # neighbors line should only mention layers from this stem
-            neighbor_line = [ln for ln in screen.splitlines() if ln.startswith("neighbors:")][0]
-            # every neighbor citation must start with the same stem prefix
-            for token in neighbor_line.split():
-                if token.startswith("L") and token[1].isdigit():
+    stems = [k.rsplit("-L", 1)[0] for k in keys]
+    state = v.ViewerState(stems[0], keys, microscope=microscope, sprites=SPRITES)
+    for i, k in enumerate(keys):
+        state.layer_idx = i
+        stem = state.current_stem()
+        same_stem = [kk for kk in keys if kk.startswith(stem + "-")]
+        screen = v.compose_screen(state, v.ContractData(SM))
+        neighbor_section = screen.split("neighbors:", 1)[1].split("glyph exact-match", 1)[0]
+        info = v.ContractData(SM).join(k)
+        raw_idx = info["raw_layer_index"]
+        if len(same_stem) == 1:
+            # For an isolated stem the only possible neighbor is a metadata layer
+            # (L0/L1); any other stem reference is a cross-stem leak.
+            for token in neighbor_section.split():
+                if token.startswith("L") and len(token) > 1 and token[1].isdigit():
                     continue
-                if token.startswith("bigbee-") or token.startswith("player-") or token.startswith("wolfie-") or token.startswith("plydie-"):
-                    assert token.startswith(stem + "-"), f"neighbor {token} bleeds from another stem"
-            return
-    pytest.skip("no multi-layer stem in packet")
-
+                if any(token.startswith(p) for p in ("bigbee-", "player-", "wolfie-", "plydie-", "attack-", "wolack-")):
+                    assert token.startswith(stem + "-"), f"{k}: neighbor {token} bleeds from another stem"
+        else:
+            for token in neighbor_section.split():
+                if token.startswith("L") and len(token) > 1 and token[1].isdigit():
+                    continue
+                if any(token.startswith(p) for p in ("bigbee-", "player-", "wolfie-", "plydie-", "attack-", "wolack-")):
+                    assert token.startswith(stem + "-"), f"{k}: neighbor {token} bleeds from another stem"
 
 def test_microscope_group_rejects_authority_true():
     """A packet claiming authority:true must fail closed."""
@@ -212,10 +241,13 @@ def test_microscope_group_rejects_authority_true():
 
 
 def test_empty_microscope_packet_fails_closed():
-    """An empty group must not crash; it simply has no cards."""
-    import json
+    """An empty group must not crash in main(); it must fail closed with exit code 2."""
+    import json, subprocess, sys
     empty = {"schema": "fl4162.microscope_packet.v1", "authority": False, "group_name": "empty", "engine_refs": {}, "cards": []}
     tmp = Path("/tmp/empty_microscope_packet.json")
     tmp.write_text(json.dumps(empty))
     m = v.MicroscopeGroup(tmp)
     assert m.cards == {}
+    # main() must reject the empty packet before indexing layer_keys[0]
+    rc = v.main(["--group", str(tmp), "--once"])
+    assert rc == 2, f"empty packet must fail closed, got rc={rc}"

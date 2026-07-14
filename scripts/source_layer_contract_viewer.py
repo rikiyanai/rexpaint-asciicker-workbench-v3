@@ -529,13 +529,16 @@ def main(argv: list[str]) -> int:
         microscope = load_microscope_group(args)
         if microscope is not None:
             layer_keys = sorted(microscope.cards.keys(), key=lambda k: int(k.rsplit("-L", 1)[1]))
+            if not layer_keys:
+                print(f"FAIL: empty microscope packet {args.group}", file=sys.stderr)
+                return 2
             stem = layer_keys[0].rsplit("-L", 1)[0]
         else:
             layer_keys = data.layer_keys_for_stem(args.stem)
             stem = args.stem
-        if not layer_keys:
-            print(f"FAIL: no evidence-card layers for stem {args.stem}", file=sys.stderr)
-            return 2
+            if not layer_keys:
+                print(f"FAIL: no evidence-card layers for stem {args.stem}", file=sys.stderr)
+                return 2
         xp = load_xp_for_stem(stem, args.sprites)
     except ContractDataError as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
