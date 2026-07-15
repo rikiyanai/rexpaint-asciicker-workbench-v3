@@ -100,16 +100,80 @@ def test_decision_must_cover_every_contract_cell_once():
     doc = queue.build_queue(records, _similarity(list(records)))
     unit = doc["review_units"][0]
     decision = {
-        "schema": "fl4162.upstream_xp_cell_role_decision.v1",
+        "schema": "fl4162.upstream_xp_cell_role_decision.v2",
         "authority": False,
         "is_proposal": True,
         "review_unit_id": unit["review_unit_id"],
         "source_layer_sha256": unit["source_layer_sha256"],
         "frame_geometry": unit["frame_geometry"],
         "member_source_keys": unit["member_source_keys"],
-        "visible_cell_assignments": [[0, 0, 0, 0, 2, ["height"]]],
+        "cell_assignments": [[
+            0, 0, 0, 0, 2, "define_height_channel", ["height"]
+        ]],
         "composition_review": {"verified_against_upstream_ref": True},
         "review_provenance": {"evidence_refs": ["sprite.cpp:351"], "decision": "height"},
     }
     with pytest.raises(queue.ReviewQueueError, match="assignment coverage mismatch"):
         queue.apply_decisions(doc, {unit["review_unit_id"]: decision}, records)
+
+
+def test_decision_binds_render_operation_and_transparent_semantics():
+    record = _record(
+        "player-a-L2", "a" * 64,
+        "layer_role_reviewed_cell_semantics_unverified", "owned", "player_body",
+    )
+    record["cell_values"] = [
+        {
+            "raw": {"glyph": 64},
+            "cell_type": "body_pixel",
+            "render_operation": "seed_l2_base_accumulator",
+        },
+        {
+            "raw": {"glyph": 0},
+            "cell_type": "transparent",
+            "render_operation": "no_visual_contribution",
+        },
+    ]
+    record["cell_spans"] = [
+        [0, 0, 0, 0, 1, 0],
+        [0, 0, 0, 1, 1, 1],
+        [0, 0, 1, 0, 2, 1],
+    ]
+    records = {record["source_key"]: record}
+    doc = queue.build_queue(records, _similarity(list(records)))
+    unit = doc["review_units"][0]
+    base = {
+        "schema": "fl4162.upstream_xp_cell_role_decision.v2",
+        "authority": False,
+        "is_proposal": True,
+        "review_unit_id": unit["review_unit_id"],
+        "source_layer_sha256": unit["source_layer_sha256"],
+        "frame_geometry": unit["frame_geometry"],
+        "member_source_keys": unit["member_source_keys"],
+        "composition_review": {"verified_against_upstream_ref": True},
+        "review_provenance": {"evidence_refs": ["sprite.cpp:352"], "decision": "body"},
+    }
+    bad_operation = dict(base, cell_assignments=[
+        [0, 0, 0, 0, 1, "ordinal_overlay_merge_into_l2", ["player_body"]],
+        [0, 0, 0, 1, 1, "no_visual_contribution", []],
+        [0, 0, 1, 0, 2, "no_visual_contribution", []],
+    ])
+    with pytest.raises(queue.ReviewQueueError, match="render operation mismatch"):
+        queue.apply_decisions(doc, {unit["review_unit_id"]: bad_operation}, records)
+
+    bad_transparent = dict(base, cell_assignments=[
+        [0, 0, 0, 0, 1, "seed_l2_base_accumulator", ["player_body"]],
+        [0, 0, 0, 1, 1, "no_visual_contribution", ["player_body"]],
+        [0, 0, 1, 0, 2, "no_visual_contribution", []],
+    ])
+    with pytest.raises(queue.ReviewQueueError, match="transparent cell has semantic claim"):
+        queue.apply_decisions(doc, {unit["review_unit_id"]: bad_transparent}, records)
+
+    valid = dict(base, cell_assignments=[
+        [0, 0, 0, 0, 1, "seed_l2_base_accumulator", ["player_body"]],
+        [0, 0, 0, 1, 1, "no_visual_contribution", []],
+        [0, 0, 1, 0, 2, "no_visual_contribution", []],
+    ])
+    queue.apply_decisions(doc, {unit["review_unit_id"]: valid}, records)
+    assert doc["coverage"]["decided_units"] == 1
+    assert doc["freeze_gate"]["ready"] is True

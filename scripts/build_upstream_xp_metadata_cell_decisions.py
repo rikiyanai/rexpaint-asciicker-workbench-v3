@@ -16,7 +16,7 @@ REPO = Path(__file__).resolve().parents[2]
 DEFAULT_LEDGER = REPO / "docs/research/ascii/semantic_maps/upstream_xp_cell_contract"
 DEFAULT_SIMILARITY = DEFAULT_LEDGER / "similarity_index.json"
 DEFAULT_OUT = DEFAULT_LEDGER / "cell_role_decisions.jsonl"
-SCHEMA = "fl4162.upstream_xp_cell_role_decision.v1"
+SCHEMA = "fl4162.upstream_xp_cell_role_decision.v2"
 
 
 def get_digit(glyph: int) -> int:
@@ -77,24 +77,32 @@ def _active_animation_columns(
 
 
 def _compress_assignments(
-    role_by_coordinate: dict[tuple[int, int, int, int], tuple[str, ...]]
+    assignments_by_coordinate: dict[
+        tuple[int, int, int, int], tuple[str, tuple[str, ...]]
+    ]
 ) -> list[list[Any]]:
     assignments: list[list[Any]] = []
     rows: dict[tuple[int, int, int], list[tuple[int, tuple[str, ...]]]] = {}
-    for (angle, frame, y, x), roles in role_by_coordinate.items():
-        rows.setdefault((angle, frame, y), []).append((x, roles))
+    for (angle, frame, y, x), assignment in assignments_by_coordinate.items():
+        rows.setdefault((angle, frame, y), []).append((x, assignment))
     for (angle, frame, y), cells in sorted(rows.items()):
         cells.sort()
         start = cells[0][0]
         previous = start
-        roles = cells[0][1]
-        for x, current_roles in cells[1:]:
-            if x != previous + 1 or current_roles != roles:
-                assignments.append([angle, frame, y, start, previous - start + 1, list(roles)])
+        operation, semantics = cells[0][1]
+        for x, current_assignment in cells[1:]:
+            if x != previous + 1 or current_assignment != (operation, semantics):
+                assignments.append([
+                    angle, frame, y, start, previous - start + 1,
+                    operation, list(semantics),
+                ])
                 start = x
-                roles = current_roles
+                operation, semantics = current_assignment
             previous = x
-        assignments.append([angle, frame, y, start, previous - start + 1, list(roles)])
+        assignments.append([
+            angle, frame, y, start, previous - start + 1,
+            operation, list(semantics),
+        ])
     return assignments
 
 
@@ -106,7 +114,7 @@ def build_metadata_decision(unit: dict[str, Any], record: dict[str, Any]) -> dic
     geometry = record["frame_geometry"]
     if layer_index == 0:
         active_animation_columns = _active_animation_columns(cells, geometry)
-        role_by_coordinate = {
+        semantics_by_coordinate = {
             coord: _l0_roles(coord, value, geometry, active_animation_columns)
             for coord, value in cells.items()
         }
@@ -124,7 +132,9 @@ def build_metadata_decision(unit: dict[str, Any], record: dict[str, Any]) -> dic
         ]
         decision_text = "reviewed L0 coordinate semantics from upstream engine reads"
     else:
-        role_by_coordinate = {coord: ("height_or_undefined_spare_channel",) for coord in cells}
+        semantics_by_coordinate = {
+            coord: ("height_or_undefined_spare_channel",) for coord in cells
+        }
         engine_rule = "L1 glyph maps 0-9/A-Z to per-cell spare height; every other glyph yields 0xFF"
         evidence_refs = [
             "sprite.cpp@8ff75d0c:351,688-727",
@@ -140,7 +150,10 @@ def build_metadata_decision(unit: dict[str, Any], record: dict[str, Any]) -> dic
         "source_layer_sha256": unit["source_layer_sha256"],
         "frame_geometry": unit["frame_geometry"],
         "member_source_keys": unit["member_source_keys"],
-        "visible_cell_assignments": _compress_assignments(role_by_coordinate),
+        "cell_assignments": _compress_assignments({
+            coord: (str(cells[coord]["render_operation"]), semantics)
+            for coord, semantics in semantics_by_coordinate.items()
+        }),
         "composition_review": {
             "engine_rule": engine_rule,
             "verified_against_upstream_ref": True,

@@ -17,7 +17,7 @@ DEFAULT_LEDGER = REPO / "docs/research/ascii/semantic_maps/upstream_xp_cell_cont
 DEFAULT_SIMILARITY = DEFAULT_LEDGER / "similarity_index.json"
 DEFAULT_DECISIONS = DEFAULT_LEDGER / "cell_role_decisions.jsonl"
 DEFAULT_OUT = DEFAULT_LEDGER / "review_queue.json"
-SCHEMA = "fl4162.upstream_xp_cell_review_queue.v1"
+SCHEMA = "fl4162.upstream_xp_cell_review_queue.v2"
 
 STATE_PRIORITY = {
     "engine_metadata_semantics_unverified": 0,
@@ -69,22 +69,29 @@ def load_decisions(path: Path) -> dict[str, dict[str, Any]]:
     return decisions
 
 
-def _assignment_coordinates(assignments: list[Any]) -> set[tuple[int, int, int, int]]:
-    coordinates: set[tuple[int, int, int, int]] = set()
+def _assignment_coordinates(
+    assignments: list[Any],
+) -> dict[tuple[int, int, int, int], tuple[str, tuple[str, ...]]]:
+    coordinates: dict[tuple[int, int, int, int], tuple[str, tuple[str, ...]]] = {}
     for assignment in assignments:
-        if not isinstance(assignment, list) or len(assignment) != 6:
+        if not isinstance(assignment, list) or len(assignment) != 7:
             raise ReviewQueueError("cell decision contains malformed assignment")
         angle, frame, y, x_start, length = (int(value) for value in assignment[:5])
-        roles = assignment[5]
-        if length < 1 or not isinstance(roles, list) or not roles or not all(
-            isinstance(role, str) and role for role in roles
+        render_operation = assignment[5]
+        semantic_contributions = assignment[6]
+        if (
+            length < 1
+            or not isinstance(render_operation, str)
+            or not render_operation
+            or not isinstance(semantic_contributions, list)
+            or not all(isinstance(role, str) and role for role in semantic_contributions)
         ):
-            raise ReviewQueueError("cell decision assignment has invalid length or roles")
+            raise ReviewQueueError("cell decision assignment has invalid operation or semantics")
         for x in range(x_start, x_start + length):
             coordinate = (angle, frame, y, x)
             if coordinate in coordinates:
                 raise ReviewQueueError(f"cell decision overlaps coordinate {coordinate}")
-            coordinates.add(coordinate)
+            coordinates[coordinate] = (render_operation, tuple(semantic_contributions))
     return coordinates
 
 
@@ -98,7 +105,7 @@ def apply_decisions(
         raise ReviewQueueError(f"cell decisions reference unknown review units: {unknown}")
     for unit_id, decision in decisions.items():
         unit = units[unit_id]
-        if decision.get("schema") != "fl4162.upstream_xp_cell_role_decision.v1":
+        if decision.get("schema") != "fl4162.upstream_xp_cell_role_decision.v2":
             raise ReviewQueueError(f"{unit_id}: wrong decision schema")
         if decision.get("authority") is not False or decision.get("is_proposal") is not True:
             raise ReviewQueueError(f"{unit_id}: decision must be authority:false proposal")
@@ -109,16 +116,24 @@ def apply_decisions(
         if sorted(decision.get("member_source_keys") or []) != unit["member_source_keys"]:
             raise ReviewQueueError(f"{unit_id}: exact-match member set mismatch")
         representative = records[unit["representative_source_key"]]
-        expected = {
-            coord for coord, value in comparison.expand_cells(representative).items()
-            if value.get("cell_type") != "transparent"
-        }
-        assigned = _assignment_coordinates(decision.get("visible_cell_assignments") or [])
-        if assigned != expected:
+        expected_cells = comparison.expand_cells(representative)
+        expected = set(expected_cells)
+        assigned = _assignment_coordinates(decision.get("cell_assignments") or [])
+        assigned_coordinates = set(assigned)
+        if assigned_coordinates != expected:
             raise ReviewQueueError(
-                f"{unit_id}: assignment coverage mismatch missing={len(expected-assigned)} "
-                f"extra={len(assigned-expected)}"
+                f"{unit_id}: assignment coverage mismatch missing={len(expected-assigned_coordinates)} "
+                f"extra={len(assigned_coordinates-expected)}"
             )
+        for coordinate, value in expected_cells.items():
+            operation, semantics = assigned[coordinate]
+            if operation != value.get("render_operation"):
+                raise ReviewQueueError(f"{unit_id}: render operation mismatch at {coordinate}")
+            transparent = value.get("cell_type") == "transparent"
+            if transparent and semantics:
+                raise ReviewQueueError(f"{unit_id}: transparent cell has semantic claim at {coordinate}")
+            if not transparent and not semantics:
+                raise ReviewQueueError(f"{unit_id}: visible cell lacks semantic contribution at {coordinate}")
         composition = decision.get("composition_review") or {}
         if composition.get("verified_against_upstream_ref") is not True:
             raise ReviewQueueError(f"{unit_id}: upstream composition review not verified")
@@ -131,8 +146,8 @@ def apply_decisions(
             "reviewer": provenance.get("reviewer"),
             "reviewed_at": provenance.get("reviewed_at"),
             "evidence_refs": provenance["evidence_refs"],
-            "assignment_spans": len(decision["visible_cell_assignments"]),
-            "assigned_coordinates": len(assigned),
+            "assignment_spans": len(decision["cell_assignments"]),
+            "assigned_coordinates": len(assigned_coordinates),
         }
     decided = sum(unit["decision_record"] is not None for unit in doc["review_units"])
     doc["coverage"]["decided_units"] = decided
@@ -208,8 +223,9 @@ def build_queue(
             "coverage": representative["coverage"],
             "nearest_neighbors": similarity[representative_key]["nearest_neighbors"],
             "required_decision": {
-                "visible_coordinates_covered_exactly_once": True,
-                "role_contribution_reviewed_per_coordinate": True,
+                "raw_coordinates_covered_exactly_once": True,
+                "semantic_contributions_reviewed_per_coordinate": True,
+                "render_operation_bound_per_coordinate": True,
                 "engine_composition_rule_verified": True,
                 "exceptions_recorded": True,
                 "evidence_refs_required": True,

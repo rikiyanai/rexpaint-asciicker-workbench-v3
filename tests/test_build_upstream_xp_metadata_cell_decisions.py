@@ -31,11 +31,11 @@ def test_l0_roles_preserve_color_key_and_consumed_metadata_coordinates():
 
 def test_assignment_compression_keeps_role_boundaries():
     assignments = metadata._compress_assignments({
-        (0, 0, 0, 0): ("color",),
-        (0, 0, 0, 1): ("color",),
-        (0, 0, 0, 2): ("color", "angle"),
+        (0, 0, 0, 0): ("define_color_key", ("color",)),
+        (0, 0, 0, 1): ("define_color_key", ("color",)),
+        (0, 0, 0, 2): ("define_color_key", ("color", "angle")),
     })
     assert assignments == [
-        [0, 0, 0, 0, 2, ["color"]],
-        [0, 0, 0, 2, 1, ["color", "angle"]],
+        [0, 0, 0, 0, 2, "define_color_key", ["color"]],
+        [0, 0, 0, 2, 1, "define_color_key", ["color", "angle"]],
     ]

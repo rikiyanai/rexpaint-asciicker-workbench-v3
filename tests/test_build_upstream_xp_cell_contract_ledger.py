@@ -71,7 +71,7 @@ def test_every_raw_coordinate_is_covered_once(tmp_path):
     assert record["coverage"]["raw_cells"] == 8
     assert record["coverage"]["visible_cells"] == 4
     assert sum(span[4] for span in record["cell_spans"]) == 8
-    assert {value["composition_rule"] for value in record["cell_values"]} == {
+    assert {value["render_operation"] for value in record["cell_values"]} == {
         "no_visual_contribution", "seed_l2_base_accumulator"
     }
 
@@ -94,8 +94,8 @@ def test_composite_cells_remain_unsegmented(tmp_path):
     )
     assert record["layer_semantics"]["cell_role_state"] == "composite_layer_unsegmented"
     assert record["layer_semantics"]["review_state"] == "reviewed_composite_cell_assignment_pending"
-    contributions = {value["role_contribution"] for value in record["cell_values"]}
-    assert contributions == {"none", "composite_layer_unsegmented"}
+    contributions = {value["semantic_review_state"] for value in record["cell_values"]}
+    assert contributions == {"not_applicable_transparent", "composite_layer_unsegmented"}
 
 
 def test_topology_reconciliation_owns_roles_over_earlier_false_clean_decision():
@@ -120,7 +120,7 @@ def test_unresolved_hand_evidence_stays_unresolved(tmp_path):
     )
     assert record["layer_semantics"]["review_state"] == "unresolved_hand_evidence"
     assert "unresolved_source_contract" in {
-        value["role_contribution"] for value in record["cell_values"]
+        value["semantic_review_state"] for value in record["cell_values"]
     }
 
 
@@ -134,7 +134,7 @@ def test_final_cyan_cell_uses_swoosh_composition(tmp_path):
     visible = [value for value in record["cell_values"] if value["cell_type"] != "transparent"]
     assert len(visible) == 1
     assert visible[0]["cell_type"] == "swoosh_pixel"
-    assert visible[0]["composition_rule"] == "final_cyan_swoosh_context_composite"
+    assert visible[0]["render_operation"] == "final_cyan_swoosh_context_composite"
 
 
 def test_metadata_layers_are_covered_as_engine_contract_cells(tmp_path):
@@ -149,7 +149,7 @@ def test_metadata_layers_are_covered_as_engine_contract_cells(tmp_path):
         assert record["raw_layer_index"] == layer_index
         assert record["coverage"]["raw_cells"] == 8
         assert record["coverage"]["cell_type_histogram"] == {cell_type: 8}
-        assert {value["composition_rule"] for value in record["cell_values"]} == {rule}
+        assert {value["render_operation"] for value in record["cell_values"]} == {rule}
         assert record["layer_semantics"]["review_state"] == "engine_metadata_semantics_unverified"
 
 

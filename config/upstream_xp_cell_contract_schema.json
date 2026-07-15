@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "fl4162.upstream_xp_cell_contract.layer.v1",
+  "$id": "fl4162.upstream_xp_cell_contract.layer.v2",
   "title": "FL-4162 upstream XP cell contract layer record",
   "type": "object",
   "required": [
@@ -20,7 +20,7 @@
     "traceability"
   ],
   "properties": {
-    "schema": {"const": "fl4162.upstream_xp_cell_contract.layer.v1"},
+    "schema": {"const": "fl4162.upstream_xp_cell_contract.layer.v2"},
     "authority": {"const": false},
     "is_proposal": {"const": true},
     "source_key": {"type": "string", "pattern": "-L[0-9]+$"},
@@ -76,7 +76,7 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["raw", "cell_type", "composition_rule", "role_contribution"],
+        "required": ["raw", "cell_type", "render_operation", "semantic_contributions", "semantic_review_state"],
         "properties": {
           "raw": {
             "type": "object",
@@ -88,8 +88,9 @@
             }
           },
           "cell_type": {"type": "string"},
-          "composition_rule": {"type": "string"},
-          "role_contribution": {"type": "string"}
+          "render_operation": {"type": "string"},
+          "semantic_contributions": {"type": "array", "items": {"type": "string"}},
+          "semantic_review_state": {"type": "string"}
         }
       }
     },

@@ -38,8 +38,8 @@ DEFAULT_STATE_FINAL = Path(
 )
 EXPECTED_STATE_FINAL_SHA256 = "ecc9a16112ce48beaeb0e24beba2ccc7399c4efc50d32505f3fd54f8e8d76020"
 DEFAULT_OUT = SM / "upstream_xp_cell_contract"
-SCHEMA = "fl4162.upstream_xp_cell_contract.layer.v1"
-MANIFEST_SCHEMA = "fl4162.upstream_xp_cell_contract.manifest.v1"
+SCHEMA = "fl4162.upstream_xp_cell_contract.layer.v2"
+MANIFEST_SCHEMA = "fl4162.upstream_xp_cell_contract.manifest.v2"
 
 
 class CellContractError(RuntimeError):
@@ -177,9 +177,9 @@ def _span_value(cell: tuple[Any, Any, Any], layer_index: int, layer_count: int,
                 role_state: str) -> tuple[Any, ...]:
     glyph, fg, bg = cell
     cell_type = classify_cell(int(glyph), fg, bg, layer_index, layer_count)
-    contribution = "none" if cell_type == "transparent" else role_state
+    semantic_state = "not_applicable_transparent" if cell_type == "transparent" else role_state
     return (int(glyph), tuple(fg), tuple(bg), cell_type,
-            composition_rule(cell_type, layer_index), contribution)
+            composition_rule(cell_type, layer_index), semantic_state)
 
 
 def build_spans(layer: xp_core.XPLayer, layer_index: int, layer_count: int,
@@ -213,7 +213,7 @@ def build_spans(layer: xp_core.XPLayer, layer_index: int, layer_count: int,
                                        layer_count, role_state) != value:
                             break
                         end += 1
-                    glyph, fg, bg, cell_type, rule, contribution = value
+                    glyph, fg, bg, cell_type, operation, semantic_state = value
                     length = end - local_x
                     histogram[cell_type] += length
                     if value not in value_ids:
@@ -221,8 +221,9 @@ def build_spans(layer: xp_core.XPLayer, layer_index: int, layer_count: int,
                         values.append({
                             "raw": {"glyph": glyph, "fg": list(fg), "bg": list(bg)},
                             "cell_type": cell_type,
-                            "composition_rule": rule,
-                            "role_contribution": contribution,
+                            "render_operation": operation,
+                            "semantic_contributions": [],
+                            "semantic_review_state": semantic_state,
                         })
                     spans.append([angle, frame, local_y, local_x, length, value_ids[value]])
                     local_x = end
