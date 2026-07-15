@@ -529,6 +529,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--sm", type=Path, default=SM)
     p.add_argument("--group", type=Path, default=None,
                    help="Optional microscope packet JSON (read-only); when supplied, layer keys come from the packet and stem is ignored")
+    p.add_argument("--source-key", default="",
+                   help="Open one exact raw layer key, e.g. attack-1001-L3 (read-only)")
     p.add_argument("--once", action="store_true",
                    help="compose one screen to stdout and exit (no terminal control)")
     return p.parse_args(argv)
@@ -567,16 +569,21 @@ def main(argv: list[str]) -> int:
                 return 2
             stem = layer_keys[0].rsplit("-L", 1)[0]
         else:
-            layer_keys = data.layer_keys_for_stem(args.stem)
-            stem = args.stem
+            stem = args.source_key.rsplit("-L", 1)[0] if args.source_key else args.stem
+            layer_keys = data.layer_keys_for_stem(stem)
             if not layer_keys:
-                print(f"FAIL: no evidence-card layers for stem {args.stem}", file=sys.stderr)
+                print(f"FAIL: no evidence-card layers for stem {stem}", file=sys.stderr)
                 return 2
+        if args.source_key and args.source_key not in layer_keys:
+            print(f"FAIL: source key not present in viewer scope: {args.source_key}", file=sys.stderr)
+            return 2
         xp = load_xp_for_stem(stem, args.sprites)
     except ContractDataError as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 2
     state = ViewerState(stem, layer_keys, microscope=microscope)
+    if args.source_key:
+        state.layer_idx = layer_keys.index(args.source_key)
     if args.once or not sys.stdin.isatty():
         print(compose_screen(state, data))
         return 0

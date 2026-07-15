@@ -294,3 +294,21 @@ def test_empty_microscope_packet_fails_closed():
     # main() must reject the empty packet before indexing layer_keys[0]
     rc = v.main(["--group", str(tmp), "--once"])
     assert rc == 2, f"empty packet must fail closed, got rc={rc}"
+
+
+def test_source_key_selects_exact_raw_layer(capsys):
+    rc = v.main(["--source-key", "attack-1001-L3", "--once"])
+    assert rc == 0
+    screen = capsys.readouterr().out
+    assert "-- attack-1001-L3  (raw layer L3" in screen
+
+
+def test_source_key_outside_group_fails_closed(capsys):
+    packet_path = SM.parent / "verification/fl4162/2026-07-14-source-contract-discovery-reframing/microscope_packets/bigbee-L3_limbless_rider_torso.json"
+    if not packet_path.exists():
+        pytest.skip("microscope packet not present")
+    rc = v.main([
+        "--group", str(packet_path), "--source-key", "attack-1001-L3", "--once",
+    ])
+    assert rc == 2
+    assert "source key not present in viewer scope" in capsys.readouterr().err
