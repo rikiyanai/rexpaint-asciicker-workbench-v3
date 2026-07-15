@@ -131,6 +131,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--ledger", type=Path, default=DEFAULT_LEDGER)
     parser.add_argument("--similarity", type=Path, default=DEFAULT_SIMILARITY)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument(
+        "--review-state-decisions", type=Path,
+        default=queue.DEFAULT_REVIEW_STATE_DECISIONS,
+    )
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
     try:
@@ -139,6 +143,9 @@ def main(argv: list[str] | None = None) -> int:
             raise queue.ReviewQueueError(f"unknown source key: {args.source_key}")
         similarity = queue.load_similarity(args.similarity, set(records))
         review_doc = queue.build_queue(records, similarity)
+        queue.apply_review_state_decisions(
+            review_doc, queue.load_review_state_decisions(args.review_state_decisions)
+        )
         existing = queue.load_decisions(args.out)
         queue.apply_decisions(review_doc, existing, records)
         unit = next(
@@ -155,6 +162,9 @@ def main(argv: list[str] | None = None) -> int:
         merged = dict(existing)
         merged[unit["review_unit_id"]] = decision
         final_doc = queue.build_queue(records, similarity)
+        queue.apply_review_state_decisions(
+            final_doc, queue.load_review_state_decisions(args.review_state_decisions)
+        )
         queue.apply_decisions(final_doc, merged, records)
         if not args.check:
             atomic_write(args.out, [merged[key] for key in sorted(merged)])

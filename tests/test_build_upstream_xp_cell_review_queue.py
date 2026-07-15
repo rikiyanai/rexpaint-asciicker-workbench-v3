@@ -1,6 +1,7 @@
 """Tests for the FL-4162 unique-layer cell review queue."""
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -87,6 +88,14 @@ def test_unknown_review_state_fails_closed():
     }
     with pytest.raises(queue.ReviewQueueError, match="unknown review state"):
         queue.build_queue(records, _similarity(list(records)))
+
+
+def test_review_state_loader_rejects_duplicate_units(tmp_path: Path):
+    path = tmp_path / "states.jsonl"
+    row = {"review_unit_id": "same"}
+    path.write_text(json.dumps(row) + "\n" + json.dumps(row) + "\n", encoding="utf-8")
+    with pytest.raises(queue.ReviewQueueError, match="duplicate review_unit_id"):
+        queue.load_review_state_decisions(path)
 
 
 def test_decision_must_cover_every_contract_cell_once():

@@ -16,8 +16,15 @@ REPO = Path(__file__).resolve().parents[2]
 DEFAULT_LEDGER = REPO / "docs/research/ascii/semantic_maps/upstream_xp_cell_contract"
 DEFAULT_SIMILARITY = DEFAULT_LEDGER / "similarity_index.json"
 DEFAULT_DECISIONS = DEFAULT_LEDGER / "cell_role_decisions.jsonl"
+DEFAULT_REVIEW_STATE_DECISIONS = DEFAULT_LEDGER / "cell_review_state_decisions.jsonl"
 DEFAULT_OUT = DEFAULT_LEDGER / "review_queue.json"
-SCHEMA = "fl4162.upstream_xp_cell_review_queue.v2"
+SCHEMA = "fl4162.upstream_xp_cell_review_queue.v3"
+REVIEW_STATE_DECISION_SCHEMA = "fl4162.upstream_xp_cell_review_state_decision.v1"
+
+REVIEW_STATE_TARGETS = {
+    "needs_cell_role_segmentation": 2,
+    "needs_source_contract": 1,
+}
 
 STATE_PRIORITY = {
     "engine_metadata_semantics_unverified": 0,
@@ -67,6 +74,97 @@ def load_decisions(path: Path) -> dict[str, dict[str, Any]]:
             raise ReviewQueueError(f"cell decisions line {lineno}: missing or duplicate review_unit_id")
         decisions[unit_id] = row
     return decisions
+
+
+def load_review_state_decisions(path: Path) -> dict[str, dict[str, Any]]:
+    if not path.exists():
+        return {}
+    decisions: dict[str, dict[str, Any]] = {}
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise ReviewQueueError(f"cannot read review-state decisions: {exc}") from exc
+    for lineno, line in enumerate(lines, 1):
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError as exc:
+            raise ReviewQueueError(
+                f"review-state decisions line {lineno}: malformed JSON: {exc}"
+            ) from exc
+        unit_id = str(row.get("review_unit_id") or "")
+        if not unit_id or unit_id in decisions:
+            raise ReviewQueueError(
+                f"review-state decisions line {lineno}: missing or duplicate review_unit_id"
+            )
+        decisions[unit_id] = row
+    return decisions
+
+
+def _refresh_coverage(doc: dict[str, Any]) -> None:
+    state_counts: dict[str, int] = {}
+    for unit in doc["review_units"]:
+        state = unit["decision_state"]
+        state_counts[state] = state_counts.get(state, 0) + 1
+    decided = sum(unit["decision_record"] is not None for unit in doc["review_units"])
+    doc["coverage"]["decision_state_counts"] = state_counts
+    doc["coverage"]["decided_units"] = decided
+    doc["coverage"]["pending_units"] = len(doc["review_units"]) - decided
+    doc["freeze_gate"]["ready"] = decided == len(doc["review_units"])
+    if doc["freeze_gate"]["ready"]:
+        doc["freeze_gate"]["reason"] = "every unique layer unit has a reviewed full-cell decision"
+
+
+def apply_review_state_decisions(
+    doc: dict[str, Any], decisions: dict[str, dict[str, Any]],
+) -> None:
+    units = {unit["review_unit_id"]: unit for unit in doc["review_units"]}
+    unknown = sorted(set(decisions) - set(units))
+    if unknown:
+        raise ReviewQueueError(
+            f"review-state decisions reference unknown review units: {unknown}"
+        )
+    for unit_id, decision in decisions.items():
+        unit = units[unit_id]
+        if decision.get("schema") != REVIEW_STATE_DECISION_SCHEMA:
+            raise ReviewQueueError(f"{unit_id}: wrong review-state decision schema")
+        if decision.get("authority") is not False or decision.get("is_proposal") is not True:
+            raise ReviewQueueError(f"{unit_id}: review-state decision must be authority:false proposal")
+        if decision.get("source_layer_sha256") != unit["source_layer_sha256"]:
+            raise ReviewQueueError(f"{unit_id}: review-state source fingerprint mismatch")
+        if decision.get("frame_geometry") != unit["frame_geometry"]:
+            raise ReviewQueueError(f"{unit_id}: review-state frame geometry mismatch")
+        if sorted(decision.get("member_source_keys") or []) != unit["member_source_keys"]:
+            raise ReviewQueueError(f"{unit_id}: review-state exact-match member set mismatch")
+        source_state = decision.get("source_decision_state")
+        if source_state != "needs_cell_semantic_confirmation":
+            raise ReviewQueueError(f"{unit_id}: review-state source must be semantic confirmation")
+        if unit["decision_state"] != source_state:
+            raise ReviewQueueError(f"{unit_id}: review-state source no longer matches queue")
+        target = decision.get("target_decision_state")
+        if target not in REVIEW_STATE_TARGETS:
+            raise ReviewQueueError(f"{unit_id}: invalid review-state target {target!r}")
+        provenance = decision.get("review_provenance") or {}
+        if not provenance.get("evidence_refs") or not provenance.get("decision"):
+            raise ReviewQueueError(f"{unit_id}: review-state provenance incomplete")
+        unit["source_decision_state"] = source_state
+        unit["decision_state"] = target
+        unit["priority"] = REVIEW_STATE_TARGETS[target]
+        unit["review_state_decision_record"] = {
+            "schema": decision["schema"],
+            "decision": provenance["decision"],
+            "reviewer": provenance.get("reviewer"),
+            "reviewed_at": provenance.get("reviewed_at"),
+            "evidence_refs": provenance["evidence_refs"],
+            "target_decision_state": target,
+        }
+    doc["review_units"].sort(key=lambda unit: (
+        unit["priority"],
+        -unit["exact_duplicate_layer_count"],
+        unit["representative_source_key"],
+    ))
+    _refresh_coverage(doc)
 
 
 def _assignment_coordinates(
@@ -149,12 +247,7 @@ def apply_decisions(
             "assignment_spans": len(decision["cell_assignments"]),
             "assigned_coordinates": len(assigned_coordinates),
         }
-    decided = sum(unit["decision_record"] is not None for unit in doc["review_units"])
-    doc["coverage"]["decided_units"] = decided
-    doc["coverage"]["pending_units"] = len(doc["review_units"]) - decided
-    doc["freeze_gate"]["ready"] = decided == len(doc["review_units"])
-    if doc["freeze_gate"]["ready"]:
-        doc["freeze_gate"]["reason"] = "every unique layer unit has a reviewed full-cell decision"
+    _refresh_coverage(doc)
 
 
 def _geometry_key(record: dict[str, Any]) -> str:
@@ -230,6 +323,7 @@ def build_queue(
                 "exceptions_recorded": True,
                 "evidence_refs_required": True,
             },
+            "review_state_decision_record": None,
             "decision_record": None,
         })
 
@@ -291,6 +385,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--ledger", type=Path, default=DEFAULT_LEDGER)
     parser.add_argument("--similarity", type=Path, default=DEFAULT_SIMILARITY)
     parser.add_argument("--decisions", type=Path, default=DEFAULT_DECISIONS)
+    parser.add_argument(
+        "--review-state-decisions", type=Path, default=DEFAULT_REVIEW_STATE_DECISIONS
+    )
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
@@ -298,6 +395,9 @@ def main(argv: list[str] | None = None) -> int:
         records = comparison.load_records(args.ledger)
         similarity = load_similarity(args.similarity, set(records))
         doc = build_queue(records, similarity)
+        apply_review_state_decisions(
+            doc, load_review_state_decisions(args.review_state_decisions)
+        )
         apply_decisions(doc, load_decisions(args.decisions), records)
         if not args.check:
             atomic_write(args.out, doc)
