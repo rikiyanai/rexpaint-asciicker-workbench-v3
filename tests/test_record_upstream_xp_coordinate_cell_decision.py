@@ -284,6 +284,67 @@ def test_reference_partition_fails_when_reference_decision_lacks_role():
         )
 
 
+def test_reference_semantic_copy_preserves_mixed_exact_semantics():
+    target_unit = _unit()
+    target_record = _partition_record("plydie-0011-L2", 221)
+    reference_unit = _unit()
+    reference_unit["review_unit_id"] = "xp-cell-unit:reference"
+    reference_unit["source_layer_sha256"] = "b" * 64
+    reference_unit["member_source_keys"] = ["plydie-0010-L2"]
+    reference_record = _partition_record("plydie-0010-L2", 222)
+    reference_assignment = {
+        "schema": recorder.INPUT_SCHEMA,
+        "source_key": "plydie-0010-L2",
+        "source_layer_sha256": "b" * 64,
+        "semantic_spans": [
+            [0, 0, 0, 0, 1, ["plydie_body"]],
+            [0, 0, 0, 1, 1, ["shield"]],
+        ],
+    }
+    reference_decision = recorder.build_decision(
+        reference_unit, reference_record, reference_assignment,
+        "reviewed body and shield", ["viewer"], [], "reviewer", "2026-07-15",
+    )
+    assignment = recorder.build_reference_semantic_copy_assignment(
+        target_unit, target_record, reference_unit, reference_record,
+        reference_decision, ["sword"],
+    )
+    assert assignment["semantic_spans"] == [
+        [0, 0, 0, 0, 1, ["plydie_body"]],
+        [0, 0, 0, 1, 1, ["sword"]],
+    ]
+    assert assignment["reference_partition"] == {
+        "reference_source_key": "plydie-0010-L2",
+        "reference_source_layer_sha256": "b" * 64,
+        "copied_semantic_sets": [["plydie_body"]],
+        "delta_semantics": ["sword"],
+        "exact_raw_coordinates": 1,
+        "delta_coordinates": 1,
+    }
+
+
+def test_reference_semantic_copy_fails_on_unassigned_exact_cell():
+    target_unit = _unit()
+    target_record = _partition_record("plydie-0011-L2", 221)
+    reference_unit = _unit("needs_cell_semantic_confirmation")
+    reference_unit["review_unit_id"] = "xp-cell-unit:reference"
+    reference_unit["source_layer_sha256"] = "b" * 64
+    reference_unit["member_source_keys"] = ["plydie-0010-L2"]
+    reference_record = _partition_record("plydie-0010-L2", 222)
+    reference_decision = {
+        "source_layer_sha256": "b" * 64,
+        "cell_assignments": [
+            [0, 0, 0, 0, 1, "fold_overlay_into_l2", []],
+            [0, 0, 0, 1, 1, "fold_overlay_into_l2", ["shield"]],
+        ],
+    }
+    with pytest.raises(queue.ReviewQueueError, match="lacks semantics"):
+        recorder.build_reference_semantic_copy_assignment(
+            target_unit, target_record, reference_unit, reference_record,
+            reference_decision, ["sword"],
+        )
+
+
 def test_reference_subset_accepts_only_exact_reviewed_target_cells():
     target_unit = _unit()
     target_record = _partition_record("plydie-0011-L3", 222)

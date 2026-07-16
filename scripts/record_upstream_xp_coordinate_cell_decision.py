@@ -222,6 +222,65 @@ def build_reference_partition_assignment(
     return assignment
 
 
+def build_reference_semantic_copy_assignment(
+    unit: dict[str, Any], record: dict[str, Any],
+    reference_unit: dict[str, Any], reference_record: dict[str, Any],
+    reference_decision: dict[str, Any], delta_semantics: list[str],
+) -> dict[str, Any]:
+    """Copy reviewed semantics at exact cells, then classify target deltas."""
+    if unit["decision_state"] != "needs_cell_role_segmentation":
+        raise queue.ReviewQueueError(
+            f"{unit['review_unit_id']}: reference semantic copy is segmentation-only"
+        )
+    if record.get("frame_geometry") != reference_record.get("frame_geometry"):
+        raise queue.ReviewQueueError("reference semantic copy frame geometry mismatch")
+    if reference_decision.get("source_layer_sha256") != reference_unit.get(
+        "source_layer_sha256"
+    ):
+        raise queue.ReviewQueueError("reference decision fingerprint mismatch")
+    delta = _normalized_semantics(delta_semantics, "reference semantic-copy delta")
+    target_visible = _visible_cells(record)
+    reference_visible = _visible_cells(reference_record)
+    reference_semantics = _decision_semantics(reference_decision)
+    semantic_by_coordinate: dict[tuple[int, int, int, int], tuple[str, ...]] = {}
+    copied_sets: set[tuple[str, ...]] = set()
+    exact_count = 0
+    delta_count = 0
+    for coordinate, value in target_visible.items():
+        reference_value = reference_visible.get(coordinate)
+        if reference_value is not None and value.get("raw") == reference_value.get("raw"):
+            semantics = reference_semantics.get(coordinate, ())
+            if not semantics:
+                raise queue.ReviewQueueError(
+                    f"reference decision lacks semantics at exact cell {coordinate}"
+                )
+            semantic_by_coordinate[coordinate] = semantics
+            copied_sets.add(semantics)
+            exact_count += 1
+        else:
+            semantic_by_coordinate[coordinate] = delta
+            delta_count += 1
+    if exact_count == 0 or delta_count == 0:
+        raise queue.ReviewQueueError(
+            "reference semantic copy requires exact-reference and delta cells"
+        )
+    return {
+        "schema": INPUT_SCHEMA,
+        "source_key": record["source_key"],
+        "source_layer_sha256": unit["source_layer_sha256"],
+        "semantic_spans": _compress_semantics(semantic_by_coordinate),
+        "assignment_method": "reviewed_exact_reference_semantic_copy",
+        "reference_partition": {
+            "reference_source_key": reference_record["source_key"],
+            "reference_source_layer_sha256": reference_unit["source_layer_sha256"],
+            "copied_semantic_sets": [list(value) for value in sorted(copied_sets)],
+            "delta_semantics": list(delta),
+            "exact_raw_coordinates": exact_count,
+            "delta_coordinates": delta_count,
+        },
+    }
+
+
 def build_reviewed_reference_subset_assignment(
     unit: dict[str, Any], record: dict[str, Any],
     reference_unit: dict[str, Any], reference_record: dict[str, Any],
@@ -418,6 +477,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--reference-exact-semantic", action="append", default=[])
     parser.add_argument("--reference-delta-semantic", action="append", default=[])
     parser.add_argument("--reference-subset-semantic", action="append", default=[])
+    parser.add_argument("--reference-copy-semantics", action="store_true")
     parser.add_argument("--source-contract-path", default="")
     parser.add_argument("--source-contract-decision", default="")
     parser.add_argument("--decision", required=True)
@@ -517,6 +577,7 @@ def main(argv: list[str] | None = None) -> int:
                     if (
                         args.reference_exact_semantic
                         or args.reference_delta_semantic
+                        or args.reference_copy_semantics
                         or args.source_contract_path
                         or args.source_contract_decision
                     ):
@@ -527,6 +588,21 @@ def main(argv: list[str] | None = None) -> int:
                         unit, records[source_key], reference_unit,
                         records[reference_key], reference_decision,
                         args.reference_subset_semantic,
+                    )
+                elif args.reference_copy_semantics:
+                    if (
+                        args.reference_exact_semantic
+                        or args.reference_subset_semantic
+                        or args.source_contract_path
+                        or args.source_contract_decision
+                    ):
+                        raise queue.ReviewQueueError(
+                            "reference semantic-copy mode received incompatible fields"
+                        )
+                    assignment = build_reference_semantic_copy_assignment(
+                        unit, records[source_key], reference_unit,
+                        records[reference_key], reference_decision,
+                        args.reference_delta_semantic,
                     )
                 else:
                     assignment = build_reference_partition_assignment(
@@ -542,6 +618,7 @@ def main(argv: list[str] | None = None) -> int:
             or args.reference_exact_semantic
             or args.reference_delta_semantic
             or args.reference_subset_semantic
+            or args.reference_copy_semantics
             or args.source_contract_path
             or args.source_contract_decision
         ):
