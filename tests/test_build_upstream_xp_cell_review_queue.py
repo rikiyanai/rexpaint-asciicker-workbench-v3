@@ -186,3 +186,70 @@ def test_decision_binds_render_operation_and_transparent_semantics():
     queue.apply_decisions(doc, {unit["review_unit_id"]: valid}, records)
     assert doc["coverage"]["decided_units"] == 1
     assert doc["freeze_gate"]["ready"] is True
+
+
+def test_false_clean_retraction_requires_distinct_expanded_replacement():
+    record = _record(
+        "attack-0101-L2", "a" * 64,
+        "layer_role_reviewed_cell_semantics_unverified", "owned", "attack_body",
+    )
+    record["cell_values"] = [{
+        "raw": {"glyph": 64},
+        "cell_type": "body_pixel",
+        "render_operation": "seed_l2_base_accumulator",
+    }]
+    record["cell_spans"] = [[0, 0, 0, 0, 4, 0]]
+    records = {record["source_key"]: record}
+    doc = queue.build_queue(records, _similarity(list(records)))
+    unit = doc["review_units"][0]
+    state = {
+        "schema": queue.REVIEW_STATE_DECISION_SCHEMA,
+        "authority": False,
+        "is_proposal": True,
+        "review_unit_id": unit["review_unit_id"],
+        "source_layer_sha256": unit["source_layer_sha256"],
+        "frame_geometry": unit["frame_geometry"],
+        "member_source_keys": unit["member_source_keys"],
+        "source_decision_state": "needs_cell_semantic_confirmation",
+        "target_decision_state": "needs_cell_role_segmentation",
+        "review_provenance": {
+            "decision": "body-only decision was false-clean",
+            "evidence_refs": ["raw cells"],
+            "retracted_full_cell_decision_sha256": "f" * 64,
+            "retracted_semantic_sets": [["attack_body"]],
+        },
+    }
+    queue.apply_review_state_decisions(doc, {unit["review_unit_id"]: state})
+    base = {
+        "schema": "fl4162.upstream_xp_cell_role_decision.v2",
+        "authority": False,
+        "is_proposal": True,
+        "review_unit_id": unit["review_unit_id"],
+        "source_layer_sha256": unit["source_layer_sha256"],
+        "frame_geometry": unit["frame_geometry"],
+        "member_source_keys": unit["member_source_keys"],
+        "composition_review": {"verified_against_upstream_ref": True},
+        "review_provenance": {"evidence_refs": ["raw cells"], "decision": "reviewed"},
+    }
+    unchanged = dict(base, cell_assignments=[[
+        0, 0, 0, 0, 4, "seed_l2_base_accumulator", ["attack_body"]
+    ]])
+    queue.apply_decisions(doc, {unit["review_unit_id"]: unchanged}, records)
+    assert doc["freeze_gate"]["semantic_honesty"]["ready"] is False
+    assert doc["freeze_gate"]["ready"] is False
+
+    corrected = dict(base, cell_assignments=[
+        [0, 0, 0, 0, 2, "seed_l2_base_accumulator", ["attack_body"]],
+        [0, 0, 0, 2, 2, "seed_l2_base_accumulator", ["attack_weapon_sword"]],
+    ])
+    queue.apply_decisions(doc, {unit["review_unit_id"]: corrected}, records)
+    assert doc["freeze_gate"]["semantic_honesty"] == {
+        "ready": True,
+        "recorded_false_clean_retractions": 1,
+        "distinct_expanded_replacements": 1,
+        "rule": (
+            "each fingerprint-bound false-clean retraction requires a distinct "
+            "active decision with an expanded semantic contribution set"
+        ),
+    }
+    assert doc["freeze_gate"]["ready"] is True

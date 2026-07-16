@@ -38,6 +38,33 @@ class ReviewQueueError(RuntimeError):
     pass
 
 
+def _canonical_sha256(value: dict[str, Any]) -> str:
+    data = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(data).hexdigest()
+
+
+def _semantic_sets(decision: dict[str, Any]) -> list[list[str]]:
+    values = {
+        tuple(str(role) for role in assignment[6])
+        for assignment in decision.get("cell_assignments") or []
+        if isinstance(assignment, list) and len(assignment) == 7 and assignment[6]
+    }
+    return [list(value) for value in sorted(values)]
+
+
+def _semantic_honesty_gate(doc: dict[str, Any]) -> dict[str, Any]:
+    gate = doc.setdefault("freeze_gate", {})
+    return gate.setdefault("semantic_honesty", {
+        "ready": True,
+        "recorded_false_clean_retractions": 0,
+        "distinct_expanded_replacements": 0,
+        "rule": (
+            "each fingerprint-bound false-clean retraction requires a distinct "
+            "active decision with an expanded semantic contribution set"
+        ),
+    })
+
+
 def load_similarity(path: Path, expected_keys: set[str]) -> dict[str, dict[str, Any]]:
     try:
         doc = json.loads(path.read_text(encoding="utf-8"))
@@ -111,9 +138,15 @@ def _refresh_coverage(doc: dict[str, Any]) -> None:
     doc["coverage"]["decision_state_counts"] = state_counts
     doc["coverage"]["decided_units"] = decided
     doc["coverage"]["pending_units"] = len(doc["review_units"]) - decided
-    doc["freeze_gate"]["ready"] = decided == len(doc["review_units"])
+    honesty = _semantic_honesty_gate(doc)
+    doc["freeze_gate"]["ready"] = (
+        decided == len(doc["review_units"]) and honesty["ready"]
+    )
     if doc["freeze_gate"]["ready"]:
-        doc["freeze_gate"]["reason"] = "every unique layer unit has a reviewed full-cell decision"
+        doc["freeze_gate"]["reason"] = (
+            "every unique layer unit has a reviewed full-cell decision and every "
+            "recorded false-clean owner has a distinct expanded replacement"
+        )
 
 
 def apply_review_state_decisions(
@@ -159,6 +192,22 @@ def apply_review_state_decisions(
             "evidence_refs": provenance["evidence_refs"],
             "target_decision_state": target,
         }
+        retracted_hash = provenance.get("retracted_full_cell_decision_sha256")
+        if retracted_hash is not None:
+            retracted_sets = provenance.get("retracted_semantic_sets")
+            if (
+                not isinstance(retracted_hash, str)
+                or len(retracted_hash) != 64
+                or not isinstance(retracted_sets, list)
+                or not retracted_sets
+            ):
+                raise ReviewQueueError(
+                    f"{unit_id}: false-clean retraction provenance incomplete"
+                )
+            unit["review_state_decision_record"].update({
+                "retracted_full_cell_decision_sha256": retracted_hash,
+                "retracted_semantic_sets": retracted_sets,
+            })
     doc["review_units"].sort(key=lambda unit: (
         unit["priority"],
         -unit["exact_duplicate_layer_count"],
@@ -247,6 +296,34 @@ def apply_decisions(
             "assignment_spans": len(decision["cell_assignments"]),
             "assigned_coordinates": len(assigned_coordinates),
         }
+    retractions = 0
+    corrected = 0
+    for unit in doc["review_units"]:
+        state = unit.get("review_state_decision_record") or {}
+        retracted_hash = state.get("retracted_full_cell_decision_sha256")
+        if retracted_hash is None:
+            continue
+        retractions += 1
+        active = decisions.get(unit["review_unit_id"])
+        if active is None or _canonical_sha256(active) == retracted_hash:
+            continue
+        old_roles = {
+            str(role)
+            for semantic_set in state["retracted_semantic_sets"]
+            for role in semantic_set
+        }
+        new_roles = {
+            role for semantic_set in _semantic_sets(active) for role in semantic_set
+        }
+        if len(new_roles) <= len(old_roles):
+            continue
+        corrected += 1
+    honesty = _semantic_honesty_gate(doc)
+    honesty.update({
+        "recorded_false_clean_retractions": retractions,
+        "distinct_expanded_replacements": corrected,
+        "ready": corrected == retractions,
+    })
     _refresh_coverage(doc)
 
 
@@ -348,6 +425,7 @@ def build_queue(
             "ready": False,
             "reason": "every unique layer unit requires a reviewed full-cell decision",
             "required_decision_schema": "pipeline-v3/config/upstream_xp_cell_role_decision_schema.json",
+            "semantic_honesty": _semantic_honesty_gate({}),
         },
         "coverage": {
             "ledger_layers": len(records),

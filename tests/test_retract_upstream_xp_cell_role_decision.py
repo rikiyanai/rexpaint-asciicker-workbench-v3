@@ -81,7 +81,14 @@ def test_live_attack_false_clean_retraction_is_preserved():
         "259d43231e09281734ec80a90b3f45134733bf3a52393931b1075b045839aea2"
     )
     assert state["review_provenance"]["retracted_semantic_sets"] == [["attack_body"]]
-    assert target_unit not in queue.load_decisions(retract.DEFAULT_DECISIONS)
+    active = queue.load_decisions(retract.DEFAULT_DECISIONS)[target_unit]
+    assert retract.canonical_sha256(active) != (
+        state["review_provenance"]["retracted_full_cell_decision_sha256"]
+    )
+    assert retract.semantic_sets(active) == [
+        ["attack_body"],
+        ["attack_weapon_sword"],
+    ]
 
 
 def test_retraction_rejects_wrong_hash():
