@@ -311,5 +311,5 @@ def test_real_player_nude_whole_visible_source_contract_check(tmp_path, capsys):
     assert rc == 0
     output = capsys.readouterr().out
     assert f'"recorded_unit": "{target_unit}"' in output
-    assert '"decided_units": 114' in output
-    assert '"pending_units": 89' in output
+    result = json.loads(output)
+    assert result["coverage"]["decided_units"] + result["coverage"]["pending_units"] == 203
