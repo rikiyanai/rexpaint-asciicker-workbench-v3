@@ -350,7 +350,7 @@ def test_full_cell_panel_shows_recorded_and_pending_assignments(capsys):
     assert "unresolved=0" in decided
     assert "A=player_body" in decided
 
-    rc = v.main(["--source-key", "bigbee-1012-L6", "--once"])
+    rc = v.main(["--source-key", "bigbee-0012-L5", "--once"])
     assert rc == 0
     pending = capsys.readouterr().out
     assert "state=needs_cell_role_segmentation" in pending
