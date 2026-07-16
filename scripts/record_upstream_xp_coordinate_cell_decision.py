@@ -222,6 +222,59 @@ def build_reference_partition_assignment(
     return assignment
 
 
+def build_reviewed_reference_subset_assignment(
+    unit: dict[str, Any], record: dict[str, Any],
+    reference_unit: dict[str, Any], reference_record: dict[str, Any],
+    reference_decision: dict[str, Any], semantics: list[str],
+) -> dict[str, Any]:
+    """Assign a target proven to be an exact visible subset of a reviewed layer."""
+    if unit["decision_state"] != "needs_cell_role_segmentation":
+        raise queue.ReviewQueueError(
+            f"{unit['review_unit_id']}: reference-subset mode is segmentation-only"
+        )
+    if record.get("frame_geometry") != reference_record.get("frame_geometry"):
+        raise queue.ReviewQueueError("reference subset frame geometry mismatch")
+    if reference_decision.get("source_layer_sha256") != reference_unit.get(
+        "source_layer_sha256"
+    ):
+        raise queue.ReviewQueueError("reference decision fingerprint mismatch")
+    normalized = _normalized_semantics(semantics, "reference subset")
+    target_visible = _visible_cells(record)
+    reference_visible = _visible_cells(reference_record)
+    reference_semantics = _decision_semantics(reference_decision)
+    if not target_visible:
+        raise queue.ReviewQueueError("reference subset target has no visible cells")
+    for coordinate, value in target_visible.items():
+        reference_value = reference_visible.get(coordinate)
+        if reference_value is None or value.get("raw") != reference_value.get("raw"):
+            raise queue.ReviewQueueError(
+                f"target is not an exact raw subset at {coordinate}"
+            )
+        if not set(normalized).issubset(reference_semantics.get(coordinate, ())):
+            raise queue.ReviewQueueError(
+                f"reference decision lacks subset semantics at {coordinate}"
+            )
+    semantic_by_coordinate = {
+        coordinate: normalized for coordinate in target_visible
+    }
+    return {
+        "schema": INPUT_SCHEMA,
+        "source_key": record["source_key"],
+        "source_layer_sha256": unit["source_layer_sha256"],
+        "semantic_spans": _compress_semantics(semantic_by_coordinate),
+        "assignment_method": "reviewed_exact_reference_subset",
+        "reference_subset": {
+            "reference_source_key": reference_record["source_key"],
+            "reference_source_layer_sha256": reference_unit["source_layer_sha256"],
+            "semantics": list(normalized),
+            "exact_target_coordinates": len(target_visible),
+            "reference_only_coordinates": len(
+                set(reference_visible) - set(target_visible)
+            ),
+        },
+    }
+
+
 def build_whole_visible_assignment(
     unit: dict[str, Any], record: dict[str, Any], semantics: list[str],
     source_xp_path: str, contract_decision: str,
@@ -333,6 +386,8 @@ def build_decision(
         provenance["assignment_method"] = assignment["assignment_method"]
     if assignment.get("reference_partition"):
         provenance["reference_partition"] = assignment["reference_partition"]
+    if assignment.get("reference_subset"):
+        provenance["reference_subset"] = assignment["reference_subset"]
     return {
         "schema": layerwide.SCHEMA,
         "authority": False,
@@ -362,6 +417,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--reference-source-key", default="")
     parser.add_argument("--reference-exact-semantic", action="append", default=[])
     parser.add_argument("--reference-delta-semantic", action="append", default=[])
+    parser.add_argument("--reference-subset-semantic", action="append", default=[])
     parser.add_argument("--source-contract-path", default="")
     parser.add_argument("--source-contract-decision", default="")
     parser.add_argument("--decision", required=True)
@@ -427,6 +483,7 @@ def main(argv: list[str] | None = None) -> int:
                 if (
                     args.reference_exact_semantic
                     or args.reference_delta_semantic
+                    or args.reference_subset_semantic
                     or args.source_contract_path
                     or args.source_contract_decision
                 ):
@@ -456,18 +513,35 @@ def main(argv: list[str] | None = None) -> int:
                     raise queue.ReviewQueueError(
                         f"reference {reference_key} lacks a reviewed full-cell decision"
                     )
-                assignment = build_reference_partition_assignment(
-                    unit, records[source_key], reference_unit,
-                    records[reference_key], reference_decision,
-                    args.reference_exact_semantic, args.reference_delta_semantic,
-                    args.source_contract_path, args.source_contract_decision,
-                )
+                if args.reference_subset_semantic:
+                    if (
+                        args.reference_exact_semantic
+                        or args.reference_delta_semantic
+                        or args.source_contract_path
+                        or args.source_contract_decision
+                    ):
+                        raise queue.ReviewQueueError(
+                            "reference-subset mode received incompatible fields"
+                        )
+                    assignment = build_reviewed_reference_subset_assignment(
+                        unit, records[source_key], reference_unit,
+                        records[reference_key], reference_decision,
+                        args.reference_subset_semantic,
+                    )
+                else:
+                    assignment = build_reference_partition_assignment(
+                        unit, records[source_key], reference_unit,
+                        records[reference_key], reference_decision,
+                        args.reference_exact_semantic, args.reference_delta_semantic,
+                        args.source_contract_path, args.source_contract_decision,
+                    )
         elif (
             args.whole_visible_semantic
             or args.reviewed_uniform_semantic
             or args.reference_source_key
             or args.reference_exact_semantic
             or args.reference_delta_semantic
+            or args.reference_subset_semantic
             or args.source_contract_path
             or args.source_contract_decision
         ):

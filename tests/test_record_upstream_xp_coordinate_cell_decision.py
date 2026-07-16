@@ -284,6 +284,55 @@ def test_reference_partition_fails_when_reference_decision_lacks_role():
         )
 
 
+def test_reference_subset_accepts_only_exact_reviewed_target_cells():
+    target_unit = _unit()
+    target_record = _partition_record("plydie-0011-L3", 222)
+    target_record["cell_spans"][1][-1] = 2
+    reference_unit = _unit("needs_cell_semantic_confirmation")
+    reference_unit["review_unit_id"] = "xp-cell-unit:reference"
+    reference_unit["source_layer_sha256"] = "b" * 64
+    reference_unit["member_source_keys"] = ["plydie-1011-L3"]
+    reference_unit["candidate_role_sets"] = ["shield"]
+    reference_record = _partition_record("plydie-1011-L3", 222)
+    reference_decision = recorder.layerwide.build_decision(
+        reference_unit, reference_record, ["shield"],
+        "clean shield reviewed", ["viewer"], [], "reviewer", "2026-07-15",
+    )
+    assignment = recorder.build_reviewed_reference_subset_assignment(
+        target_unit, target_record, reference_unit, reference_record,
+        reference_decision, ["shield"],
+    )
+    assert assignment["semantic_spans"] == [
+        [0, 0, 0, 0, 1, ["shield"]],
+    ]
+    assert assignment["reference_subset"] == {
+        "reference_source_key": "plydie-1011-L3",
+        "reference_source_layer_sha256": "b" * 64,
+        "semantics": ["shield"],
+        "exact_target_coordinates": 1,
+        "reference_only_coordinates": 1,
+    }
+
+
+def test_reference_subset_rejects_changed_target_cell():
+    target_unit = _unit()
+    target_record = _partition_record("plydie-0011-L3", 221)
+    reference_unit = _unit("needs_cell_semantic_confirmation")
+    reference_unit["review_unit_id"] = "xp-cell-unit:reference"
+    reference_unit["source_layer_sha256"] = "b" * 64
+    reference_unit["member_source_keys"] = ["plydie-1011-L3"]
+    reference_record = _partition_record("plydie-1011-L3", 222)
+    reference_decision = recorder.layerwide.build_decision(
+        reference_unit, reference_record, ["shield"],
+        "clean shield reviewed", ["viewer"], [], "reviewer", "2026-07-15",
+    )
+    with pytest.raises(queue.ReviewQueueError, match="not an exact raw subset"):
+        recorder.build_reviewed_reference_subset_assignment(
+            target_unit, target_record, reference_unit, reference_record,
+            reference_decision, ["shield"],
+        )
+
+
 def test_real_player_nude_whole_visible_source_contract_check(tmp_path, capsys):
     import json
 
