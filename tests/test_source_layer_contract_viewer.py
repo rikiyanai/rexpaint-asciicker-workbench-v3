@@ -13,6 +13,14 @@ import source_layer_contract_viewer as v  # noqa: E402
 
 SM = PIPELINE_V3.parent / "docs/research/ascii/semantic_maps"
 SPRITES = PIPELINE_V3.parent / "assets/sprites"
+_SHARED_CONTRACT_DATA = None
+
+
+def _data():
+    global _SHARED_CONTRACT_DATA
+    if _SHARED_CONTRACT_DATA is None:
+        _SHARED_CONTRACT_DATA = v.ContractData(SM)
+    return _SHARED_CONTRACT_DATA
 
 
 # ---- pure units (no disk) ----
@@ -84,7 +92,7 @@ def test_cell_comparison_report_is_read_only_and_authority_false():
 
 def test_handle_key_transitions():
     st = v.ViewerState("bigbee-0000", ["bigbee-0000-L2", "bigbee-0000-L3"])
-    data = v.ContractData(SM)
+    data = _data()
     assert v.handle_key(st, "]", data) is True and st.layer_idx == 1
     assert v.handle_key(st, "[", data) is True and st.layer_idx == 0
     v.handle_key(st, ".", data); assert st.angle == 1
@@ -97,7 +105,7 @@ def test_handle_key_transitions():
 
 
 def test_advance_autoplay_wraps_within_bounds():
-    data = v.ContractData(SM)
+    data = _data()
     xp = v.load_xp_for_stem("bigbee-0000", SPRITES)
     st = v.ViewerState("bigbee-0000", data.layer_keys_for_stem("bigbee-0000"))
     st.frame = 5  # last frame (6 frames per angle)
@@ -107,7 +115,7 @@ def test_advance_autoplay_wraps_within_bounds():
 
 # ---- integration over the committed artifacts ----
 def test_contract_data_joins_the_bee_body_trap():
-    data = v.ContractData(SM)
+    data = _data()
     info = data.join("bigbee-0000-L2")
     assert info["machine_guess"] == "armor;mount_body_wolf"
     assert info["proposed_roles"] == ["bee_body"]
@@ -117,7 +125,7 @@ def test_contract_data_joins_the_bee_body_trap():
 
 
 def test_compose_screen_makes_the_trap_visible():
-    data = v.ContractData(SM)
+    data = _data()
     xp = v.load_xp_for_stem("bigbee-0000", SPRITES)
     st = v.ViewerState("bigbee-0000", data.layer_keys_for_stem("bigbee-0000"))
     screen = v.compose_screen(st, data)
@@ -129,7 +137,7 @@ def test_compose_screen_makes_the_trap_visible():
 
 
 def test_layer_keys_for_stem_sorted_and_scoped():
-    data = v.ContractData(SM)
+    data = _data()
     keys = data.layer_keys_for_stem("bigbee-0000")
     assert keys == ["bigbee-0000-L2", "bigbee-0000-L3"]
     # stem scoping must not bleed into bigbee-0001
@@ -143,14 +151,32 @@ def test_missing_inputs_fail_closed(tmp_path):
 
 def test_viewer_module_writes_nothing_to_disk():
     """Read-only guarantee: no file-write primitives in the module source."""
+    import ast
+
     src = (PIPELINE_V3 / "scripts" / "source_layer_contract_viewer.py").read_text()
-    for forbidden in ("open(", "json.dump", "mkstemp", "os.replace", "Path.write_text", ".write_text("):
+    for forbidden in ("json.dump", "mkstemp", "os.replace", "Path.write_text", ".write_text("):
         assert forbidden not in src, f"viewer must not write: found {forbidden!r}"
+    for node in ast.walk(ast.parse(src)):
+        if not isinstance(node, ast.Call):
+            continue
+        is_builtin_open = isinstance(node.func, ast.Name) and node.func.id == "open"
+        is_path_open = isinstance(node.func, ast.Attribute) and node.func.attr == "open"
+        if not (is_builtin_open or is_path_open):
+            continue
+        mode_node = None
+        positional_index = 1 if is_builtin_open else 0
+        if len(node.args) > positional_index:
+            mode_node = node.args[positional_index]
+        for keyword in node.keywords:
+            if keyword.arg == "mode":
+                mode_node = keyword.value
+        mode = mode_node.value if isinstance(mode_node, ast.Constant) else "r"
+        assert isinstance(mode, str) and not any(flag in mode for flag in "wax+")
 
 
 # --- FL-4162 microscope: engine refs, neighbors, hand_note, match ids in one panel ---
 def _screen_for(stem, layer_index=0):
-    data = v.ContractData(SM)
+    data = _data()
     st = v.ViewerState(stem, data.layer_keys_for_stem(stem), sprites=SPRITES)
     st.layer_idx = layer_index
     return v.compose_screen(st, data)
@@ -206,7 +232,7 @@ def test_group_navigation_loads_correct_xp_per_source_key():
     distinct = set(stems)
     assert len(distinct) > 1, "cross-stem packet should span multiple stems"
     state = v.ViewerState(stems[0], keys, microscope=microscope, sprites=SPRITES)
-    data = v.ContractData(SM)
+    data = _data()
     # choose two stems with clearly different dimensions
     # Use the first two distinct stems present in the packet.
     distinct_stems = sorted(set(stems), key=lambda s: stems.index(s))
@@ -218,7 +244,7 @@ def test_group_navigation_loads_correct_xp_per_source_key():
         layer_i = info["raw_layer_index"]
         fw, fh = info["frame_wh"]
         stem = key.rsplit("-L", 1)[0]
-        xp = state.xp_for(stem)
+        xp = state.xp_for_key(key, data)
         layer = xp.layers[layer_i]
         sliced = v.slice_frame(layer, [fw, fh], 0, 0)
         cells = [(g, tuple(fg), tuple(bg)) for row in sliced["grid"] for g, fg, bg in row if tuple(bg) != (255, 0, 255)]
@@ -250,13 +276,14 @@ def test_group_neighbors_isolated_to_current_stem():
     keys = sorted(microscope.cards.keys(), key=lambda k: int(k.rsplit("-L", 1)[1]))
     stems = [k.rsplit("-L", 1)[0] for k in keys]
     state = v.ViewerState(stems[0], keys, microscope=microscope, sprites=SPRITES)
+    data = _data()
     for i, k in enumerate(keys):
         state.layer_idx = i
         stem = state.current_stem()
         same_stem = [kk for kk in keys if kk.startswith(stem + "-")]
-        screen = v.compose_screen(state, v.ContractData(SM))
+        screen = v.compose_screen(state, data)
         neighbor_section = screen.split("neighbors:", 1)[1].split("glyph exact-match", 1)[0]
-        info = v.ContractData(SM).join(k)
+        info = data.join(k)
         raw_idx = info["raw_layer_index"]
         if len(same_stem) == 1:
             # For an isolated stem the only possible neighbor is a metadata layer
@@ -312,3 +339,86 @@ def test_source_key_outside_group_fails_closed(capsys):
     ])
     assert rc == 2
     assert "source key not present in viewer scope" in capsys.readouterr().err
+
+
+def test_full_cell_panel_shows_recorded_and_pending_assignments(capsys):
+    rc = v.main(["--source-key", "player-0000-L2", "--once"])
+    assert rc == 0
+    decided = capsys.readouterr().out
+    assert "-- FULL-CELL CONTRACT (authority:false, read-only) --" in decided
+    assert "decision=recorded" in decided
+    assert "unresolved=0" in decided
+    assert "A=player_body" in decided
+
+    rc = v.main(["--source-key", "bigbee-1012-L6", "--once"])
+    assert rc == 0
+    pending = capsys.readouterr().out
+    assert "state=needs_cell_role_segmentation" in pending
+    assert "decision=pending" in pending
+    assert "?=unresolved" in pending
+    assert "unresolved_coordinates:" in pending
+
+
+def test_assignment_preview_uses_coordinate_recorder_without_writing(tmp_path):
+    import json
+
+    data = _data()
+    source_key = "bigbee-1012-L6"
+    unit = data.review_units_by_key[source_key]
+    visible = [
+        coordinate for coordinate, value in data.expanded_cells(source_key).items()
+        if value.get("cell_type") != "transparent"
+    ]
+    assignment = {
+        "schema": "fl4162.upstream_xp_coordinate_assignment_input.v1",
+        "source_key": source_key,
+        "source_layer_sha256": unit["source_layer_sha256"],
+        "semantic_spans": [
+            [angle, frame, y, x, 1, ["crossbow", "shield"]]
+            for angle, frame, y, x in visible
+        ],
+    }
+    assignment_path = tmp_path / "assignment.json"
+    assignment_path.write_text(json.dumps(assignment), encoding="utf-8")
+    decisions_path = SM / "upstream_xp_cell_contract/cell_role_decisions.jsonl"
+    before = decisions_path.read_bytes()
+
+    try:
+        assert data.load_assignment_preview(assignment_path) == source_key
+        stem = source_key.rsplit("-L", 1)[0]
+        state = v.ViewerState(stem, data.layer_keys_for_stem(stem), sprites=SPRITES)
+        state.layer_idx = state.layer_keys.index(source_key)
+        screen = v.compose_screen(state, data)
+        assert "-- ASSIGNMENT PREVIEW (authority:false, read-only) --" in screen
+        assert "decision=preview" in screen
+        assert "unresolved=0" in screen
+        assert "A=crossbow;shield" in screen
+        assert decisions_path.read_bytes() == before
+    finally:
+        data.assignment_preview_key = None
+        data.assignment_preview_decision = None
+
+
+def test_assignment_preview_rejects_partial_visible_coverage(tmp_path):
+    import json
+
+    data = _data()
+    source_key = "bigbee-1012-L6"
+    unit = data.review_units_by_key[source_key]
+    assignment_path = tmp_path / "partial.json"
+    assignment_path.write_text(json.dumps({
+        "schema": "fl4162.upstream_xp_coordinate_assignment_input.v1",
+        "source_key": source_key,
+        "source_layer_sha256": unit["source_layer_sha256"],
+        "semantic_spans": [[0, 0, 0, 0, 1, ["crossbow"]]],
+    }), encoding="utf-8")
+    with pytest.raises(v.ContractDataError, match="coordinate semantic coverage mismatch"):
+        data.load_assignment_preview(assignment_path)
+
+
+def test_base_alias_uses_ledger_source_xp_path(capsys):
+    rc = v.main(["--source-key", "player-nude-base-L2", "--once"])
+    assert rc == 0
+    screen = capsys.readouterr().out
+    assert "source_xp: assets/sprites/player-nude.xp" in screen
+    assert "-- player-nude-base-L2  (raw layer L2" in screen

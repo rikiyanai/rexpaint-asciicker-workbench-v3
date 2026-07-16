@@ -31,6 +31,8 @@ Inputs (read-only):
 from __future__ import annotations
 
 import argparse
+import copy
+import hashlib
 import json
 import os
 import select
@@ -44,10 +46,14 @@ SCRIPTS = Path(__file__).resolve().parent
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 import xp_core  # noqa: E402  (the shared XP parser — single owner)
+import build_upstream_xp_cell_review_queue as cell_review  # noqa: E402
+import compare_upstream_xp_cell_contracts as cell_contracts  # noqa: E402
+import record_upstream_xp_coordinate_cell_decision as coordinate_recorder  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SM = REPO_ROOT / "docs/research/ascii/semantic_maps"
 SPRITES = REPO_ROOT / "assets/sprites"
+CELL_CONTRACT = SM / "upstream_xp_cell_contract"
 MAGENTA_KEY = (255, 0, 255)  # transparency key (idea borrowed from xp_uv_body_viewer)
 
 
@@ -82,10 +88,54 @@ def _read_json(path: Path) -> dict[str, Any]:
         raise ContractDataError(f"malformed JSON {path}: {exc}") from exc
 
 
-class ContractData:
-    """All four FL-4162 artifacts, loaded once, indexed by source_key/card_id."""
+def _index_jsonl(path: Path, key_field: str) -> tuple[dict[str, tuple[int, int]], str]:
+    """Validate a JSONL file and retain byte offsets instead of its large rows."""
+    if not path.is_file():
+        raise ContractDataError(f"missing read-only input: {path}")
+    index: dict[str, tuple[int, int]] = {}
+    digest = hashlib.sha256()
+    try:
+        with path.open("rb") as handle:
+            lineno = 0
+            while True:
+                offset = handle.tell()
+                line = handle.readline()
+                if not line:
+                    break
+                lineno += 1
+                digest.update(line)
+                if not line.strip():
+                    continue
+                try:
+                    row = json.loads(line)
+                except ValueError as exc:
+                    raise ContractDataError(
+                        f"{path}:{lineno}: malformed JSONL: {exc}"
+                    ) from exc
+                key = str(row.get(key_field) or "")
+                if not key or key in index:
+                    raise ContractDataError(
+                        f"{path}:{lineno}: missing or duplicate {key_field}: {key!r}"
+                    )
+                index[key] = (offset, len(line))
+    except OSError as exc:
+        raise ContractDataError(f"cannot read {path}: {exc}") from exc
+    return index, digest.hexdigest()
 
-    def __init__(self, sm: Path = SM):
+
+def _read_indexed_json(path: Path, location: tuple[int, int]) -> dict[str, Any]:
+    try:
+        with path.open("rb") as handle:
+            handle.seek(location[0])
+            return json.loads(handle.read(location[1]))
+    except (OSError, ValueError) as exc:
+        raise ContractDataError(f"cannot reload indexed JSONL row from {path}: {exc}") from exc
+
+
+class ContractData:
+    """FL-4162 evidence plus the read-only full-cell contract surfaces."""
+
+    def __init__(self, sm: Path = SM, cell_contract: Path | None = None):
         self.cards = {str(c.get("source_key") or c.get("card_id")): c
                       for c in _read_jsonl(sm / "layer_evidence_cards.jsonl")}
         self.decisions = {str(d["source_key"]): d
@@ -102,6 +152,59 @@ class ContractData:
                 for m in conflict.get("members", []):
                     self.role_conflicts.setdefault(str(m.get("card_id")), []).extend(
                         conflict.get("distinct_role_sets", []))
+        self.cell_contract = cell_contract or sm / "upstream_xp_cell_contract"
+        manifest = _read_json(self.cell_contract / "manifest.json")
+        if manifest.get("authority") is not False or manifest.get("is_proposal") is not True:
+            raise ContractDataError("full-cell ledger must be authority:false proposal")
+        self._cell_record_index: dict[str, tuple[Path, int, int]] = {}
+        for shard in manifest.get("shards") or []:
+            shard_path = self.cell_contract / str(shard.get("path") or "")
+            shard_index, digest = _index_jsonl(shard_path, "source_key")
+            if digest != shard.get("sha256"):
+                raise ContractDataError(f"full-cell ledger shard hash mismatch: {shard_path}")
+            if len(shard_index) != int(shard.get("records", -1)):
+                raise ContractDataError(f"full-cell ledger shard count mismatch: {shard_path}")
+            duplicates = set(self._cell_record_index) & set(shard_index)
+            if duplicates:
+                raise ContractDataError(f"duplicate full-cell ledger keys: {sorted(duplicates)}")
+            self._cell_record_index.update({
+                key: (shard_path, offset, length)
+                for key, (offset, length) in shard_index.items()
+            })
+        expected_layers = int((manifest.get("totals") or {}).get("layers", -1))
+        if len(self._cell_record_index) != expected_layers:
+            raise ContractDataError("full-cell ledger record count does not match manifest")
+        self.review_doc = _read_json(self.cell_contract / "review_queue.json")
+        if (
+            self.review_doc.get("authority") is not False
+            or self.review_doc.get("is_proposal") is not True
+        ):
+            raise ContractDataError("cell review queue must be authority:false proposal")
+        self._cell_decision_path = self.cell_contract / "cell_role_decisions.jsonl"
+        decision_index, _digest = _index_jsonl(
+            self._cell_decision_path, "review_unit_id"
+        )
+        self._cell_decision_index = decision_index
+        self.review_units_by_key: dict[str, dict[str, Any]] = {}
+        for unit in self.review_doc.get("review_units") or []:
+            for key in unit.get("member_source_keys") or []:
+                if key in self.review_units_by_key:
+                    raise ContractDataError(f"duplicate full-cell review membership: {key}")
+                self.review_units_by_key[key] = unit
+        if set(self.review_units_by_key) != set(self._cell_record_index):
+            raise ContractDataError("full-cell review queue does not cover the ledger exactly")
+        decided_in_queue = {
+            unit["review_unit_id"] for unit in self.review_doc.get("review_units") or []
+            if unit.get("decision_record") is not None
+        }
+        if decided_in_queue != set(self._cell_decision_index):
+            raise ContractDataError("full-cell decisions do not match the generated review queue")
+        self.assignment_preview_key: str | None = None
+        self.assignment_preview_decision: dict[str, Any] | None = None
+        self._cell_record_cache: dict[str, dict[str, Any]] = {}
+        self._cell_decision_cache: dict[str, dict[str, Any]] = {}
+        self._expanded_cells: dict[str, dict[tuple[int, int, int, int], dict[str, Any]]] = {}
+        self._validated_decision_units: set[str] = set()
 
     def layer_keys_for_stem(self, stem: str) -> list[str]:
         keys = [k for k in self.cards if k.rsplit("-L", 1)[0] == stem]
@@ -145,6 +248,145 @@ class ContractData:
             "queue_class": verdict_row.get("queue_class"),
             "frame_topology": (card.get("engine") or {}).get("frame_topology") or {},
             "frame_wh": cells.get("frame_wh"),
+        }
+
+    def cell_record(self, source_key: str) -> dict[str, Any]:
+        if source_key not in self._cell_record_cache:
+            location = self._cell_record_index.get(source_key)
+            if location is None:
+                raise ContractDataError(f"missing full-cell ledger record: {source_key}")
+            path, offset, length = location
+            self._cell_record_cache[source_key] = _read_indexed_json(
+                path, (offset, length)
+            )
+        return self._cell_record_cache[source_key]
+
+    def source_xp_path(self, source_key: str) -> Path:
+        record = self.cell_record(source_key)
+        raw_path_value = str((record.get("source_xp") or {}).get("path") or "")
+        if not raw_path_value:
+            raise ContractDataError(f"missing source XP path: {source_key}")
+        return Path(raw_path_value)
+
+    def expanded_cells(self, source_key: str) -> dict[tuple[int, int, int, int], dict[str, Any]]:
+        if source_key not in self._expanded_cells:
+            try:
+                self._expanded_cells[source_key] = cell_contracts.expand_cells(
+                    self.cell_record(source_key)
+                )
+            except cell_contracts.ComparisonError as exc:
+                raise ContractDataError(f"invalid cell ledger record: {exc}") from exc
+        return self._expanded_cells[source_key]
+
+    def decision_for(self, source_key: str) -> tuple[dict[str, Any] | None, bool]:
+        if source_key == self.assignment_preview_key:
+            return self.assignment_preview_decision, True
+        unit = self.review_units_by_key[source_key]
+        unit_id = unit["review_unit_id"]
+        decision = None
+        if unit_id in self._cell_decision_index:
+            if unit_id not in self._cell_decision_cache:
+                self._cell_decision_cache[unit_id] = _read_indexed_json(
+                    self._cell_decision_path, self._cell_decision_index[unit_id]
+                )
+            decision = self._cell_decision_cache[unit_id]
+        if decision is not None and unit_id not in self._validated_decision_units:
+            mini_doc = {
+                "review_units": [copy.deepcopy(unit)],
+                "coverage": {},
+                "freeze_gate": {},
+            }
+            try:
+                cell_review.apply_decisions(
+                    mini_doc,
+                    {unit_id: decision},
+                    {unit["representative_source_key"]: self.cell_record(
+                        unit["representative_source_key"]
+                    )},
+                )
+            except cell_review.ReviewQueueError as exc:
+                raise ContractDataError(f"invalid full-cell decision: {exc}") from exc
+            self._validated_decision_units.add(unit_id)
+        return decision, False
+
+    def load_assignment_preview(self, path: Path) -> str:
+        try:
+            assignment = coordinate_recorder.load_assignment(path)
+            source_key = str(assignment.get("source_key") or "")
+            if source_key not in self._cell_record_index:
+                raise cell_review.ReviewQueueError(
+                    f"assignment preview has unknown source key: {source_key}"
+                )
+            unit = self.review_units_by_key[source_key]
+            decision = coordinate_recorder.build_decision(
+                unit,
+                self.cell_record(source_key),
+                assignment,
+                "read-only assignment preview",
+                [str(path)],
+                [],
+                "source_layer_contract_viewer",
+                "read_only_preview",
+            )
+        except (OSError, cell_review.ReviewQueueError) as exc:
+            raise ContractDataError(f"invalid assignment preview: {exc}") from exc
+        self.assignment_preview_key = source_key
+        self.assignment_preview_decision = decision
+        return source_key
+
+    def cell_review_frame(self, source_key: str, angle: int, frame: int) -> dict[str, Any]:
+        record = self.cell_record(source_key)
+        unit = self.review_units_by_key[source_key]
+        decision, is_preview = self.decision_for(source_key)
+        assigned = (
+            cell_review._assignment_coordinates(decision.get("cell_assignments") or [])
+            if decision is not None else {}
+        )
+        cells = self.expanded_cells(source_key)
+        frame_cells = {
+            coordinate: value for coordinate, value in cells.items()
+            if coordinate[0] == angle and coordinate[1] == frame
+        }
+        visible = {
+            coordinate for coordinate, value in frame_cells.items()
+            if value.get("cell_type") != "transparent"
+        }
+        semantic_sets = sorted({
+            semantic for coordinate, (_operation, semantic) in assigned.items()
+            if coordinate in visible and semantic
+        })
+        token_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+        tokens = {
+            semantic: token_chars[index] if index < len(token_chars) else "*"
+            for index, semantic in enumerate(semantic_sets)
+        }
+        geometry = record["frame_geometry"]
+        rows = []
+        unresolved = []
+        for y in range(int(geometry["frame_height"])):
+            row = []
+            for x in range(int(geometry["frame_width"])):
+                coordinate = (angle, frame, y, x)
+                value = frame_cells.get(coordinate)
+                if value is None or value.get("cell_type") == "transparent":
+                    row.append(".")
+                elif coordinate not in assigned or not assigned[coordinate][1]:
+                    row.append("?")
+                    unresolved.append(coordinate)
+                else:
+                    row.append(tokens[assigned[coordinate][1]])
+            rows.append("".join(row))
+        return {
+            "review_unit_id": unit["review_unit_id"],
+            "decision_state": unit["decision_state"],
+            "decided": decision is not None and not is_preview,
+            "is_preview": is_preview,
+            "source_xp_path": str(self.source_xp_path(source_key)),
+            "visible_cells": len(visible),
+            "assigned_visible_cells": len(visible) - len(unresolved),
+            "unresolved_coordinates": unresolved,
+            "grid": rows,
+            "legend": [(tokens[semantic], list(semantic)) for semantic in semantic_sets],
         }
 
 
@@ -252,10 +494,14 @@ class ViewerState:
     def current_stem(self) -> str:
         return self.current_key.rsplit("-L", 1)[0]
 
-    def xp_for(self, stem: str) -> "xp_core.XPFile":
-        if stem not in self._xp_cache:
-            self._xp_cache[stem] = load_xp_for_stem(stem, self.sprites)
-        return self._xp_cache[stem]
+    def xp_for_key(self, source_key: str, data: ContractData) -> "xp_core.XPFile":
+        source_path = data.source_xp_path(source_key)
+        candidate = self.sprites / source_path.name
+        path = candidate if candidate.is_file() else REPO_ROOT / source_path
+        cache_key = str(path.resolve())
+        if cache_key not in self._xp_cache:
+            self._xp_cache[cache_key] = load_xp_path(path)
+        return self._xp_cache[cache_key]
 
 
 def _layer_is_cyan_swoosh(layer) -> bool:
@@ -338,7 +584,7 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
     info = data.join(key)
     idx = info["raw_layer_index"]
     stem = state.current_stem()
-    xp = state.xp_for(stem)
+    xp = state.xp_for_key(key, data)
     layer = xp.layers[idx] if isinstance(idx, int) and 0 <= idx < len(xp.layers) else None
 
     out: list[str] = []
@@ -423,6 +669,30 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
     if info["topology_note"]:
         out.append(f"topology_note: {info['topology_note']}")
 
+    cell_review_frame = data.cell_review_frame(key, state.angle, state.frame)
+    out.append("")
+    preview_label = "ASSIGNMENT PREVIEW" if cell_review_frame["is_preview"] else "FULL-CELL CONTRACT"
+    out.append(f"-- {preview_label} (authority:false, read-only) --")
+    out.append(f"source_xp: {cell_review_frame['source_xp_path']}")
+    out.append(
+        f"review_unit: {cell_review_frame['review_unit_id']}  "
+        f"state={cell_review_frame['decision_state']}  "
+        f"decision={'preview' if cell_review_frame['is_preview'] else ('recorded' if cell_review_frame['decided'] else 'pending')}"
+    )
+    out.append(
+        f"current_frame: visible={cell_review_frame['visible_cells']} "
+        f"assigned={cell_review_frame['assigned_visible_cells']} "
+        f"unresolved={len(cell_review_frame['unresolved_coordinates'])}"
+    )
+    out.append("assignment_grid: .=transparent ?=unresolved")
+    out.extend(f"  {row}" for row in cell_review_frame["grid"])
+    for token, semantics in cell_review_frame["legend"]:
+        out.append(f"  {token}={';'.join(semantics)}")
+    if cell_review_frame["unresolved_coordinates"]:
+        coords = cell_review_frame["unresolved_coordinates"][:12]
+        suffix = " ..." if len(cell_review_frame["unresolved_coordinates"]) > 12 else ""
+        out.append(f"unresolved_coordinates: {coords}{suffix}")
+
     out.append("")
     if state.microscope is not None:
         out.append("-- ROLE GRID (group members; current stem highlighted) --")
@@ -459,7 +729,7 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
 def _advance_autoplay(state: ViewerState, data: ContractData) -> None:
     info = data.join(state.current_key)
     idx = info["raw_layer_index"]
-    xp = state.xp_for(state.current_stem())
+    xp = state.xp_for_key(state.current_key, data)
     layer = xp.layers[idx] if isinstance(idx, int) and 0 <= idx < len(xp.layers) else None
     if layer is None or not info["frame_wh"]:
         return
@@ -501,14 +771,13 @@ def handle_key(state: ViewerState, ch: str, data: ContractData) -> bool:
     return True
 
 
-def run_interactive(state: ViewerState, data: ContractData, xp: "xp_core.XPFile",
-                    tick: float = 0.4) -> int:
+def run_interactive(state: ViewerState, data: ContractData, tick: float = 0.4) -> int:
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
     try:
         tty.setcbreak(fd)
         while True:
-            sys.stdout.write("\x1b[H\x1b[2J" + compose_screen(state, data, xp) + "\n")
+            sys.stdout.write("\x1b[H\x1b[2J" + compose_screen(state, data) + "\n")
             sys.stdout.flush()
             ready, _, _ = select.select([sys.stdin], [], [], tick if state.autoplay else None)
             if ready:
@@ -527,6 +796,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     p.add_argument("stem", nargs="?", default="", help="XP stem, e.g. bigbee-0000 (ignored when --group is provided)")
     p.add_argument("--sprites", type=Path, default=SPRITES)
     p.add_argument("--sm", type=Path, default=SM)
+    p.add_argument("--cell-contract", type=Path, default=None,
+                   help="Full-cell ledger directory (defaults to <sm>/upstream_xp_cell_contract)")
+    p.add_argument("--assignment", type=Path, default=None,
+                   help="Coordinate assignment JSON to validate and preview read-only")
     p.add_argument("--group", type=Path, default=None,
                    help="Optional microscope packet JSON (read-only); when supplied, layer keys come from the packet and stem is ignored")
     p.add_argument("--source-key", default="",
@@ -543,10 +816,12 @@ def load_microscope_group(args) -> "MicroscopeGroup | None":
 
 
 def load_xp_for_stem(stem: str, sprites: Path) -> "xp_core.XPFile":
-    path = sprites / f"{stem}.xp"
+    return load_xp_path(sprites / f"{stem}.xp")
+
+
+def load_xp_path(path: Path) -> "xp_core.XPFile":
     if not path.is_file():
-        # base/monolith stems resolve to the family monolith
-        raise ContractDataError(f"XP not found for stem {stem}: {path}")
+        raise ContractDataError(f"XP not found: {path}")
     xp = xp_core.XPFile()
     # xp_core.load() prints progress to stdout; silence it so it cannot corrupt
     # the rendered terminal frame (this viewer owns the screen).
@@ -560,7 +835,12 @@ def load_xp_for_stem(stem: str, sprites: Path) -> "xp_core.XPFile":
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
     try:
-        data = ContractData(args.sm)
+        data = ContractData(args.sm, args.cell_contract)
+        if args.assignment is not None:
+            assignment_key = data.load_assignment_preview(args.assignment)
+            if args.source_key and args.source_key != assignment_key:
+                raise ContractDataError("--source-key does not match --assignment")
+            args.source_key = assignment_key
         microscope = load_microscope_group(args)
         if microscope is not None:
             layer_keys = sorted(microscope.cards.keys(), key=lambda k: int(k.rsplit("-L", 1)[1]))
@@ -577,11 +857,10 @@ def main(argv: list[str]) -> int:
         if args.source_key and args.source_key not in layer_keys:
             print(f"FAIL: source key not present in viewer scope: {args.source_key}", file=sys.stderr)
             return 2
-        xp = load_xp_for_stem(stem, args.sprites)
     except ContractDataError as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 2
-    state = ViewerState(stem, layer_keys, microscope=microscope)
+    state = ViewerState(stem, layer_keys, microscope=microscope, sprites=args.sprites)
     if args.source_key:
         state.layer_idx = layer_keys.index(args.source_key)
     if args.once or not sys.stdin.isatty():
