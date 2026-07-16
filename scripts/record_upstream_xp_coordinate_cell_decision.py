@@ -57,6 +57,60 @@ def _expand_semantic_spans(
     return assigned
 
 
+def build_whole_visible_assignment(
+    unit: dict[str, Any], record: dict[str, Any], semantics: list[str],
+    source_xp_path: str, contract_decision: str,
+) -> dict[str, Any]:
+    """Expand one manually reviewed source-contract role over every visible cell.
+
+    This is deliberately unavailable to segmentation units. It performs no role
+    inference: the reviewer supplies the semantic contribution after confirming
+    that the complete raw layer has one semantic role.
+    """
+    if unit["decision_state"] != "needs_source_contract":
+        raise queue.ReviewQueueError(
+            f"{unit['review_unit_id']}: whole-visible mode is source-contract-only"
+        )
+    normalized = tuple(dict.fromkeys(value.strip() for value in semantics if value.strip()))
+    if not normalized:
+        raise queue.ReviewQueueError("whole-visible mode requires a reviewed semantic")
+    expected_path = str((record.get("source_xp") or {}).get("path") or "")
+    if source_xp_path != expected_path:
+        raise queue.ReviewQueueError("source-contract XP path mismatch")
+    if not contract_decision.strip():
+        raise queue.ReviewQueueError("source-contract decision is missing")
+    visible_by_row: dict[tuple[int, int, int], list[int]] = {}
+    for coordinate, value in comparison.expand_cells(record).items():
+        if value.get("cell_type") == "transparent":
+            continue
+        angle, frame, y, x = coordinate
+        visible_by_row.setdefault((angle, frame, y), []).append(x)
+    spans: list[list[Any]] = []
+    for (angle, frame, y), xs in sorted(visible_by_row.items()):
+        xs.sort()
+        start = previous = xs[0]
+        for x in xs[1:]:
+            if x != previous + 1:
+                spans.append([
+                    angle, frame, y, start, previous - start + 1, list(normalized)
+                ])
+                start = x
+            previous = x
+        spans.append([
+            angle, frame, y, start, previous - start + 1, list(normalized)
+        ])
+    return {
+        "schema": INPUT_SCHEMA,
+        "source_key": record["source_key"],
+        "source_layer_sha256": unit["source_layer_sha256"],
+        "semantic_spans": spans,
+        "source_contract": {
+            "source_xp_path": source_xp_path,
+            "contract_decision": contract_decision.strip(),
+        },
+    }
+
+
 def build_decision(
     unit: dict[str, Any], record: dict[str, Any], assignment: dict[str, Any],
     decision_text: str, evidence_refs: list[str], exceptions: list[str],
@@ -133,7 +187,12 @@ def build_decision(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--assignment", type=Path, required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--assignment", type=Path)
+    mode.add_argument("--source-key")
+    parser.add_argument("--whole-visible-semantic", action="append", default=[])
+    parser.add_argument("--source-contract-path", default="")
+    parser.add_argument("--source-contract-decision", default="")
     parser.add_argument("--decision", required=True)
     parser.add_argument("--evidence-ref", action="append", required=True)
     parser.add_argument("--exception", action="append", default=[])
@@ -149,8 +208,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
     try:
-        assignment = load_assignment(args.assignment)
-        source_key = str(assignment.get("source_key") or "")
+        assignment = load_assignment(args.assignment) if args.assignment is not None else None
+        source_key = (
+            str(assignment.get("source_key") or "")
+            if assignment is not None else str(args.source_key or "")
+        )
         records = comparison.load_records(args.ledger)
         if source_key not in records:
             raise queue.ReviewQueueError(f"unknown source key: {source_key}")
@@ -171,6 +233,22 @@ def main(argv: list[str] | None = None) -> int:
         if unit["decision_record"] is not None:
             raise queue.ReviewQueueError(
                 f"{unit['review_unit_id']}: full-cell decision already exists"
+            )
+        if assignment is None:
+            assignment = build_whole_visible_assignment(
+                unit,
+                records[source_key],
+                args.whole_visible_semantic,
+                args.source_contract_path,
+                args.source_contract_decision,
+            )
+        elif (
+            args.whole_visible_semantic
+            or args.source_contract_path
+            or args.source_contract_decision
+        ):
+            raise queue.ReviewQueueError(
+                "whole-visible source-contract flags cannot accompany --assignment"
             )
         decision = build_decision(
             unit, records[source_key], assignment, args.decision,

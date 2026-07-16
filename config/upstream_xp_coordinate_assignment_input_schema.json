@@ -27,7 +27,8 @@
     },
     "source_contract": {
       "type": "object",
-      "required": ["source_xp_path", "contract_decision"]
+      "required": ["source_xp_path", "contract_decision"],
+      "description": "Required for needs_source_contract units; records the explicit XP alias/path resolution and reviewed source meaning."
     }
   }
 }
