@@ -341,7 +341,7 @@ def test_source_key_outside_group_fails_closed(capsys):
     assert "source key not present in viewer scope" in capsys.readouterr().err
 
 
-def test_full_cell_panel_shows_recorded_and_pending_assignments(capsys):
+def test_full_cell_panel_shows_recorded_single_and_composite_assignments(capsys):
     rc = v.main(["--source-key", "player-0000-L2", "--once"])
     assert rc == 0
     decided = capsys.readouterr().out
@@ -352,11 +352,12 @@ def test_full_cell_panel_shows_recorded_and_pending_assignments(capsys):
 
     rc = v.main(["--source-key", "bigbee-0012-L5", "--once"])
     assert rc == 0
-    pending = capsys.readouterr().out
-    assert "state=needs_cell_role_segmentation" in pending
-    assert "decision=pending" in pending
-    assert "?=unresolved" in pending
-    assert "unresolved_coordinates:" in pending
+    composite = capsys.readouterr().out
+    assert "state=needs_cell_role_segmentation" in composite
+    assert "decision=recorded" in composite
+    assert "unresolved=0" in composite
+    assert "A=shield" in composite
+    assert "unresolved_coordinates:" not in composite
 
 
 def test_assignment_preview_uses_coordinate_recorder_without_writing(tmp_path):
