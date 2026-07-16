@@ -57,6 +57,171 @@ def _expand_semantic_spans(
     return assigned
 
 
+def _normalized_semantics(values: list[str], label: str) -> tuple[str, ...]:
+    normalized = tuple(dict.fromkeys(value.strip() for value in values if value.strip()))
+    if not normalized:
+        raise queue.ReviewQueueError(f"{label} requires a reviewed semantic")
+    return normalized
+
+
+def _compress_semantics(
+    semantic_by_coordinate: dict[tuple[int, int, int, int], tuple[str, ...]],
+) -> list[list[Any]]:
+    rows: dict[tuple[int, int, int], list[tuple[int, tuple[str, ...]]]] = {}
+    for (angle, frame, y, x), semantics in semantic_by_coordinate.items():
+        rows.setdefault((angle, frame, y), []).append((x, semantics))
+    spans: list[list[Any]] = []
+    for (angle, frame, y), cells in sorted(rows.items()):
+        cells.sort()
+        start = previous = cells[0][0]
+        semantics = cells[0][1]
+        for x, current_semantics in cells[1:]:
+            if x != previous + 1 or current_semantics != semantics:
+                spans.append([
+                    angle, frame, y, start, previous - start + 1, list(semantics)
+                ])
+                start = x
+                semantics = current_semantics
+            previous = x
+        spans.append([
+            angle, frame, y, start, previous - start + 1, list(semantics)
+        ])
+    return spans
+
+
+def _visible_cells(record: dict[str, Any]) -> dict[tuple[int, int, int, int], dict]:
+    return {
+        coordinate: value
+        for coordinate, value in comparison.expand_cells(record).items()
+        if value.get("cell_type") != "transparent"
+    }
+
+
+def build_reviewed_uniform_assignment(
+    unit: dict[str, Any], record: dict[str, Any], semantics: list[str],
+) -> dict[str, Any]:
+    """Assign one manually confirmed clean-mask meaning to visible cells only."""
+    if unit["decision_state"] != "needs_cell_role_segmentation":
+        raise queue.ReviewQueueError(
+            f"{unit['review_unit_id']}: reviewed-uniform mode is segmentation-only"
+        )
+    candidates = unit.get("candidate_role_sets") or []
+    if (
+        len(candidates) != 1
+        or ";" in candidates[0]
+        or candidates[0].startswith("composite_source:")
+    ):
+        raise queue.ReviewQueueError(
+            f"{unit['review_unit_id']}: reviewed-uniform mode refuses composite candidates"
+        )
+    normalized = _normalized_semantics(semantics, "reviewed-uniform mode")
+    semantic_by_coordinate = {
+        coordinate: normalized for coordinate in _visible_cells(record)
+    }
+    return {
+        "schema": INPUT_SCHEMA,
+        "source_key": record["source_key"],
+        "source_layer_sha256": unit["source_layer_sha256"],
+        "semantic_spans": _compress_semantics(semantic_by_coordinate),
+        "assignment_method": "reviewed_uniform_visible",
+    }
+
+
+def _decision_semantics(
+    decision: dict[str, Any],
+) -> dict[tuple[int, int, int, int], tuple[str, ...]]:
+    semantic_by_coordinate: dict[tuple[int, int, int, int], tuple[str, ...]] = {}
+    for span in decision.get("cell_assignments") or []:
+        if not isinstance(span, list) or len(span) != 7:
+            raise queue.ReviewQueueError("reference decision contains malformed assignment")
+        angle, frame, y, x_start, length = (int(value) for value in span[:5])
+        semantics = tuple(str(value) for value in span[6])
+        for x in range(x_start, x_start + length):
+            coordinate = (angle, frame, y, x)
+            if coordinate in semantic_by_coordinate:
+                raise queue.ReviewQueueError(
+                    f"reference decision overlaps coordinate {coordinate}"
+                )
+            semantic_by_coordinate[coordinate] = semantics
+    return semantic_by_coordinate
+
+
+def build_reference_partition_assignment(
+    unit: dict[str, Any], record: dict[str, Any],
+    reference_unit: dict[str, Any], reference_record: dict[str, Any],
+    reference_decision: dict[str, Any], exact_semantics: list[str],
+    delta_semantics: list[str], source_xp_path: str, contract_decision: str,
+) -> dict[str, Any]:
+    """Partition target cells by exact raw identity to one reviewed reference."""
+    if unit["decision_state"] not in {
+        "needs_cell_role_segmentation", "needs_source_contract",
+    }:
+        raise queue.ReviewQueueError(
+            f"{unit['review_unit_id']}: reference partition refuses "
+            f"{unit['decision_state']}"
+        )
+    if record.get("frame_geometry") != reference_record.get("frame_geometry"):
+        raise queue.ReviewQueueError("reference partition frame geometry mismatch")
+    if reference_decision.get("source_layer_sha256") != reference_unit.get(
+        "source_layer_sha256"
+    ):
+        raise queue.ReviewQueueError("reference decision fingerprint mismatch")
+    exact = _normalized_semantics(exact_semantics, "reference exact partition")
+    delta = _normalized_semantics(delta_semantics, "reference delta partition")
+    target_visible = _visible_cells(record)
+    reference_visible = _visible_cells(reference_record)
+    reference_semantics = _decision_semantics(reference_decision)
+    semantic_by_coordinate: dict[tuple[int, int, int, int], tuple[str, ...]] = {}
+    exact_count = 0
+    delta_count = 0
+    for coordinate, value in target_visible.items():
+        reference_value = reference_visible.get(coordinate)
+        if reference_value is not None and value.get("raw") == reference_value.get("raw"):
+            if not set(exact).issubset(reference_semantics.get(coordinate, ())):
+                raise queue.ReviewQueueError(
+                    f"reference decision lacks exact semantics at {coordinate}"
+                )
+            semantic_by_coordinate[coordinate] = exact
+            exact_count += 1
+        else:
+            semantic_by_coordinate[coordinate] = delta
+            delta_count += 1
+    if exact_count == 0 or delta_count == 0:
+        raise queue.ReviewQueueError(
+            "reference partition requires both exact-reference and delta cells"
+        )
+    assignment: dict[str, Any] = {
+        "schema": INPUT_SCHEMA,
+        "source_key": record["source_key"],
+        "source_layer_sha256": unit["source_layer_sha256"],
+        "semantic_spans": _compress_semantics(semantic_by_coordinate),
+        "assignment_method": "reviewed_exact_reference_partition",
+        "reference_partition": {
+            "reference_source_key": reference_record["source_key"],
+            "reference_source_layer_sha256": reference_unit["source_layer_sha256"],
+            "exact_semantics": list(exact),
+            "delta_semantics": list(delta),
+            "exact_raw_coordinates": exact_count,
+            "delta_coordinates": delta_count,
+        },
+    }
+    if unit["decision_state"] == "needs_source_contract":
+        expected_path = str((record.get("source_xp") or {}).get("path") or "")
+        if source_xp_path != expected_path:
+            raise queue.ReviewQueueError("source-contract XP path mismatch")
+        if not contract_decision.strip():
+            raise queue.ReviewQueueError("source-contract decision is missing")
+        assignment["source_contract"] = {
+            "source_xp_path": source_xp_path,
+            "contract_decision": contract_decision.strip(),
+        }
+    elif source_xp_path or contract_decision:
+        raise queue.ReviewQueueError(
+            "source-contract fields are only valid for source-contract units"
+        )
+    return assignment
+
+
 def build_whole_visible_assignment(
     unit: dict[str, Any], record: dict[str, Any], semantics: list[str],
     source_xp_path: str, contract_decision: str,
@@ -71,9 +236,7 @@ def build_whole_visible_assignment(
         raise queue.ReviewQueueError(
             f"{unit['review_unit_id']}: whole-visible mode is source-contract-only"
         )
-    normalized = tuple(dict.fromkeys(value.strip() for value in semantics if value.strip()))
-    if not normalized:
-        raise queue.ReviewQueueError("whole-visible mode requires a reviewed semantic")
+    normalized = _normalized_semantics(semantics, "whole-visible mode")
     expected_path = str((record.get("source_xp") or {}).get("path") or "")
     if source_xp_path != expected_path:
         raise queue.ReviewQueueError("source-contract XP path mismatch")
@@ -166,6 +329,10 @@ def build_decision(
     }
     if source_contract is not None:
         provenance["source_contract"] = source_contract
+    if assignment.get("assignment_method"):
+        provenance["assignment_method"] = assignment["assignment_method"]
+    if assignment.get("reference_partition"):
+        provenance["reference_partition"] = assignment["reference_partition"]
     return {
         "schema": layerwide.SCHEMA,
         "authority": False,
@@ -191,6 +358,10 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--assignment", type=Path)
     mode.add_argument("--source-key")
     parser.add_argument("--whole-visible-semantic", action="append", default=[])
+    parser.add_argument("--reviewed-uniform-semantic", action="append", default=[])
+    parser.add_argument("--reference-source-key", default="")
+    parser.add_argument("--reference-exact-semantic", action="append", default=[])
+    parser.add_argument("--reference-delta-semantic", action="append", default=[])
     parser.add_argument("--source-contract-path", default="")
     parser.add_argument("--source-contract-decision", default="")
     parser.add_argument("--decision", required=True)
@@ -235,15 +406,68 @@ def main(argv: list[str] | None = None) -> int:
                 f"{unit['review_unit_id']}: full-cell decision already exists"
             )
         if assignment is None:
-            assignment = build_whole_visible_assignment(
-                unit,
-                records[source_key],
+            strategies = sum(bool(value) for value in (
                 args.whole_visible_semantic,
-                args.source_contract_path,
-                args.source_contract_decision,
-            )
+                args.reviewed_uniform_semantic,
+                args.reference_source_key,
+            ))
+            if strategies != 1:
+                raise queue.ReviewQueueError(
+                    "source-key mode requires exactly one manual assignment strategy"
+                )
+            if args.whole_visible_semantic:
+                assignment = build_whole_visible_assignment(
+                    unit,
+                    records[source_key],
+                    args.whole_visible_semantic,
+                    args.source_contract_path,
+                    args.source_contract_decision,
+                )
+            elif args.reviewed_uniform_semantic:
+                if (
+                    args.reference_exact_semantic
+                    or args.reference_delta_semantic
+                    or args.source_contract_path
+                    or args.source_contract_decision
+                ):
+                    raise queue.ReviewQueueError(
+                        "reviewed-uniform mode received incompatible fields"
+                    )
+                assignment = build_reviewed_uniform_assignment(
+                    unit, records[source_key], args.reviewed_uniform_semantic
+                )
+            else:
+                reference_key = args.reference_source_key
+                if reference_key not in records:
+                    raise queue.ReviewQueueError(
+                        f"unknown reference source key: {reference_key}"
+                    )
+                reference_unit = next(
+                    (value for value in review_doc["review_units"]
+                     if reference_key in value["member_source_keys"]),
+                    None,
+                )
+                if reference_unit is None:
+                    raise queue.ReviewQueueError(
+                        f"no review unit for reference {reference_key}"
+                    )
+                reference_decision = existing.get(reference_unit["review_unit_id"])
+                if reference_decision is None:
+                    raise queue.ReviewQueueError(
+                        f"reference {reference_key} lacks a reviewed full-cell decision"
+                    )
+                assignment = build_reference_partition_assignment(
+                    unit, records[source_key], reference_unit,
+                    records[reference_key], reference_decision,
+                    args.reference_exact_semantic, args.reference_delta_semantic,
+                    args.source_contract_path, args.source_contract_decision,
+                )
         elif (
             args.whole_visible_semantic
+            or args.reviewed_uniform_semantic
+            or args.reference_source_key
+            or args.reference_exact_semantic
+            or args.reference_delta_semantic
             or args.source_contract_path
             or args.source_contract_decision
         ):
