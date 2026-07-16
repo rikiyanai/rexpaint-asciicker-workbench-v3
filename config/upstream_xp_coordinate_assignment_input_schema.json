@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fl4162.upstream_xp_coordinate_assignment_input.v1",
+  "title": "FL-4162 manual coordinate semantic assignment input",
+  "type": "object",
+  "required": ["schema", "source_key", "source_layer_sha256", "semantic_spans"],
+  "properties": {
+    "schema": {"const": "fl4162.upstream_xp_coordinate_assignment_input.v1"},
+    "source_key": {"type": "string", "pattern": "-L[0-9]+$"},
+    "source_layer_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "semantic_spans": {
+      "type": "array",
+      "description": "Reviewed visible-cell spans [angle, frame, local_y, local_x_start, length, semantic_contributions].",
+      "items": {
+        "type": "array",
+        "minItems": 6,
+        "maxItems": 6,
+        "prefixItems": [
+          {"type": "integer", "minimum": 0},
+          {"type": "integer", "minimum": 0},
+          {"type": "integer", "minimum": 0},
+          {"type": "integer", "minimum": 0},
+          {"type": "integer", "minimum": 1},
+          {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+        ]
+      }
+    },
+    "source_contract": {
+      "type": "object",
+      "required": ["source_xp_path", "contract_decision"]
+    }
+  }
+}
