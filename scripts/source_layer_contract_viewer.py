@@ -13,7 +13,8 @@ with attribution here. Everything else is new and read-only.
 What it shows for one XP stem (e.g. bigbee-0000):
   * every raw VISUAL layer (the ones with evidence cards, L2..LN),
   * the original cells sliced per frame/angle from card geometry, with autoplay,
-  * the reviewed proposal role(s) (authority:false), topology class, blockers,
+  * immutable hand/proposal evidence separately from frozen reviewed cell roles,
+  * topology class, blockers,
   * glyph exact/near match evidence, and a role-focus grid over the stem's layers.
 
 Hard read-only guarantees (Canon Law: old owner stays dead):
@@ -27,6 +28,8 @@ Inputs (read-only):
   docs/research/ascii/semantic_maps/source_layer_review_decisions.jsonl
   docs/research/ascii/semantic_maps/manual_candidate_review.json
   docs/research/ascii/semantic_maps/family_topology_contracts.json
+  docs/research/ascii/semantic_maps/upstream_xp_cell_contract/family_contract_freeze.json
+  docs/research/ascii/semantic_maps/upstream_xp_cell_contract/cell_role_decisions.jsonl
 """
 from __future__ import annotations
 
@@ -86,6 +89,17 @@ def _read_json(path: Path) -> dict[str, Any]:
         return json.loads(path.read_text(encoding="utf-8"))
     except ValueError as exc:
         raise ContractDataError(f"malformed JSON {path}: {exc}") from exc
+
+
+def _sha256_file(path: Path) -> str:
+    try:
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+    except OSError as exc:
+        raise ContractDataError(f"cannot hash read-only input {path}: {exc}") from exc
 
 
 def _index_jsonl(path: Path, key_field: str) -> tuple[dict[str, tuple[int, int]], str]:
@@ -181,10 +195,27 @@ class ContractData:
         ):
             raise ContractDataError("cell review queue must be authority:false proposal")
         self._cell_decision_path = self.cell_contract / "cell_role_decisions.jsonl"
-        decision_index, _digest = _index_jsonl(
+        decision_index, decision_digest = _index_jsonl(
             self._cell_decision_path, "review_unit_id"
         )
         self._cell_decision_index = decision_index
+        freeze_path = self.cell_contract / "family_contract_freeze.json"
+        freeze = _read_json(freeze_path)
+        if (
+            freeze.get("frozen") is not True
+            or freeze.get("is_proposal") is not False
+            or freeze.get("runtime_authoritative") is not False
+            or freeze.get("contract_authority") != "reviewed_upstream_source_contract"
+        ):
+            raise ContractDataError("family contract freeze has an invalid authority boundary")
+        freeze_hashes = freeze.get("source_hashes") or {}
+        if freeze_hashes.get("cell_contract_manifest_sha256") != _sha256_file(
+            self.cell_contract / "manifest.json"
+        ):
+            raise ContractDataError("family contract freeze manifest hash mismatch")
+        if freeze_hashes.get("cell_role_decisions_sha256") != decision_digest:
+            raise ContractDataError("family contract freeze cell-decision hash mismatch")
+        self.contract_authority = str(freeze["contract_authority"])
         self.review_units_by_key: dict[str, dict[str, Any]] = {}
         for unit in self.review_doc.get("review_units") or []:
             for key in unit.get("member_source_keys") or []:
@@ -278,9 +309,7 @@ class ContractData:
                 raise ContractDataError(f"invalid cell ledger record: {exc}") from exc
         return self._expanded_cells[source_key]
 
-    def decision_for(self, source_key: str) -> tuple[dict[str, Any] | None, bool]:
-        if source_key == self.assignment_preview_key:
-            return self.assignment_preview_decision, True
+    def _recorded_decision_for(self, source_key: str) -> dict[str, Any] | None:
         unit = self.review_units_by_key[source_key]
         unit_id = unit["review_unit_id"]
         decision = None
@@ -307,7 +336,23 @@ class ContractData:
             except cell_review.ReviewQueueError as exc:
                 raise ContractDataError(f"invalid full-cell decision: {exc}") from exc
             self._validated_decision_units.add(unit_id)
-        return decision, False
+        return decision
+
+    def decision_for(self, source_key: str) -> tuple[dict[str, Any] | None, bool]:
+        if source_key == self.assignment_preview_key:
+            return self.assignment_preview_decision, True
+        return self._recorded_decision_for(source_key), False
+
+    def reviewed_roles(self, source_key: str) -> list[str]:
+        decision = self._recorded_decision_for(source_key)
+        if decision is None:
+            return []
+        return sorted({
+            role
+            for assignment in decision.get("cell_assignments") or []
+            for role in ((assignment[6] or []) if len(assignment) > 6 else [])
+            if role
+        })
 
     def load_assignment_preview(self, path: Path) -> str:
         try:
@@ -605,12 +650,12 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
         out.append(f"-- {key}: no renderable geometry (metadata layer?) --")
 
     out.append("")
-    out.append("-- CONTRACT (authority:false proposal) --")
+    out.append("-- IMMUTABLE HAND + PROPOSAL EVIDENCE (authority:false) --")
     out.append(f"hand[{info['hand_status']}]: {info['hand_label']!r}")
     if info["hand_note"] and info["hand_note"] != info["hand_label"]:
         out.append(f"hand_note: {info['hand_note']!r}")
     out.append(f"machine_guess: {info['machine_guess']!r} ({info['machine_guess_source']})")
-    out.append(f"PROPOSED ROLE: {';'.join(info['proposed_roles']) or '<none>'}"
+    out.append(f"PROPOSAL ROLE: {';'.join(info['proposed_roles']) or '<none>'}"
                f"   topology_class: {info['topology_class']}   queue: {info['queue_class']}")
     if state.microscope is not None:
         out.append("")
@@ -647,7 +692,7 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
     # Engine anchor: which sprite.cpp role this raw layer plays (read-only annotation).
     out.append(f"engine (upstream 8ff75d0c): {_engine_ref(idx, len(xp.layers), layer)}")
     out.append(f"engine (local Y9-2): {local_engine_correspondence(idx, len(xp.layers), layer)}")
-    # Neighboring-layer patterns: adjacent raw layers + their proposed roles, for
+    # Neighboring-layer patterns: adjacent raw layers + frozen reviewed roles, for
     # convention comparison (is this the base, an overlay, the swoosh?). Only same stem.
     same_stem_keys = [k for k in state.layer_keys if k.rsplit("-L", 1)[0] == stem]
     by_idx = {data.join(k)["raw_layer_index"]: k for k in same_stem_keys}
@@ -657,7 +702,8 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
             neigh.append(f"L{d}=<metadata>")
         elif d in by_idx:
             nj = data.join(by_idx[d])
-            neigh.append(f"L{d}={';'.join(nj['proposed_roles']) or '<none>'}[{nj['topology_class']}]")
+            reviewed = ";".join(data.reviewed_roles(by_idx[d])) or "<none>"
+            neigh.append(f"L{d}={reviewed}[{nj['topology_class']}]")
     out.append(f"neighbors: {', '.join(neigh) or 'none'}")
     ex, nr = info["exact_matches"], info["near_matches"]
     out.append(f"glyph exact-match peers ({len(ex)}): "
@@ -671,8 +717,9 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
 
     cell_review_frame = data.cell_review_frame(key, state.angle, state.frame)
     out.append("")
-    preview_label = "ASSIGNMENT PREVIEW" if cell_review_frame["is_preview"] else "FULL-CELL CONTRACT"
-    out.append(f"-- {preview_label} (authority:false, read-only) --")
+    preview_label = "ASSIGNMENT PREVIEW" if cell_review_frame["is_preview"] else "FROZEN REVIEWED FULL-CELL SOURCE CONTRACT"
+    authority = "authority:false" if cell_review_frame["is_preview"] else f"authority:{data.contract_authority}"
+    out.append(f"-- {preview_label} ({authority}, runtime_authoritative:false, read-only) --")
     out.append(f"source_xp: {cell_review_frame['source_xp_path']}")
     out.append(
         f"review_unit: {cell_review_frame['review_unit_id']}  "
@@ -688,6 +735,7 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
     out.extend(f"  {row}" for row in cell_review_frame["grid"])
     for token, semantics in cell_review_frame["legend"]:
         out.append(f"  {token}={';'.join(semantics)}")
+    out.append(f"reviewed_roles: {';'.join(data.reviewed_roles(key)) or '<none>'}")
     if cell_review_frame["unresolved_coordinates"]:
         coords = cell_review_frame["unresolved_coordinates"][:12]
         suffix = " ..." if len(cell_review_frame["unresolved_coordinates"]) > 12 else ""
@@ -700,17 +748,19 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
         out.append("-- ROLE GRID (this stem's visual layers) --")
     for k in state.layer_keys:
         ji = data.join(k)
-        role = ";".join(ji["proposed_roles"]) or "<none>"
+        reviewed_role = ";".join(data.reviewed_roles(k)) or "<none>"
+        proposal_role = ";".join(ji["proposed_roles"]) or "<none>"
         mark = ">" if k == key else " "
-        focus_hit = "*" if (state.role_focus and state.role_focus in ji["proposed_roles"]) else " "
+        focus_hit = "*" if (state.role_focus and state.role_focus in data.reviewed_roles(k)) else " "
         out.append(f"{mark}{focus_hit} {k:18s} L{ji['raw_layer_index']}"
-                   f"  role={role:28s} class={ji['topology_class']}")
+                   f"  reviewed={reviewed_role:28s} proposal={proposal_role}"
+                   f" class={ji['topology_class']}")
 
     if state.role_focus:
         out.append("")
         out.append(f"-- ROLE-FOCUS EVIDENCE :: {state.role_focus} --")
-        hits = [k for k in state.layer_keys if state.role_focus in data.join(k)["proposed_roles"]]
-        out.append(f"layers in this stem proposing {state.role_focus}: {hits or 'none'}")
+        hits = [k for k in state.layer_keys if state.role_focus in data.reviewed_roles(k)]
+        out.append(f"layers in this stem with reviewed role {state.role_focus}: {hits or 'none'}")
         cur_exact = info["exact_matches"]
         out.append(f"current layer byte-identical peers ({len(cur_exact)}): "
                    f"{', '.join(map(str, cur_exact[:8]))}{' ...' if len(cur_exact) > 8 else ''}")
@@ -766,7 +816,7 @@ def handle_key(state: ViewerState, ch: str, data: ContractData) -> bool:
     elif ch == "x":
         state.autoplay_axis = "angle" if state.autoplay_axis == "frame" else "frame"
     elif ch == "f":
-        roles = data.join(state.current_key)["proposed_roles"]
+        roles = data.reviewed_roles(state.current_key)
         state.role_focus = roles[0] if roles and not state.role_focus else None
     return True
 

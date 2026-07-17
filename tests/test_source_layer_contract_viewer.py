@@ -103,6 +103,11 @@ def test_handle_key_transitions():
     v.handle_key(st, "f", data); assert st.role_focus == "bee_body"  # L2 role
     assert v.handle_key(st, "q", data) is False
 
+    wolack = v.ViewerState("wolack-0001", data.layer_keys_for_stem("wolack-0001"))
+    wolack.layer_idx = wolack.layer_keys.index("wolack-0001-L3")
+    v.handle_key(wolack, "f", data)
+    assert wolack.role_focus == "mount_body_wolf"
+
 
 def test_advance_autoplay_wraps_within_bounds():
     data = _data()
@@ -345,10 +350,12 @@ def test_full_cell_panel_shows_recorded_single_and_composite_assignments(capsys)
     rc = v.main(["--source-key", "player-0000-L2", "--once"])
     assert rc == 0
     decided = capsys.readouterr().out
-    assert "-- FULL-CELL CONTRACT (authority:false, read-only) --" in decided
+    assert "-- IMMUTABLE HAND + PROPOSAL EVIDENCE (authority:false) --" in decided
+    assert "-- FROZEN REVIEWED FULL-CELL SOURCE CONTRACT (authority:reviewed_upstream_source_contract, runtime_authoritative:false, read-only) --" in decided
     assert "decision=recorded" in decided
     assert "unresolved=0" in decided
     assert "A=player_body" in decided
+    assert "reviewed_roles: player_body" in decided
 
     rc = v.main(["--source-key", "bigbee-0012-L5", "--once"])
     assert rc == 0
@@ -360,12 +367,63 @@ def test_full_cell_panel_shows_recorded_single_and_composite_assignments(capsys)
     assert "unresolved_coordinates:" not in composite
 
 
+def test_false_clean_hand_proposal_cannot_masquerade_as_wolack_contract(capsys):
+    rc = v.main(["--source-key", "wolack-0001-L3", "--once"])
+    assert rc == 0
+    screen = capsys.readouterr().out
+    assert "hand[accept]: 'wolack_weapon_sword'" in screen
+    assert "PROPOSAL ROLE: wolack_weapon_sword" in screen
+    assert "reviewed_roles: mount_body_wolf;rider_torso;sword" in screen
+    assert "reviewed=mount_body_wolf;rider_torso;sword" in screen
+    assert "proposal=wolack_weapon_sword" in screen
+
+
+@pytest.mark.parametrize(
+    ("mutation", "error"),
+    [
+        ("decision_hash", "cell-decision hash mismatch"),
+        ("manifest_hash", "manifest hash mismatch"),
+        ("frozen_false", "invalid authority boundary"),
+        ("proposal_true", "invalid authority boundary"),
+        ("runtime_true", "invalid authority boundary"),
+        ("wrong_authority", "invalid authority boundary"),
+        ("missing_hashes", "manifest hash mismatch"),
+    ],
+)
+def test_family_freeze_guards_fail_closed(monkeypatch, mutation, error):
+    real_read_json = v._read_json
+
+    def read_json_with_stale_freeze(path):
+        payload = real_read_json(path)
+        if path.name == "family_contract_freeze.json":
+            if mutation == "decision_hash":
+                payload["source_hashes"]["cell_role_decisions_sha256"] = "0" * 64
+            elif mutation == "manifest_hash":
+                payload["source_hashes"]["cell_contract_manifest_sha256"] = "0" * 64
+            elif mutation == "frozen_false":
+                payload["frozen"] = False
+            elif mutation == "proposal_true":
+                payload["is_proposal"] = True
+            elif mutation == "runtime_true":
+                payload["runtime_authoritative"] = True
+            elif mutation == "wrong_authority":
+                payload["contract_authority"] = "generated_report"
+            elif mutation == "missing_hashes":
+                payload.pop("source_hashes")
+        return payload
+
+    monkeypatch.setattr(v, "_read_json", read_json_with_stale_freeze)
+    with pytest.raises(v.ContractDataError, match=error):
+        v.ContractData(SM)
+
+
 def test_assignment_preview_uses_coordinate_recorder_without_writing(tmp_path):
     import json
 
     data = _data()
     source_key = "bigbee-1012-L6"
     unit = data.review_units_by_key[source_key]
+    recorded_roles_before = data.reviewed_roles(source_key)
     visible = [
         coordinate for coordinate, value in data.expanded_cells(source_key).items()
         if value.get("cell_type") != "transparent"
@@ -390,10 +448,11 @@ def test_assignment_preview_uses_coordinate_recorder_without_writing(tmp_path):
         state = v.ViewerState(stem, data.layer_keys_for_stem(stem), sprites=SPRITES)
         state.layer_idx = state.layer_keys.index(source_key)
         screen = v.compose_screen(state, data)
-        assert "-- ASSIGNMENT PREVIEW (authority:false, read-only) --" in screen
+        assert "-- ASSIGNMENT PREVIEW (authority:false, runtime_authoritative:false, read-only) --" in screen
         assert "decision=preview" in screen
         assert "unresolved=0" in screen
         assert "A=crossbow;shield" in screen
+        assert data.reviewed_roles(source_key) == recorded_roles_before
         assert decisions_path.read_bytes() == before
     finally:
         data.assignment_preview_key = None
