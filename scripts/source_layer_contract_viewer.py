@@ -520,9 +520,23 @@ class MicroscopeGroup:
 # --------------------------------------------------------------------------- #
 # Frame slicing (card geometry) + pure rendering
 # --------------------------------------------------------------------------- #
+# FL-4162: Python's cp437 codec maps the IBM-PC graphical control range to C0
+# controls.  The XP contract owns these as visible one-cell glyphs, so preserve
+# their exact identity instead of collapsing distinct bytes to "?".
+CP437_GRAPHICAL_CONTROLS = {
+    1: "☺", 2: "☻", 3: "♥", 4: "♦", 5: "♣", 6: "♠", 7: "•", 8: "◘",
+    9: "○", 10: "◙", 11: "♂", 12: "♀", 13: "♪", 14: "♫", 15: "☼",
+    16: "►", 17: "◄", 18: "↕", 19: "‼", 20: "¶", 21: "§", 22: "▬",
+    23: "↨", 24: "↑", 25: "↓", 26: "→", 27: "←", 28: "∟", 29: "↔",
+    30: "▲", 31: "▼", 127: "⌂",
+}
+
+
 def _glyph_char(glyph: int) -> str:
     if glyph in (0, 32):
         return " "
+    if glyph in CP437_GRAPHICAL_CONTROLS:
+        return CP437_GRAPHICAL_CONTROLS[glyph]
     if 33 <= glyph <= 126:
         return chr(glyph)
     if 0 <= glyph <= 255:

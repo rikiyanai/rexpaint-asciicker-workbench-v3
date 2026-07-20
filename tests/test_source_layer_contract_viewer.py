@@ -48,13 +48,25 @@ def test_render_blanks_magenta_key_and_zero_glyph():
 
 
 def test_render_can_expose_metadata_cells_and_highlight_selected_bits():
-    grid = [[(32, (1, 2, 3), (255, 0, 255)), (65, (4, 5, 6), (7, 8, 9))]]
+    grid = [[
+        (32, (1, 2, 3), (255, 0, 255)),
+        (2, (4, 5, 6), (7, 8, 9)),
+        (65, (4, 5, 6), (7, 8, 9)),
+    ]]
     lines = v.render_cells_ansi(
-        grid, raw_metadata=True, highlight_mask=[[True, False]]
+        grid, raw_metadata=True, highlight_mask=[[True, False, False]]
     )
     assert "·" in lines[0]
+    assert "☻" in lines[0]
     assert "\x1b[7;1m" in lines[0]
     assert "A" in lines[0]
+
+
+def test_cp437_graphical_control_bytes_keep_exact_visible_identity():
+    assert v._glyph_char(1) == "☺"
+    assert v._glyph_char(2) == "☻"
+    assert v._glyph_char(31) == "▼"
+    assert v._glyph_char(127) == "⌂"
 
 
 def test_cell_classifier_taxonomy():
