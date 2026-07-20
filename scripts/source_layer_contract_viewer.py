@@ -577,6 +577,47 @@ def slice_frame(layer: "xp_core.XPLayer", frame_wh, angle: int, frame: int):
     return {"grid": grid, "cols": cols, "rows": rows, "fw": fw, "fh": fh}
 
 
+def source_animation_layout(xp: "xp_core.XPFile", layer: "xp_core.XPLayer", frame_wh):
+    """Return the engine-authored animation/projection split for an XP atlas.
+
+    Multi-angle XP files store ``projs * sum(anims)`` columns.  Projection banks
+    are not animation frames: flattening both axes made the reflected bank look
+    like the second half of one 18-frame animation (FL-4162).
+    """
+    geometry = slice_frame(layer, frame_wh, 0, 0)
+    if not geometry:
+        return None
+    metadata = xp.get_metadata() or {}
+    anims = [max(1, int(value)) for value in metadata.get("anims") or []]
+    projections = max(1, int(metadata.get("projs") or 1))
+    animation_frames = sum(anims)
+    atlas_columns = geometry["cols"]
+    if animation_frames <= 0 or animation_frames * projections != atlas_columns:
+        return {
+            "valid": False,
+            "anims": anims,
+            "projections": projections,
+            "animation_frames": animation_frames,
+            "atlas_columns": atlas_columns,
+        }
+    return {
+        "valid": True,
+        "anims": anims,
+        "projections": projections,
+        "animation_frames": animation_frames,
+        "atlas_columns": atlas_columns,
+    }
+
+
+def atlas_frame_index(layout: dict[str, Any], projection: int, frame: int) -> int:
+    """Map semantic animation axes to the physical XP atlas column."""
+    projections = max(1, int(layout["projections"]))
+    animation_frames = max(1, int(layout["animation_frames"]))
+    p = max(0, min(projection, projections - 1))
+    f = max(0, min(frame, animation_frames - 1))
+    return p * animation_frames + f
+
+
 def render_cells_ansi(grid, *, raw_metadata: bool = False,
                       highlight_mask: list[list[bool]] | None = None,
                       dim_mask: list[list[bool]] | None = None) -> list[str]:
@@ -637,6 +678,7 @@ class ViewerState:
         self.layer_idx = 0
         self.angle = 0
         self.frame = 0
+        self.projection = 0
         self.autoplay = True
         self.autoplay_axis = "frame"   # or "angle"
         self.role_focus: str | None = None
@@ -664,6 +706,7 @@ class ViewerState:
         self.layer_idx = 0
         self.angle = 0
         self.frame = 0
+        self.projection = 0
         self.role_focus = None
 
     def xp_for_key(self, source_key: str, data: ContractData) -> "xp_core.XPFile":
@@ -705,11 +748,19 @@ def compose_layer_stack(
         idx = info["raw_layer_index"]
         if not isinstance(idx, int) or idx >= len(xp.layers):
             continue
+        layout = source_animation_layout(xp, xp.layers[idx], info["frame_wh"])
+        if not layout or not layout["valid"]:
+            continue
+        atlas_frame = atlas_frame_index(
+            layout,
+            state.projection,
+            state.frame if frame is None else frame,
+        )
         sliced = slice_frame(
             xp.layers[idx],
             info["frame_wh"],
             state.angle if angle is None else angle,
-            state.frame if frame is None else frame,
+            atlas_frame,
         )
         if not sliced:
             continue
@@ -851,16 +902,28 @@ def _render_semantic_animation_grid(
     if not isinstance(idx, int) or idx >= len(xp.layers) or not info["frame_wh"]:
         return [f"{key}: no frame geometry"]
     selected_layer = xp.layers[idx]
-    geometry = slice_frame(selected_layer, info["frame_wh"], state.angle, state.frame)
-    if not geometry:
+    layout = source_animation_layout(xp, selected_layer, info["frame_wh"])
+    if not layout:
         return [f"{key}: no frame geometry"]
-    total_frames = geometry["cols"]
+    if not layout["valid"]:
+        return [
+            f"{key}: atlas topology mismatch; "
+            f"columns={layout['atlas_columns']} projs={layout['projections']} "
+            f"anims={layout['anims']}"
+        ]
+    total_frames = layout["animation_frames"]
+    projection = max(0, min(state.projection, layout["projections"] - 1))
     current_frame = max(0, min(state.frame, total_frames - 1))
     tiles: list[list[str]] = []
     raw_metadata = idx < 2
     for frame_idx in range(total_frames):
         final = compose_layer_stack(state, data, angle=state.angle, frame=frame_idx)
-        selected = slice_frame(selected_layer, info["frame_wh"], state.angle, frame_idx)
+        selected = slice_frame(
+            selected_layer,
+            info["frame_wh"],
+            state.angle,
+            atlas_frame_index(layout, projection, frame_idx),
+        )
         if final is None or selected is None:
             continue
         merged, selected_mask, dim_mask = _focus_projection(
@@ -903,7 +966,16 @@ def compose_grid_surface(state: ViewerState, data: ContractData) -> list[str]:
 
     selected_lines: list[str]
     if isinstance(idx, int) and idx < len(xp.layers) and info["frame_wh"]:
-        selected = slice_frame(xp.layers[idx], info["frame_wh"], state.angle, state.frame)
+        layout = source_animation_layout(xp, xp.layers[idx], info["frame_wh"])
+        selected = (
+            slice_frame(
+                xp.layers[idx],
+                info["frame_wh"],
+                state.angle,
+                atlas_frame_index(layout, state.projection, state.frame),
+            )
+            if layout and layout["valid"] else None
+        )
         selected_lines = render_cells_ansi(
             selected["grid"] if selected else [],
             raw_metadata=idx < 2,
@@ -919,7 +991,11 @@ def compose_grid_surface(state: ViewerState, data: ContractData) -> list[str]:
     grid_width = max(24, terminal_cols - left_width - mid_width - 8)
     grid_lines = _render_semantic_animation_grid(state, data, max_width=grid_width)
     grid_box = _box_panel(
-        "ANIMATION GRID · selected bit bright · final sprite dim",
+        (
+            "ANIMATION GRID · "
+            f"PROJECTION {state.projection + 1}/{max(1, int((xp.get_metadata() or {}).get('projs') or 1))}"
+            " · selected bit bright · final sprite dim"
+        ),
         grid_lines,
     )
     total_width = sum(
@@ -1026,7 +1102,7 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
     out.append(f"== SOURCE LAYER CONTRACT VIEWER (READ-ONLY) :: {state.current_stem()} =="
                f"{corpus_position}"
                f"  layer {state.layer_idx + 1}/{len(state.layer_keys)}"
-               f"  angle {state.angle}  frame {state.frame}"
+               f"  angle {state.angle}  projection {state.projection}  frame {state.frame}"
                f"  view={view_mode}  highlight={highlight}  {inclusion}"
                f"  autoplay={'ON:' + state.autoplay_axis if state.autoplay else 'OFF'}{foc}")
     totals = data.corpus_totals
@@ -1041,10 +1117,20 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
 
     if state.grid_mode:
         if layer is not None and info["frame_wh"]:
-            sliced = slice_frame(layer, info["frame_wh"], state.angle, state.frame)
-            if sliced:
+            layout = source_animation_layout(xp, layer, info["frame_wh"])
+            sliced = (
+                slice_frame(
+                    layer,
+                    info["frame_wh"],
+                    state.angle,
+                    atlas_frame_index(layout, state.projection, state.frame),
+                )
+                if layout and layout["valid"] else None
+            )
+            if sliced and layout:
                 out.append(
-                    f"-- {key}  (raw layer L{idx}, frame {state.frame + 1}/{sliced['cols']},"
+                    f"-- {key}  (raw layer L{idx}, frame {state.frame + 1}/{layout['animation_frames']},"
+                    f" projection {state.projection + 1}/{layout['projections']},"
                     f" angle {state.angle + 1}/{sliced['rows']}, {sliced['fw']}x{sliced['fh']}) --"
                 )
         out.extend(compose_grid_surface(state, data))
@@ -1066,9 +1152,19 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
         else:
             out.append("-- DISPLAY-ONLY VISUAL STACK: all visual layers hidden --")
     elif layer is not None and info["frame_wh"]:
-        sliced = slice_frame(layer, info["frame_wh"], state.angle, state.frame)
-        if sliced:
-            out.append(f"-- {key}  (raw layer L{idx}, frame {state.frame + 1}/{sliced['cols']},"
+        layout = source_animation_layout(xp, layer, info["frame_wh"])
+        sliced = (
+            slice_frame(
+                layer,
+                info["frame_wh"],
+                state.angle,
+                atlas_frame_index(layout, state.projection, state.frame),
+            )
+            if layout and layout["valid"] else None
+        )
+        if sliced and layout:
+            out.append(f"-- {key}  (raw layer L{idx}, frame {state.frame + 1}/{layout['animation_frames']},"
+                       f" projection {state.projection + 1}/{layout['projections']},"
                        f" angle {state.angle + 1}/{sliced['rows']}, {sliced['fw']}x{sliced['fh']}) --")
             current_mask = [
                 [state.highlight_current for _ in row] for row in sliced["grid"]
@@ -1207,7 +1303,7 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
         out.append("")
         out.append(state.status)
     out.append("")
-    out.append("{ } XP  [ ] layer  , . angle  n/p frame  space autoplay  x axis")
+    out.append("{ } XP  [ ] layer  , . angle  n/p frame  r projection  space autoplay  x axis")
     out.append("g grid/detail  c isolated/stack  h highlight  v include/hide layer  a include all  f role-focus  q quit")
     return "\n".join(out)
 
@@ -1222,12 +1318,15 @@ def _advance_autoplay(state: ViewerState, data: ContractData) -> None:
     layer = xp.layers[idx] if isinstance(idx, int) and 0 <= idx < len(xp.layers) else None
     if layer is None or not info["frame_wh"]:
         return
-    sliced = slice_frame(layer, info["frame_wh"], state.angle, state.frame)
-    if not sliced:
+    layout = source_animation_layout(xp, layer, info["frame_wh"])
+    if not layout or not layout["valid"]:
         return
     if state.autoplay_axis == "frame":
-        state.frame = (state.frame + 1) % sliced["cols"]
+        state.frame = (state.frame + 1) % layout["animation_frames"]
     else:
+        sliced = slice_frame(layer, info["frame_wh"], state.angle, 0)
+        if not sliced:
+            return
         state.angle = (state.angle + 1) % sliced["rows"]
 
 
@@ -1243,17 +1342,39 @@ def handle_key(state: ViewerState, ch: str, data: ContractData) -> bool:
     elif ch == "]":
         state.layer_idx = (state.layer_idx + 1) % n
         state.frame = state.angle = 0
+        state.projection = 0
     elif ch == "[":
         state.layer_idx = (state.layer_idx - 1) % n
         state.frame = state.angle = 0
+        state.projection = 0
     elif ch == ".":
         state.angle += 1
     elif ch == ",":
         state.angle = max(0, state.angle - 1)
     elif ch == "n":
-        state.frame += 1
+        info = data.join(state.current_key)
+        idx = info["raw_layer_index"]
+        xp = state.xp_for_key(state.current_key, data)
+        layer = xp.layers[idx] if isinstance(idx, int) and 0 <= idx < len(xp.layers) else None
+        layout = source_animation_layout(xp, layer, info["frame_wh"]) if layer else None
+        if layout and layout["valid"]:
+            state.frame = min(state.frame + 1, layout["animation_frames"] - 1)
     elif ch == "p":
-        state.frame = max(0, state.frame - 1)
+        info = data.join(state.current_key)
+        idx = info["raw_layer_index"]
+        xp = state.xp_for_key(state.current_key, data)
+        layer = xp.layers[idx] if isinstance(idx, int) and 0 <= idx < len(xp.layers) else None
+        layout = source_animation_layout(xp, layer, info["frame_wh"]) if layer else None
+        if layout and layout["valid"]:
+            state.frame = max(0, state.frame - 1)
+    elif ch == "r":
+        info = data.join(state.current_key)
+        idx = info["raw_layer_index"]
+        xp = state.xp_for_key(state.current_key, data)
+        layer = xp.layers[idx] if isinstance(idx, int) and 0 <= idx < len(xp.layers) else None
+        layout = source_animation_layout(xp, layer, info["frame_wh"]) if layer else None
+        if layout and layout["valid"]:
+            state.projection = (state.projection + 1) % layout["projections"]
     elif ch == " ":
         state.autoplay = not state.autoplay
     elif ch == "x":

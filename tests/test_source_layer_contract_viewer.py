@@ -164,6 +164,22 @@ def test_advance_autoplay_wraps_within_bounds():
     assert st.frame == 0  # wrapped
 
 
+def test_player_projection_bank_is_not_flattened_into_animation_frames():
+    data = _data()
+    xp = v.load_xp_for_stem("player-0100", SPRITES)
+    info = data.join("player-0100-L3")
+    layout = v.source_animation_layout(xp, xp.layers[3], info["frame_wh"])
+    assert layout == {
+        "valid": True,
+        "anims": [1, 8],
+        "projections": 2,
+        "animation_frames": 9,
+        "atlas_columns": 18,
+    }
+    assert v.atlas_frame_index(layout, projection=0, frame=8) == 8
+    assert v.atlas_frame_index(layout, projection=1, frame=0) == 9
+
+
 # ---- integration over the committed artifacts ----
 def test_contract_data_joins_the_bee_body_trap():
     data = _data()
@@ -203,9 +219,10 @@ def test_default_grid_is_three_pane_and_names_reviewed_helmet_bit(monkeypatch):
     screen = v.compose_screen(state, data)
     assert "FINAL SPRITE" in screen
     assert "SEMANTIC BIT · L3 · player_helmet_regular" in screen
-    assert "ANIMATION GRID · selected bit bright · final sprite dim" in screen
-    assert "FRAME 1/18" in screen and "FRAME 18/18" in screen
-    assert "\x1b[1;96m┏ FRAME 3/18" in screen
+    assert "ANIMATION GRID · PROJECTION 1/2 · selected bit bright · final sprite dim" in screen
+    assert "FRAME 1/9" in screen and "FRAME 9/9" in screen
+    assert "FRAME 10/" not in screen
+    assert "\x1b[1;96m┏ FRAME 3/9" in screen
     assert "38;2;" in screen
 
 
@@ -221,11 +238,31 @@ def test_autoplay_moves_the_active_animation_grid_border(monkeypatch):
         lambda fallback: __import__("os").terminal_size((220, 70)),
     )
     first = v.compose_screen(state, data)
-    assert "\x1b[1;96m┏ FRAME 1/18" in first
+    assert "\x1b[1;96m┏ FRAME 1/9" in first
     v._advance_autoplay(state, data)
     second = v.compose_screen(state, data)
-    assert "\x1b[1;96m┏ FRAME 2/18" in second
-    assert "\x1b[1;96m┏ FRAME 1/18" not in second
+    assert "\x1b[1;96m┏ FRAME 2/9" in second
+    assert "\x1b[1;96m┏ FRAME 1/9" not in second
+
+
+def test_projection_key_switches_bank_without_advancing_animation_frame(monkeypatch):
+    data = _data()
+    state = v.ViewerState(
+        "player-0100", data.layer_keys_for_stem("player-0100"), sprites=SPRITES
+    )
+    state.layer_idx = state.layer_keys.index("player-0100-L3")
+    state.frame = 2
+    monkeypatch.setattr(
+        v.shutil,
+        "get_terminal_size",
+        lambda fallback: __import__("os").terminal_size((220, 70)),
+    )
+    assert v.handle_key(state, "r", data) is True
+    assert state.projection == 1
+    assert state.frame == 2
+    screen = v.compose_screen(state, data)
+    assert "ANIMATION GRID · PROJECTION 2/2" in screen
+    assert "\x1b[1;96m┏ FRAME 3/9" in screen
 
 
 def test_layer_keys_for_stem_sorted_and_scoped():
