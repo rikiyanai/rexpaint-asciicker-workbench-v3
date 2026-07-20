@@ -10,12 +10,13 @@ It borrows ONLY the pure-rendering idea from xp_uv_body_viewer.py — a cell is
 visible iff its bg is not the magenta key (255,0,255) and its glyph is non-zero —
 with attribution here. Everything else is new and read-only.
 
-What it shows for one XP stem (e.g. bigbee-0000):
-  * every raw VISUAL layer (the ones with evidence cards, L2..LN),
+What it shows across the complete reviewed upstream XP corpus:
+  * every raw layer in all reviewed XP files, including engine metadata L0/L1,
   * the original cells sliced per frame/angle from card geometry, with autoplay,
   * immutable hand/proposal evidence separately from frozen reviewed cell roles,
   * topology class, blockers,
   * glyph exact/near match evidence, and a role-focus grid over the stem's layers.
+  * corpus, layer, frame, and angle navigation plus include/hide/highlight controls.
 
 Hard read-only guarantees (Canon Law: old owner stays dead):
   * opens XP + four FL-4162 artifacts read-only; writes NOTHING to disk;
@@ -102,11 +103,14 @@ def _sha256_file(path: Path) -> str:
         raise ContractDataError(f"cannot hash read-only input {path}: {exc}") from exc
 
 
-def _index_jsonl(path: Path, key_field: str) -> tuple[dict[str, tuple[int, int]], str]:
+def _index_jsonl(path: Path, key_field: str) -> tuple[
+    dict[str, tuple[int, int]], str, dict[str, str]
+]:
     """Validate a JSONL file and retain byte offsets instead of its large rows."""
     if not path.is_file():
         raise ContractDataError(f"missing read-only input: {path}")
     index: dict[str, tuple[int, int]] = {}
+    source_paths: dict[str, str] = {}
     digest = hashlib.sha256()
     try:
         with path.open("rb") as handle:
@@ -132,9 +136,12 @@ def _index_jsonl(path: Path, key_field: str) -> tuple[dict[str, tuple[int, int]]
                         f"{path}:{lineno}: missing or duplicate {key_field}: {key!r}"
                     )
                 index[key] = (offset, len(line))
+                source_path = str((row.get("source_xp") or {}).get("path") or "")
+                if source_path:
+                    source_paths[key] = source_path
     except OSError as exc:
         raise ContractDataError(f"cannot read {path}: {exc}") from exc
-    return index, digest.hexdigest()
+    return index, digest.hexdigest(), source_paths
 
 
 def _read_indexed_json(path: Path, location: tuple[int, int]) -> dict[str, Any]:
@@ -171,9 +178,10 @@ class ContractData:
         if manifest.get("authority") is not False or manifest.get("is_proposal") is not True:
             raise ContractDataError("full-cell ledger must be authority:false proposal")
         self._cell_record_index: dict[str, tuple[Path, int, int]] = {}
+        self._source_path_by_key: dict[str, str] = {}
         for shard in manifest.get("shards") or []:
             shard_path = self.cell_contract / str(shard.get("path") or "")
-            shard_index, digest = _index_jsonl(shard_path, "source_key")
+            shard_index, digest, source_paths = _index_jsonl(shard_path, "source_key")
             if digest != shard.get("sha256"):
                 raise ContractDataError(f"full-cell ledger shard hash mismatch: {shard_path}")
             if len(shard_index) != int(shard.get("records", -1)):
@@ -185,6 +193,7 @@ class ContractData:
                 key: (shard_path, offset, length)
                 for key, (offset, length) in shard_index.items()
             })
+            self._source_path_by_key.update(source_paths)
         expected_layers = int((manifest.get("totals") or {}).get("layers", -1))
         if len(self._cell_record_index) != expected_layers:
             raise ContractDataError("full-cell ledger record count does not match manifest")
@@ -195,7 +204,7 @@ class ContractData:
         ):
             raise ContractDataError("cell review queue must be authority:false proposal")
         self._cell_decision_path = self.cell_contract / "cell_role_decisions.jsonl"
-        decision_index, decision_digest = _index_jsonl(
+        decision_index, decision_digest, _decision_source_paths = _index_jsonl(
             self._cell_decision_path, "review_unit_id"
         )
         self._cell_decision_index = decision_index
@@ -236,21 +245,66 @@ class ContractData:
         self._cell_decision_cache: dict[str, dict[str, Any]] = {}
         self._expanded_cells: dict[str, dict[tuple[int, int, int, int], dict[str, Any]]] = {}
         self._validated_decision_units: set[str] = set()
+        self.corpus_totals = {
+            "xp_files": len(self.stems()),
+            "layers": expected_layers,
+            "visual_layers": len(self.cards),
+            "engine_metadata_layers": int(
+                (manifest.get("totals") or {}).get("engine_metadata_layers", 0)
+            ),
+            "raw_cells": int((manifest.get("totals") or {}).get("raw_cells", 0)),
+            "visible_cells": int((manifest.get("totals") or {}).get("visible_cells", 0)),
+        }
 
     def layer_keys_for_stem(self, stem: str) -> list[str]:
-        keys = [k for k in self.cards if k.rsplit("-L", 1)[0] == stem]
+        # FL-4162: the full-cell ledger is the corpus owner.  Evidence cards cover
+        # only hand-labelled visual layers (L2+); using them as the picker silently
+        # dropped all 230 reviewed upstream engine-metadata layers.
+        xp_id = self.resolve_xp_id(stem)
+        keys = [
+            key for key in self._cell_record_index
+            if self.xp_id_for_key(key) == xp_id
+        ]
         return sorted(keys, key=lambda k: int(k.rsplit("-L", 1)[1]))
+
+    def stems(self) -> list[str]:
+        return sorted({self.xp_id_for_key(key) for key in self._cell_record_index})
+
+    def corpus_layer_map(self) -> dict[str, list[str]]:
+        return {stem: self.layer_keys_for_stem(stem) for stem in self.stems()}
+
+    def xp_id_for_key(self, source_key: str) -> str:
+        source_path = self._source_path_by_key.get(source_key)
+        if not source_path:
+            raise ContractDataError(f"missing indexed source XP path: {source_key}")
+        return Path(source_path).stem
+
+    def resolve_xp_id(self, value: str) -> str:
+        physical_stems = {
+            self.xp_id_for_key(key) for key in self._cell_record_index
+        }
+        if value in physical_stems:
+            return value
+        matches = {
+            self.xp_id_for_key(key) for key in self._cell_record_index
+            if key.rsplit("-L", 1)[0] == value
+        }
+        return next(iter(matches)) if len(matches) == 1 else value
 
     def join(self, source_key: str) -> dict[str, Any]:
         card = self.cards.get(source_key, {})
         decision = self.decisions.get(source_key, {})
         verdict_row = self.verdicts.get(source_key, {})
         verdict = verdict_row.get("agent_verdict", {})
-        hand = card.get("hand", {})
+        contract_record = self.cell_record(source_key)
+        hand = card.get("hand") or contract_record.get("hand_evidence") or {}
         cells = card.get("cells", {})
         sim = card.get("glyph_similarity", {})
+        layer_semantics = contract_record.get("layer_semantics") or {}
+        implication = contract_record.get("actor_visual_profile_implication") or {}
+        exceptions = contract_record.get("exceptions") or {}
         blockers = []
-        cls = self.topo_class.get(source_key)
+        cls = self.topo_class.get(source_key) or layer_semantics.get("topology_class")
         if cls in {"unresolved", "rejected"}:
             blockers.append(f"unowned:{cls}")
         if verdict.get("unresolved"):
@@ -261,24 +315,35 @@ class ContractData:
             blockers.append("composite_layer")
         return {
             "source_key": source_key,
-            "raw_layer_index": card.get("raw_layer_index"),
+            "raw_layer_index": card.get("raw_layer_index", contract_record.get("raw_layer_index")),
             "hand_status": hand.get("status"),
             "hand_label": hand.get("corrected_label"),
             "hand_note": hand.get("note"),
             "machine_guess": hand.get("pre_guess"),
             "machine_guess_source": hand.get("pre_source"),
             "proposed_roles": decision.get("composite_roles")
-            or verdict.get("proposed_roles") or [],
+            or verdict.get("proposed_roles")
+            or layer_semantics.get("candidate_roles")
+            or implication.get("candidate_roles") or [],
             "authority": decision.get("authority"),
             "topology_class": cls,
             "blockers": blockers,
-            "exact_matches": sim.get("exact_matches") or card.get("glyph_exact_matches") or [],
-            "near_matches": sim.get("near_matches") or card.get("glyph_near_matches") or [],
-            "contradictions": verdict.get("contradictions") or [],
-            "topology_note": verdict.get("topology_note") or "",
-            "queue_class": verdict_row.get("queue_class"),
+            "exact_matches": sim.get("exact_matches") or card.get("glyph_exact_matches")
+            or exceptions.get("glyph_exact_matches") or [],
+            "near_matches": sim.get("near_matches") or card.get("glyph_near_matches")
+            or exceptions.get("glyph_near_matches") or [],
+            "contradictions": verdict.get("contradictions")
+            or exceptions.get("contradictions") or [],
+            "topology_note": verdict.get("topology_note")
+            or exceptions.get("topology_note") or "",
+            "queue_class": verdict_row.get("queue_class")
+            or layer_semantics.get("review_state")
+            or implication.get("state"),
             "frame_topology": (card.get("engine") or {}).get("frame_topology") or {},
-            "frame_wh": cells.get("frame_wh"),
+            "frame_wh": cells.get("frame_wh") or [
+                int((contract_record.get("frame_geometry") or {}).get("frame_width", 0)),
+                int((contract_record.get("frame_geometry") or {}).get("frame_height", 0)),
+            ],
         }
 
     def cell_record(self, source_key: str) -> dict[str, Any]:
@@ -495,20 +560,31 @@ def slice_frame(layer: "xp_core.XPLayer", frame_wh, angle: int, frame: int):
     return {"grid": grid, "cols": cols, "rows": rows, "fw": fw, "fh": fh}
 
 
-def render_cells_ansi(grid) -> list[str]:
-    """Pure render: truecolor ANSI per cell; magenta-key/zero-glyph = blank."""
+def render_cells_ansi(grid, *, raw_metadata: bool = False,
+                      highlight_mask: list[list[bool]] | None = None) -> list[str]:
+    """Pure render with optional metadata visibility and per-cell highlighting."""
     lines = []
-    for row in grid:
+    for y, row in enumerate(grid):
         parts = []
-        for glyph, fg, bg in row:
+        for x, (glyph, fg, bg) in enumerate(row):
             bg = tuple(bg)
-            if bg == MAGENTA_KEY or glyph in (0,):
+            if not raw_metadata and (bg == MAGENTA_KEY or glyph in (0,)):
                 parts.append(" ")
                 continue
             fr, fgg, fb = fg
             br, bgg, bb = bg
-            ch = _glyph_char(glyph)
-            parts.append(f"\x1b[38;2;{fr};{fgg};{fb}m\x1b[48;2;{br};{bgg};{bb}m{ch}\x1b[0m")
+            ch = "·" if raw_metadata and glyph in (0, 32) else _glyph_char(glyph)
+            highlighted = bool(
+                highlight_mask is not None
+                and y < len(highlight_mask)
+                and x < len(highlight_mask[y])
+                and highlight_mask[y][x]
+            )
+            emphasis = "\x1b[7;1m" if highlighted else ""
+            parts.append(
+                f"{emphasis}\x1b[38;2;{fr};{fgg};{fb}m"
+                f"\x1b[48;2;{br};{bgg};{bb}m{ch}\x1b[0m"
+            )
         lines.append("".join(parts))
     return lines
 
@@ -518,9 +594,13 @@ def render_cells_ansi(grid) -> list[str]:
 # --------------------------------------------------------------------------- #
 class ViewerState:
     def __init__(self, stem: str, layer_keys: list[str], microscope: "MicroscopeGroup | None" = None,
-                 sprites: Path = SPRITES):
+                 sprites: Path = SPRITES,
+                 corpus_layer_keys: dict[str, list[str]] | None = None):
         self.stem = stem
         self.layer_keys = layer_keys
+        self.corpus_layer_keys = corpus_layer_keys or {}
+        self.corpus_stems = list(self.corpus_layer_keys)
+        self.stem_idx = self.corpus_stems.index(stem) if stem in self.corpus_stems else 0
         self.microscope = microscope
         self.sprites = sprites
         self._xp_cache: dict[str, "xp_core.XPFile"] = {}
@@ -530,6 +610,9 @@ class ViewerState:
         self.autoplay = True
         self.autoplay_axis = "frame"   # or "angle"
         self.role_focus: str | None = None
+        self.stack_mode = False
+        self.highlight_current = True
+        self.hidden_layer_keys: set[str] = set()
         self.status = ""
 
     @property
@@ -537,7 +620,20 @@ class ViewerState:
         return self.layer_keys[self.layer_idx]
 
     def current_stem(self) -> str:
+        if self.corpus_layer_keys:
+            return self.stem
         return self.current_key.rsplit("-L", 1)[0]
+
+    def change_stem(self, delta: int) -> None:
+        if not self.corpus_stems:
+            return
+        self.stem_idx = (self.stem_idx + delta) % len(self.corpus_stems)
+        self.stem = self.corpus_stems[self.stem_idx]
+        self.layer_keys = self.corpus_layer_keys[self.stem]
+        self.layer_idx = 0
+        self.angle = 0
+        self.frame = 0
+        self.role_focus = None
 
     def xp_for_key(self, source_key: str, data: ContractData) -> "xp_core.XPFile":
         source_path = data.source_xp_path(source_key)
@@ -547,6 +643,65 @@ class ViewerState:
         if cache_key not in self._xp_cache:
             self._xp_cache[cache_key] = load_xp_path(path)
         return self._xp_cache[cache_key]
+
+
+def compose_layer_stack(state: ViewerState, data: ContractData):
+    """Compose included visual layers for inspection; return cells and owner mask.
+
+    This is a read-only discovery projection.  It applies ordinal visible-cell
+    overwrite so reviewers can include, hide, and highlight source contributions;
+    it does not claim compiler/runtime composition authority.
+    """
+    visual_keys = [
+        key for key in state.layer_keys
+        if int(key.rsplit("-L", 1)[1]) >= 2 and key not in state.hidden_layer_keys
+    ]
+    if not visual_keys:
+        return None
+    visual_keys.sort(key=lambda key: int(key.rsplit("-L", 1)[1]))
+    xp = state.xp_for_key(visual_keys[0], data)
+    composite = None
+    owners: list[list[str | None]] = []
+    cols = rows = fw = fh = 0
+    for key in visual_keys:
+        info = data.join(key)
+        idx = info["raw_layer_index"]
+        if not isinstance(idx, int) or idx >= len(xp.layers):
+            continue
+        sliced = slice_frame(xp.layers[idx], info["frame_wh"], state.angle, state.frame)
+        if not sliced:
+            continue
+        if composite is None:
+            composite = [[(0, (0, 0, 0), MAGENTA_KEY) for _ in row]
+                         for row in sliced["grid"]]
+            owners = [[None for _ in row] for row in sliced["grid"]]
+            cols, rows, fw, fh = sliced["cols"], sliced["rows"], sliced["fw"], sliced["fh"]
+        for y, row in enumerate(sliced["grid"]):
+            if y >= len(composite):
+                continue
+            for x, cell in enumerate(row):
+                if x >= len(composite[y]):
+                    continue
+                glyph, _fg, bg = cell
+                if tuple(bg) == MAGENTA_KEY or glyph == 0:
+                    continue
+                composite[y][x] = cell
+                owners[y][x] = key
+    if composite is None:
+        return None
+    highlight_mask = [
+        [state.highlight_current and owner == state.current_key for owner in row]
+        for row in owners
+    ]
+    return {
+        "grid": composite,
+        "highlight_mask": highlight_mask,
+        "included_keys": visual_keys,
+        "cols": cols,
+        "rows": rows,
+        "fw": fw,
+        "fh": fh,
+    }
 
 
 def _layer_is_cyan_swoosh(layer) -> bool:
@@ -634,18 +789,59 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
 
     out: list[str] = []
     foc = f"  ROLE-FOCUS={state.role_focus}" if state.role_focus else ""
+    corpus_position = (
+        f"  XP {state.stem_idx + 1}/{len(state.corpus_stems)}"
+        if state.corpus_stems else ""
+    )
+    view_mode = "STACK" if state.stack_mode else "ISOLATED"
+    inclusion = "HIDDEN-FROM-STACK" if key in state.hidden_layer_keys else "INCLUDED"
+    highlight = "ON" if state.highlight_current else "OFF"
     out.append(f"== SOURCE LAYER CONTRACT VIEWER (READ-ONLY) :: {state.current_stem()} =="
+               f"{corpus_position}"
                f"  layer {state.layer_idx + 1}/{len(state.layer_keys)}"
                f"  angle {state.angle}  frame {state.frame}"
+               f"  view={view_mode}  highlight={highlight}  {inclusion}"
                f"  autoplay={'ON:' + state.autoplay_axis if state.autoplay else 'OFF'}{foc}")
+    totals = data.corpus_totals
+    out.append(
+        "CORPUS: "
+        f"{totals['xp_files']} XP / {totals['layers']} raw layers "
+        f"({totals['visual_layers']} hand-reviewed visual + "
+        f"{totals['engine_metadata_layers']} engine metadata) / "
+        f"{totals['raw_cells']:,} cells / {totals['visible_cells']:,} visible"
+    )
     out.append("")
 
-    if layer is not None and info["frame_wh"]:
+    if state.stack_mode:
+        stack = compose_layer_stack(state, data)
+        if stack:
+            selected_note = (
+                f"selected {key} highlighted"
+                if state.highlight_current and isinstance(idx, int) and idx >= 2
+                else f"selected {key} unhighlighted"
+            )
+            out.append(
+                f"-- DISPLAY-ONLY VISUAL STACK ({len(stack['included_keys'])} included; "
+                f"{selected_note}; ordinal overwrite; not compiler authority) --"
+            )
+            out.extend(render_cells_ansi(
+                stack["grid"], highlight_mask=stack["highlight_mask"]
+            ))
+        else:
+            out.append("-- DISPLAY-ONLY VISUAL STACK: all visual layers hidden --")
+    elif layer is not None and info["frame_wh"]:
         sliced = slice_frame(layer, info["frame_wh"], state.angle, state.frame)
         if sliced:
             out.append(f"-- {key}  (raw layer L{idx}, frame {state.frame + 1}/{sliced['cols']},"
                        f" angle {state.angle + 1}/{sliced['rows']}, {sliced['fw']}x{sliced['fh']}) --")
-            out.extend(render_cells_ansi(sliced["grid"]))
+            current_mask = [
+                [state.highlight_current for _ in row] for row in sliced["grid"]
+            ]
+            out.extend(render_cells_ansi(
+                sliced["grid"],
+                raw_metadata=isinstance(idx, int) and idx < 2,
+                highlight_mask=current_mask,
+            ))
     else:
         out.append(f"-- {key}: no renderable geometry (metadata layer?) --")
 
@@ -694,7 +890,11 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
     out.append(f"engine (local Y9-2): {local_engine_correspondence(idx, len(xp.layers), layer)}")
     # Neighboring-layer patterns: adjacent raw layers + frozen reviewed roles, for
     # convention comparison (is this the base, an overlay, the swoosh?). Only same stem.
-    same_stem_keys = [k for k in state.layer_keys if k.rsplit("-L", 1)[0] == stem]
+    same_stem_keys = (
+        state.layer_keys
+        if state.corpus_layer_keys
+        else [k for k in state.layer_keys if k.rsplit("-L", 1)[0] == stem]
+    )
     by_idx = {data.join(k)["raw_layer_index"]: k for k in same_stem_keys}
     neigh = []
     for d in (idx - 1, idx + 1) if isinstance(idx, int) else ():
@@ -752,7 +952,9 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
         proposal_role = ";".join(ji["proposed_roles"]) or "<none>"
         mark = ">" if k == key else " "
         focus_hit = "*" if (state.role_focus and state.role_focus in data.reviewed_roles(k)) else " "
-        out.append(f"{mark}{focus_hit} {k:18s} L{ji['raw_layer_index']}"
+        visible_mark = "-" if k in state.hidden_layer_keys else "+"
+        highlight_mark = "H" if k == key and state.highlight_current else " "
+        out.append(f"{mark}{focus_hit}{visible_mark}{highlight_mark} {k:18s} L{ji['raw_layer_index']}"
                    f"  reviewed={reviewed_role:28s} proposal={proposal_role}"
                    f" class={ji['topology_class']}")
 
@@ -769,7 +971,8 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
         out.append("")
         out.append(state.status)
     out.append("")
-    out.append("[ ]/[ ] layer  , . angle  n/p frame  space autoplay  x axis  f role-focus  q quit")
+    out.append("{ } XP  [ ] layer  , . angle  n/p frame  space autoplay  x axis")
+    out.append("c isolated/stack  h highlight  v include/hide layer  a include all  f role-focus  q quit")
     return "\n".join(out)
 
 
@@ -797,6 +1000,10 @@ def handle_key(state: ViewerState, ch: str, data: ContractData) -> bool:
     n = len(state.layer_keys)
     if ch in ("q", "\x03"):
         return False
+    elif ch == "}":
+        state.change_stem(1)
+    elif ch == "{":
+        state.change_stem(-1)
     elif ch == "]":
         state.layer_idx = (state.layer_idx + 1) % n
         state.frame = state.angle = 0
@@ -818,6 +1025,17 @@ def handle_key(state: ViewerState, ch: str, data: ContractData) -> bool:
     elif ch == "f":
         roles = data.reviewed_roles(state.current_key)
         state.role_focus = roles[0] if roles and not state.role_focus else None
+    elif ch == "c":
+        state.stack_mode = not state.stack_mode
+    elif ch == "h":
+        state.highlight_current = not state.highlight_current
+    elif ch == "v":
+        if state.current_key in state.hidden_layer_keys:
+            state.hidden_layer_keys.remove(state.current_key)
+        else:
+            state.hidden_layer_keys.add(state.current_key)
+    elif ch == "a":
+        state.hidden_layer_keys.clear()
     return True
 
 
@@ -843,7 +1061,10 @@ def run_interactive(state: ViewerState, data: ContractData, tick: float = 0.4) -
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("stem", nargs="?", default="", help="XP stem, e.g. bigbee-0000 (ignored when --group is provided)")
+    p.add_argument(
+        "stem", nargs="?", default="",
+        help="initial XP stem; omitted opens the complete reviewed corpus",
+    )
     p.add_argument("--sprites", type=Path, default=SPRITES)
     p.add_argument("--sm", type=Path, default=SM)
     p.add_argument("--cell-contract", type=Path, default=None,
@@ -856,6 +1077,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
                    help="Open one exact raw layer key, e.g. attack-1001-L3 (read-only)")
     p.add_argument("--once", action="store_true",
                    help="compose one screen to stdout and exit (no terminal control)")
+    p.add_argument("--stack", action="store_true",
+                   help="start in display-only included-layer stack mode")
+    p.add_argument("--unhighlighted", action="store_true",
+                   help="start with current-layer highlighting disabled")
     return p.parse_args(argv)
 
 
@@ -899,10 +1124,15 @@ def main(argv: list[str]) -> int:
                 return 2
             stem = layer_keys[0].rsplit("-L", 1)[0]
         else:
-            stem = args.source_key.rsplit("-L", 1)[0] if args.source_key else args.stem
+            corpus_layer_keys = data.corpus_layer_map()
+            stem = (
+                data.xp_id_for_key(args.source_key)
+                if args.source_key else data.resolve_xp_id(args.stem) if args.stem
+                else data.stems()[0]
+            )
             layer_keys = data.layer_keys_for_stem(stem)
             if not layer_keys:
-                print(f"FAIL: no evidence-card layers for stem {stem}", file=sys.stderr)
+                print(f"FAIL: no frozen contract layers for stem {stem}", file=sys.stderr)
                 return 2
         if args.source_key and args.source_key not in layer_keys:
             print(f"FAIL: source key not present in viewer scope: {args.source_key}", file=sys.stderr)
@@ -910,9 +1140,17 @@ def main(argv: list[str]) -> int:
     except ContractDataError as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 2
-    state = ViewerState(stem, layer_keys, microscope=microscope, sprites=args.sprites)
+    state = ViewerState(
+        stem,
+        layer_keys,
+        microscope=microscope,
+        sprites=args.sprites,
+        corpus_layer_keys=None if microscope is not None else corpus_layer_keys,
+    )
     if args.source_key:
         state.layer_idx = layer_keys.index(args.source_key)
+    state.stack_mode = args.stack
+    state.highlight_current = not args.unhighlighted
     if args.once or not sys.stdin.isatty():
         print(compose_screen(state, data))
         return 0

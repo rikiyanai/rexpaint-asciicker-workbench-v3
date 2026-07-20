@@ -47,6 +47,16 @@ def test_render_blanks_magenta_key_and_zero_glyph():
     assert "B" in lines[0] and "38;2;10;20;30" in lines[0]  # opaque cell rendered truecolor
 
 
+def test_render_can_expose_metadata_cells_and_highlight_selected_bits():
+    grid = [[(32, (1, 2, 3), (255, 0, 255)), (65, (4, 5, 6), (7, 8, 9))]]
+    lines = v.render_cells_ansi(
+        grid, raw_metadata=True, highlight_mask=[[True, False]]
+    )
+    assert "·" in lines[0]
+    assert "\x1b[7;1m" in lines[0]
+    assert "A" in lines[0]
+
+
 def test_cell_classifier_taxonomy():
     """Every cell in a frame dump is typed according to the upstream sprite.cpp contract."""
     assert v.classify_cell(0, (0, 0, 0), (255, 0, 255), 2, 4) == "transparent"
@@ -113,6 +123,7 @@ def test_advance_autoplay_wraps_within_bounds():
     data = _data()
     xp = v.load_xp_for_stem("bigbee-0000", SPRITES)
     st = v.ViewerState("bigbee-0000", data.layer_keys_for_stem("bigbee-0000"))
+    st.layer_idx = st.layer_keys.index("bigbee-0000-L2")
     st.frame = 5  # last frame (6 frames per angle)
     v._advance_autoplay(st, data)
     assert st.frame == 0  # wrapped
@@ -133,6 +144,7 @@ def test_compose_screen_makes_the_trap_visible():
     data = _data()
     xp = v.load_xp_for_stem("bigbee-0000", SPRITES)
     st = v.ViewerState("bigbee-0000", data.layer_keys_for_stem("bigbee-0000"))
+    st.layer_idx = st.layer_keys.index("bigbee-0000-L2")
     screen = v.compose_screen(st, data)
     assert "READ-ONLY" in screen
     assert "armor;mount_body_wolf" in screen           # the wrong machine guess
@@ -144,9 +156,85 @@ def test_compose_screen_makes_the_trap_visible():
 def test_layer_keys_for_stem_sorted_and_scoped():
     data = _data()
     keys = data.layer_keys_for_stem("bigbee-0000")
-    assert keys == ["bigbee-0000-L2", "bigbee-0000-L3"]
+    assert keys == [
+        "bigbee-0000-L0", "bigbee-0000-L1",
+        "bigbee-0000-L2", "bigbee-0000-L3",
+    ]
     # stem scoping must not bleed into bigbee-0001
     assert all(k.startswith("bigbee-0000-L") for k in keys)
+
+
+def test_complete_corpus_inventory_includes_metadata_and_every_reviewed_xp():
+    data = _data()
+    assert data.corpus_totals == {
+        "xp_files": 115,
+        "layers": 573,
+        "visual_layers": 343,
+        "engine_metadata_layers": 230,
+        "raw_cells": 6807104,
+        "visible_cells": 3340170,
+    }
+    assert data.stems()[0] == "attack-0001"
+    assert data.stems()[-1] == "wolfie-1112"
+    assert sum(map(len, data.corpus_layer_map().values())) == 573
+
+
+def test_metadata_layers_surface_normalized_contract_and_engine_cross_reference():
+    data = _data()
+    info = data.join("player-0000-L0")
+    assert info["raw_layer_index"] == 0
+    assert info["topology_class"] == "engine_metadata"
+    assert info["proposed_roles"] == ["engine_color_key_frame_metadata"]
+    state = v.ViewerState(
+        "player-0000",
+        data.layer_keys_for_stem("player-0000"),
+        sprites=SPRITES,
+        corpus_layer_keys=data.corpus_layer_map(),
+    )
+    screen = v.compose_screen(state, data)
+    assert f"XP {data.stems().index('player-0000') + 1}/115" in screen
+    assert "raw layer L0" in screen
+    assert "engine_color_key_frame_metadata" in screen
+    assert "upstream sprite.cpp:350" in screen
+    assert "6,807,104 cells" in screen
+
+
+def test_corpus_navigation_reaches_last_xp_and_resets_layer_frame_state():
+    data = _data()
+    corpus = data.corpus_layer_map()
+    state = v.ViewerState(
+        data.stems()[0], corpus[data.stems()[0]],
+        sprites=SPRITES, corpus_layer_keys=corpus,
+    )
+    state.layer_idx = len(state.layer_keys) - 1
+    state.angle = 3
+    state.frame = 4
+    v.handle_key(state, "{", data)
+    assert state.current_stem() == "wolfie-1112"
+    assert state.layer_idx == state.angle == state.frame == 0
+    v.handle_key(state, "}", data)
+    assert state.current_stem() == "attack-0001"
+
+
+def test_layer_include_hide_highlight_and_stack_controls():
+    data = _data()
+    state = v.ViewerState(
+        "bigbee-0000", data.layer_keys_for_stem("bigbee-0000"), sprites=SPRITES
+    )
+    state.layer_idx = state.layer_keys.index("bigbee-0000-L3")
+    assert state.highlight_current is True
+    v.handle_key(state, "h", data)
+    assert state.highlight_current is False
+    v.handle_key(state, "v", data)
+    assert state.current_key in state.hidden_layer_keys
+    v.handle_key(state, "c", data)
+    assert state.stack_mode is True
+    screen = v.compose_screen(state, data)
+    assert "view=STACK" in screen
+    assert "HIDDEN-FROM-STACK" in screen
+    assert "DISPLAY-ONLY VISUAL STACK (1 included" in screen
+    v.handle_key(state, "a", data)
+    assert not state.hidden_layer_keys
 
 
 def test_missing_inputs_fail_closed(tmp_path):
@@ -180,10 +268,10 @@ def test_viewer_module_writes_nothing_to_disk():
 
 
 # --- FL-4162 microscope: engine refs, neighbors, hand_note, match ids in one panel ---
-def _screen_for(stem, layer_index=0):
+def _screen_for(stem, raw_layer_index=2):
     data = _data()
     st = v.ViewerState(stem, data.layer_keys_for_stem(stem), sprites=SPRITES)
-    st.layer_idx = layer_index
+    st.layer_idx = st.layer_keys.index(f"{stem}-L{raw_layer_index}")
     return v.compose_screen(st, data)
 
 
@@ -191,7 +279,7 @@ def test_engine_refs_anchor_each_wolack_layer():
     """The microscope shows the upstream sprite.cpp role for each raw layer:
     L2 base accumulator, L3 merge overlay, L4 final cyan-fg swoosh special-case."""
     keys = ["wolack-0001-L2", "wolack-0001-L3", "wolack-0001-L4"]
-    screens = [_screen_for("wolack-0001", i) for i in range(len(keys))]
+    screens = [_screen_for("wolack-0001", i) for i in (2, 3, 4)]
     assert "L2 primary visual / base accumulator" in screens[0] and "upstream sprite.cpp:352" in screens[0]
     assert "overlay L3" in screens[1] and "upstream sprite.cpp:354-360" in screens[1]
     assert "swoosh composition" in screens[2] and "upstream sprite.cpp:361" in screens[2]
@@ -214,7 +302,7 @@ def test_microscope_shows_neighbors_and_matches():
     """One panel surfaces neighboring-layer roles and glyph match peers so a contract
     hypothesis is checked against raw evidence (the wolack-0001-L3 false-clean: it
     byte-matches its sibling composites)."""
-    screen = _screen_for("wolack-0001", 1)   # wolack-0001-L3
+    screen = _screen_for("wolack-0001", 3)   # wolack-0001-L3
     assert "neighbors:" in screen
     assert "L2=mount_body_wolf" in screen and "L4=weapon_swoosh" in screen
     assert "engine (upstream 8ff75d0c):" in screen
