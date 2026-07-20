@@ -39,7 +39,9 @@ import copy
 import hashlib
 import json
 import os
+import re
 import select
+import shutil
 import sys
 import termios
 import tty
@@ -59,6 +61,7 @@ SM = REPO_ROOT / "docs/research/ascii/semantic_maps"
 SPRITES = REPO_ROOT / "assets/sprites"
 CELL_CONTRACT = SM / "upstream_xp_cell_contract"
 MAGENTA_KEY = (255, 0, 255)  # transparency key (idea borrowed from xp_uv_body_viewer)
+ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 
 # --------------------------------------------------------------------------- #
@@ -575,8 +578,9 @@ def slice_frame(layer: "xp_core.XPLayer", frame_wh, angle: int, frame: int):
 
 
 def render_cells_ansi(grid, *, raw_metadata: bool = False,
-                      highlight_mask: list[list[bool]] | None = None) -> list[str]:
-    """Pure render with optional metadata visibility and per-cell highlighting."""
+                      highlight_mask: list[list[bool]] | None = None,
+                      dim_mask: list[list[bool]] | None = None) -> list[str]:
+    """Pure render with optional metadata visibility, highlighting, and dimming."""
     lines = []
     for y, row in enumerate(grid):
         parts = []
@@ -594,6 +598,18 @@ def render_cells_ansi(grid, *, raw_metadata: bool = False,
                 and x < len(highlight_mask[y])
                 and highlight_mask[y][x]
             )
+            dimmed = bool(
+                dim_mask is not None
+                and y < len(dim_mask)
+                and x < len(dim_mask[y])
+                and dim_mask[y][x]
+            )
+            if dimmed:
+                # FL-4162 grid acceptance requires the context to be visibly dark
+                # in captures as well as interactive terminals. Encode the reduced
+                # RGB values directly instead of relying only on SGR 2 support.
+                fr, fgg, fb = (max(0, channel // 4) for channel in (fr, fgg, fb))
+                br, bgg, bb = (max(0, channel // 4) for channel in (br, bgg, bb))
             emphasis = "\x1b[7;1m" if highlighted else ""
             parts.append(
                 f"{emphasis}\x1b[38;2;{fr};{fgg};{fb}m"
@@ -625,6 +641,7 @@ class ViewerState:
         self.autoplay_axis = "frame"   # or "angle"
         self.role_focus: str | None = None
         self.stack_mode = False
+        self.grid_mode = True
         self.highlight_current = True
         self.hidden_layer_keys: set[str] = set()
         self.status = ""
@@ -659,7 +676,13 @@ class ViewerState:
         return self._xp_cache[cache_key]
 
 
-def compose_layer_stack(state: ViewerState, data: ContractData):
+def compose_layer_stack(
+    state: ViewerState,
+    data: ContractData,
+    *,
+    angle: int | None = None,
+    frame: int | None = None,
+):
     """Compose included visual layers for inspection; return cells and owner mask.
 
     This is a read-only discovery projection.  It applies ordinal visible-cell
@@ -682,7 +705,12 @@ def compose_layer_stack(state: ViewerState, data: ContractData):
         idx = info["raw_layer_index"]
         if not isinstance(idx, int) or idx >= len(xp.layers):
             continue
-        sliced = slice_frame(xp.layers[idx], info["frame_wh"], state.angle, state.frame)
+        sliced = slice_frame(
+            xp.layers[idx],
+            info["frame_wh"],
+            state.angle if angle is None else angle,
+            state.frame if frame is None else frame,
+        )
         if not sliced:
             continue
         if composite is None:
@@ -716,6 +744,191 @@ def compose_layer_stack(state: ViewerState, data: ContractData):
         "fw": fw,
         "fh": fh,
     }
+
+
+def _visible_len(value: str) -> int:
+    return len(ANSI_RE.sub("", value))
+
+
+def _pad_visible(value: str, width: int) -> str:
+    return value + (" " * max(0, width - _visible_len(value)))
+
+
+def _box_panel(title: str, lines: list[str], *, active: bool = False) -> list[str]:
+    """Box a render panel; the active animation frame gets a cyan heavy border."""
+    safe_title = title.replace("\n", " ")
+    width = max(
+        [_visible_len(safe_title) + 2, *(_visible_len(line) for line in lines)],
+        default=1,
+    )
+    if active:
+        style, tl, tr, bl, br, h, v = "\x1b[1;96m", "┏", "┓", "┗", "┛", "━", "┃"
+    else:
+        style, tl, tr, bl, br, h, v = "\x1b[2m", "┌", "┐", "└", "┘", "─", "│"
+    top_fill = max(0, width - _visible_len(safe_title) - 2)
+    top = f"{style}{tl} {safe_title} {h * top_fill}{tr}\x1b[0m"
+    body = [
+        f"{style}{v}\x1b[0m{_pad_visible(line, width)}{style}{v}\x1b[0m"
+        for line in lines
+    ]
+    bottom = f"{style}{bl}{h * width}{br}\x1b[0m"
+    return [top, *body, bottom]
+
+
+def _layout_columns(columns: list[list[str]], *, gap: int = 2) -> list[str]:
+    widths = [max((_visible_len(line) for line in col), default=0) for col in columns]
+    height = max((len(col) for col in columns), default=0)
+    out: list[str] = []
+    for row in range(height):
+        parts = []
+        for idx, col in enumerate(columns):
+            value = col[row] if row < len(col) else ""
+            parts.append(_pad_visible(value, widths[idx]))
+        out.append((" " * gap).join(parts).rstrip())
+    return out
+
+
+def _semantic_label(data: ContractData, key: str) -> str:
+    reviewed = data.reviewed_roles(key)
+    if reviewed:
+        return ";".join(reviewed)
+    info = data.join(key)
+    proposed = list(info.get("proposed_roles") or [])
+    if proposed:
+        return ";".join(map(str, proposed))
+    hand = str(info.get("hand_label") or "").strip()
+    return hand if hand else key
+
+
+def _focus_projection(final_grid, selected_grid, *, raw_metadata: bool = False):
+    """Selected semantic cells stay bright; the composed sprite becomes context."""
+    height = max(len(final_grid), len(selected_grid))
+    width = max(
+        max((len(row) for row in final_grid), default=0),
+        max((len(row) for row in selected_grid), default=0),
+    )
+    blank = (0, (0, 0, 0), MAGENTA_KEY)
+    merged = []
+    selected_mask = []
+    dim_mask = []
+    for y in range(height):
+        merged_row = []
+        selected_row = []
+        dim_row = []
+        for x in range(width):
+            final_cell = (
+                final_grid[y][x]
+                if y < len(final_grid) and x < len(final_grid[y])
+                else blank
+            )
+            selected_cell = (
+                selected_grid[y][x]
+                if y < len(selected_grid) and x < len(selected_grid[y])
+                else blank
+            )
+            glyph, _fg, bg = selected_cell
+            selected_visible = raw_metadata or (glyph != 0 and tuple(bg) != MAGENTA_KEY)
+            merged_row.append(selected_cell if selected_visible else final_cell)
+            selected_row.append(selected_visible)
+            dim_row.append(not selected_visible)
+        merged.append(merged_row)
+        selected_mask.append(selected_row)
+        dim_mask.append(dim_row)
+    return merged, selected_mask, dim_mask
+
+
+def _render_semantic_animation_grid(
+    state: ViewerState,
+    data: ContractData,
+    *,
+    max_width: int,
+) -> list[str]:
+    """Render all frames for the current angle with a moving active-frame border."""
+    key = state.current_key
+    info = data.join(key)
+    idx = info["raw_layer_index"]
+    xp = state.xp_for_key(key, data)
+    if not isinstance(idx, int) or idx >= len(xp.layers) or not info["frame_wh"]:
+        return [f"{key}: no frame geometry"]
+    selected_layer = xp.layers[idx]
+    geometry = slice_frame(selected_layer, info["frame_wh"], state.angle, state.frame)
+    if not geometry:
+        return [f"{key}: no frame geometry"]
+    total_frames = geometry["cols"]
+    current_frame = max(0, min(state.frame, total_frames - 1))
+    tiles: list[list[str]] = []
+    raw_metadata = idx < 2
+    for frame_idx in range(total_frames):
+        final = compose_layer_stack(state, data, angle=state.angle, frame=frame_idx)
+        selected = slice_frame(selected_layer, info["frame_wh"], state.angle, frame_idx)
+        if final is None or selected is None:
+            continue
+        merged, selected_mask, dim_mask = _focus_projection(
+            final["grid"], selected["grid"], raw_metadata=raw_metadata
+        )
+        rendered = render_cells_ansi(
+            merged,
+            raw_metadata=raw_metadata,
+            dim_mask=dim_mask,
+        )
+        tiles.append(_box_panel(
+            f"FRAME {frame_idx + 1}/{total_frames}",
+            rendered,
+            active=frame_idx == current_frame,
+        ))
+    if not tiles:
+        return [f"{key}: no renderable frames"]
+    tile_width = max(_visible_len(line) for line in tiles[0])
+    columns_per_row = max(1, min(6, max_width // max(1, tile_width + 1)))
+    lines: list[str] = []
+    for start in range(0, len(tiles), columns_per_row):
+        if lines:
+            lines.append("")
+        lines.extend(_layout_columns(tiles[start:start + columns_per_row], gap=1))
+    return lines
+
+
+def compose_grid_surface(state: ViewerState, data: ContractData) -> list[str]:
+    """Three-pane acceptance surface: final, semantic bit, animation grid."""
+    key = state.current_key
+    info = data.join(key)
+    idx = info["raw_layer_index"]
+    xp = state.xp_for_key(key, data)
+    final = compose_layer_stack(state, data)
+    if final is None:
+        final_lines = ["all visual layers hidden"]
+    else:
+        final_lines = render_cells_ansi(final["grid"])
+    final_box = _box_panel("FINAL SPRITE", final_lines)
+
+    selected_lines: list[str]
+    if isinstance(idx, int) and idx < len(xp.layers) and info["frame_wh"]:
+        selected = slice_frame(xp.layers[idx], info["frame_wh"], state.angle, state.frame)
+        selected_lines = render_cells_ansi(
+            selected["grid"] if selected else [],
+            raw_metadata=idx < 2,
+        )
+    else:
+        selected_lines = ["no renderable geometry"]
+    label = _semantic_label(data, key)
+    semantic_box = _box_panel(f"SEMANTIC BIT · L{idx} · {label}", selected_lines)
+
+    terminal_cols = shutil.get_terminal_size(fallback=(180, 48)).columns
+    left_width = max((_visible_len(line) for line in final_box), default=0)
+    mid_width = max((_visible_len(line) for line in semantic_box), default=0)
+    grid_width = max(24, terminal_cols - left_width - mid_width - 8)
+    grid_lines = _render_semantic_animation_grid(state, data, max_width=grid_width)
+    grid_box = _box_panel(
+        "ANIMATION GRID · selected bit bright · final sprite dim",
+        grid_lines,
+    )
+    total_width = sum(
+        max((_visible_len(line) for line in panel), default=0)
+        for panel in (final_box, semantic_box, grid_box)
+    ) + 4
+    if total_width <= terminal_cols:
+        return _layout_columns([final_box, semantic_box, grid_box])
+    return _layout_columns([final_box, semantic_box]) + [""] + grid_box
 
 
 def _layer_is_cyan_swoosh(layer) -> bool:
@@ -807,7 +1020,7 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
         f"  XP {state.stem_idx + 1}/{len(state.corpus_stems)}"
         if state.corpus_stems else ""
     )
-    view_mode = "STACK" if state.stack_mode else "ISOLATED"
+    view_mode = "GRID" if state.grid_mode else "STACK" if state.stack_mode else "ISOLATED"
     inclusion = "HIDDEN-FROM-STACK" if key in state.hidden_layer_keys else "INCLUDED"
     highlight = "ON" if state.highlight_current else "OFF"
     out.append(f"== SOURCE LAYER CONTRACT VIEWER (READ-ONLY) :: {state.current_stem()} =="
@@ -826,7 +1039,16 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
     )
     out.append("")
 
-    if state.stack_mode:
+    if state.grid_mode:
+        if layer is not None and info["frame_wh"]:
+            sliced = slice_frame(layer, info["frame_wh"], state.angle, state.frame)
+            if sliced:
+                out.append(
+                    f"-- {key}  (raw layer L{idx}, frame {state.frame + 1}/{sliced['cols']},"
+                    f" angle {state.angle + 1}/{sliced['rows']}, {sliced['fw']}x{sliced['fh']}) --"
+                )
+        out.extend(compose_grid_surface(state, data))
+    elif state.stack_mode:
         stack = compose_layer_stack(state, data)
         if stack:
             selected_note = (
@@ -986,7 +1208,7 @@ def compose_screen(state: ViewerState, data: ContractData) -> str:
         out.append(state.status)
     out.append("")
     out.append("{ } XP  [ ] layer  , . angle  n/p frame  space autoplay  x axis")
-    out.append("c isolated/stack  h highlight  v include/hide layer  a include all  f role-focus  q quit")
+    out.append("g grid/detail  c isolated/stack  h highlight  v include/hide layer  a include all  f role-focus  q quit")
     return "\n".join(out)
 
 
@@ -1039,7 +1261,10 @@ def handle_key(state: ViewerState, ch: str, data: ContractData) -> bool:
     elif ch == "f":
         roles = data.reviewed_roles(state.current_key)
         state.role_focus = roles[0] if roles and not state.role_focus else None
+    elif ch == "g":
+        state.grid_mode = not state.grid_mode
     elif ch == "c":
+        state.grid_mode = False
         state.stack_mode = not state.stack_mode
     elif ch == "h":
         state.highlight_current = not state.highlight_current

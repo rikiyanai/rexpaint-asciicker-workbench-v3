@@ -62,6 +62,27 @@ def test_render_can_expose_metadata_cells_and_highlight_selected_bits():
     assert "A" in lines[0]
 
 
+def test_focus_projection_keeps_selected_bit_bright_and_dims_final_context():
+    final = [[
+        (65, (200, 200, 200), (10, 10, 10)),
+        (66, (200, 200, 200), (10, 10, 10)),
+    ]]
+    selected = [[
+        (0, (0, 0, 0), (255, 0, 255)),
+        (72, (255, 255, 0), (20, 20, 20)),
+    ]]
+    merged, selected_mask, dim_mask = v._focus_projection(final, selected)
+    assert merged[0][0] == final[0][0]
+    assert merged[0][1] == selected[0][1]
+    assert selected_mask == [[False, True]]
+    assert dim_mask == [[True, False]]
+    rendered = v.render_cells_ansi(
+        merged, highlight_mask=selected_mask, dim_mask=dim_mask
+    )[0]
+    assert "38;2;50;50;50" in rendered
+    assert "\x1b[7;1m" in rendered
+
+
 def test_cp437_graphical_control_bytes_keep_exact_visible_identity():
     assert v._glyph_char(1) == "☺"
     assert v._glyph_char(2) == "☻"
@@ -123,6 +144,8 @@ def test_handle_key_transitions():
     v.handle_key(st, " ", data); assert st.autoplay is False
     v.handle_key(st, "x", data); assert st.autoplay_axis == "angle"
     v.handle_key(st, "f", data); assert st.role_focus == "bee_body"  # L2 role
+    assert st.grid_mode is True
+    v.handle_key(st, "g", data); assert st.grid_mode is False
     assert v.handle_key(st, "q", data) is False
 
     wolack = v.ViewerState("wolack-0001", data.layer_keys_for_stem("wolack-0001"))
@@ -163,6 +186,46 @@ def test_compose_screen_makes_the_trap_visible():
     assert "bee_body" in screen                        # the human-corrected role
     assert "contradicted by hand" in screen            # the trap, spelled out
     assert "ROLE GRID" in screen
+
+
+def test_default_grid_is_three_pane_and_names_reviewed_helmet_bit(monkeypatch):
+    data = _data()
+    state = v.ViewerState(
+        "player-0100", data.layer_keys_for_stem("player-0100"), sprites=SPRITES
+    )
+    state.layer_idx = state.layer_keys.index("player-0100-L3")
+    state.frame = 2
+    monkeypatch.setattr(
+        v.shutil,
+        "get_terminal_size",
+        lambda fallback: __import__("os").terminal_size((220, 70)),
+    )
+    screen = v.compose_screen(state, data)
+    assert "FINAL SPRITE" in screen
+    assert "SEMANTIC BIT · L3 · player_helmet_regular" in screen
+    assert "ANIMATION GRID · selected bit bright · final sprite dim" in screen
+    assert "FRAME 1/18" in screen and "FRAME 18/18" in screen
+    assert "\x1b[1;96m┏ FRAME 3/18" in screen
+    assert "38;2;" in screen
+
+
+def test_autoplay_moves_the_active_animation_grid_border(monkeypatch):
+    data = _data()
+    state = v.ViewerState(
+        "player-0100", data.layer_keys_for_stem("player-0100"), sprites=SPRITES
+    )
+    state.layer_idx = state.layer_keys.index("player-0100-L3")
+    monkeypatch.setattr(
+        v.shutil,
+        "get_terminal_size",
+        lambda fallback: __import__("os").terminal_size((220, 70)),
+    )
+    first = v.compose_screen(state, data)
+    assert "\x1b[1;96m┏ FRAME 1/18" in first
+    v._advance_autoplay(state, data)
+    second = v.compose_screen(state, data)
+    assert "\x1b[1;96m┏ FRAME 2/18" in second
+    assert "\x1b[1;96m┏ FRAME 1/18" not in second
 
 
 def test_layer_keys_for_stem_sorted_and_scoped():
