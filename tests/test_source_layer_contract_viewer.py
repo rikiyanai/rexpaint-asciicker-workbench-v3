@@ -362,6 +362,7 @@ def test_viewer_module_writes_nothing_to_disk():
     assert "build_upstream_xp_cell_review_queue" not in src
     assert "compare_upstream_xp_cell_contracts" not in src
     assert "record_upstream_xp_coordinate_cell_decision" not in src
+    assert "xp_core" not in src
     for forbidden in ("json.dump", "mkstemp", "os.replace", "Path.write_text", ".write_text("):
         assert forbidden not in src, f"viewer must not write: found {forbidden!r}"
     for node in ast.walk(ast.parse(src)):
@@ -392,6 +393,31 @@ def test_contract_read_model_has_no_disk_write_surface():
         "record_upstream_xp_coordinate_cell_decision",
     ):
         assert forbidden not in src
+
+
+def test_xp_read_model_has_no_write_surface_and_matches_existing_parser():
+    import xp_core
+    import xp_read_model
+
+    src = (PIPELINE_V3 / "scripts" / "xp_read_model.py").read_text()
+    for forbidden in (
+        "save", "serialize", "write_text", "write_bytes", "mkstemp", "os.replace",
+        'gzip.open(path, "wb")', "xp_core",
+    ):
+        assert forbidden not in src
+
+    path = SPRITES / "player-0100.xp"
+    expected = xp_core.XPFile()
+    expected.load(str(path))
+    actual = xp_read_model.load_xp(path)
+    assert actual.version == expected.version
+    assert actual.get_metadata() == expected.get_metadata()
+    assert len(actual.layers) == len(expected.layers)
+    for actual_layer, expected_layer in zip(actual.layers, expected.layers):
+        assert (actual_layer.width, actual_layer.height) == (
+            expected_layer.width, expected_layer.height,
+        )
+        assert actual_layer.data == expected_layer.data
 
 
 # --- FL-4162 microscope: engine refs, neighbors, hand_note, match ids in one panel ---

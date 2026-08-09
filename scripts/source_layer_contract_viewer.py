@@ -51,8 +51,8 @@ from typing import Any
 SCRIPTS = Path(__file__).resolve().parent
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
-import xp_core  # noqa: E402  (the shared XP parser — single owner)
 import source_layer_contract_read_model as contract_read_model  # noqa: E402
+import xp_read_model  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SM = REPO_ROOT / "docs/research/ascii/semantic_maps"
@@ -540,7 +540,7 @@ def _glyph_char(glyph: int) -> str:
     return "?"
 
 
-def slice_frame(layer: "xp_core.XPLayer", frame_wh, angle: int, frame: int):
+def slice_frame(layer: "xp_read_model.XPLayer", frame_wh, angle: int, frame: int):
     """Return the (glyph,fg,bg) grid for one frame/angle, using card geometry.
 
     Atlas is row-major data[y][x]; frame_wh=[fw,fh]; columns=W//fw frames per angle
@@ -566,7 +566,9 @@ def slice_frame(layer: "xp_core.XPLayer", frame_wh, angle: int, frame: int):
     return {"grid": grid, "cols": cols, "rows": rows, "fw": fw, "fh": fh}
 
 
-def source_animation_layout(xp: "xp_core.XPFile", layer: "xp_core.XPLayer", frame_wh):
+def source_animation_layout(
+    xp: "xp_read_model.XPFile", layer: "xp_read_model.XPLayer", frame_wh,
+):
     """Return the engine-authored animation/projection split for an XP atlas.
 
     Multi-angle XP files store ``projs * sum(anims)`` columns.  Projection banks
@@ -663,7 +665,7 @@ class ViewerState:
         self.stem_idx = self.corpus_stems.index(stem) if stem in self.corpus_stems else 0
         self.microscope = microscope
         self.sprites = sprites
-        self._xp_cache: dict[str, "xp_core.XPFile"] = {}
+        self._xp_cache: dict[str, "xp_read_model.XPFile"] = {}
         self.layer_idx = 0
         self.angle = 0
         self.frame = 0
@@ -698,7 +700,9 @@ class ViewerState:
         self.projection = 0
         self.role_focus = None
 
-    def xp_for_key(self, source_key: str, data: ContractData) -> "xp_core.XPFile":
+    def xp_for_key(
+        self, source_key: str, data: ContractData,
+    ) -> "xp_read_model.XPFile":
         source_path = data.source_xp_path(source_key)
         candidate = self.sprites / source_path.name
         path = candidate if candidate.is_file() else REPO_ROOT / source_path
@@ -1439,21 +1443,17 @@ def load_microscope_group(args) -> "MicroscopeGroup | None":
     return MicroscopeGroup(args.group)
 
 
-def load_xp_for_stem(stem: str, sprites: Path) -> "xp_core.XPFile":
+def load_xp_for_stem(stem: str, sprites: Path) -> "xp_read_model.XPFile":
     return load_xp_path(sprites / f"{stem}.xp")
 
 
-def load_xp_path(path: Path) -> "xp_core.XPFile":
+def load_xp_path(path: Path) -> "xp_read_model.XPFile":
     if not path.is_file():
         raise ContractDataError(f"XP not found: {path}")
-    xp = xp_core.XPFile()
-    # xp_core.load() prints progress to stdout; silence it so it cannot corrupt
-    # the rendered terminal frame (this viewer owns the screen).
-    import contextlib
-    import io
-    with contextlib.redirect_stdout(io.StringIO()):
-        xp.load(str(path))
-    return xp
+    try:
+        return xp_read_model.load_xp(path)
+    except (OSError, ValueError) as exc:
+        raise ContractDataError(f"cannot read XP {path}: {exc}") from exc
 
 
 def main(argv: list[str]) -> int:
