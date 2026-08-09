@@ -52,9 +52,7 @@ SCRIPTS = Path(__file__).resolve().parent
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 import xp_core  # noqa: E402  (the shared XP parser — single owner)
-import build_upstream_xp_cell_review_queue as cell_review  # noqa: E402
-import compare_upstream_xp_cell_contracts as cell_contracts  # noqa: E402
-import record_upstream_xp_coordinate_cell_decision as coordinate_recorder  # noqa: E402
+import source_layer_contract_read_model as contract_read_model  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SM = REPO_ROOT / "docs/research/ascii/semantic_maps"
@@ -370,10 +368,10 @@ class ContractData:
     def expanded_cells(self, source_key: str) -> dict[tuple[int, int, int, int], dict[str, Any]]:
         if source_key not in self._expanded_cells:
             try:
-                self._expanded_cells[source_key] = cell_contracts.expand_cells(
+                self._expanded_cells[source_key] = contract_read_model.expand_cells(
                     self.cell_record(source_key)
                 )
-            except cell_contracts.ComparisonError as exc:
+            except contract_read_model.ReadModelError as exc:
                 raise ContractDataError(f"invalid cell ledger record: {exc}") from exc
         return self._expanded_cells[source_key]
 
@@ -388,20 +386,13 @@ class ContractData:
                 )
             decision = self._cell_decision_cache[unit_id]
         if decision is not None and unit_id not in self._validated_decision_units:
-            mini_doc = {
-                "review_units": [copy.deepcopy(unit)],
-                "coverage": {},
-                "freeze_gate": {},
-            }
             try:
-                cell_review.apply_decisions(
-                    mini_doc,
-                    {unit_id: decision},
-                    {unit["representative_source_key"]: self.cell_record(
-                        unit["representative_source_key"]
-                    )},
+                contract_read_model.validate_decision(
+                    copy.deepcopy(unit),
+                    self.cell_record(unit["representative_source_key"]),
+                    decision,
                 )
-            except cell_review.ReviewQueueError as exc:
+            except contract_read_model.ReadModelError as exc:
                 raise ContractDataError(f"invalid full-cell decision: {exc}") from exc
             self._validated_decision_units.add(unit_id)
         return decision
@@ -424,24 +415,20 @@ class ContractData:
 
     def load_assignment_preview(self, path: Path) -> str:
         try:
-            assignment = coordinate_recorder.load_assignment(path)
+            assignment = contract_read_model.load_assignment(path)
             source_key = str(assignment.get("source_key") or "")
             if source_key not in self._cell_record_index:
-                raise cell_review.ReviewQueueError(
+                raise contract_read_model.ReadModelError(
                     f"assignment preview has unknown source key: {source_key}"
                 )
             unit = self.review_units_by_key[source_key]
-            decision = coordinate_recorder.build_decision(
+            decision = contract_read_model.build_assignment_preview(
                 unit,
                 self.cell_record(source_key),
                 assignment,
-                "read-only assignment preview",
-                [str(path)],
-                [],
-                "source_layer_contract_viewer",
-                "read_only_preview",
+                str(path),
             )
-        except (OSError, cell_review.ReviewQueueError) as exc:
+        except (OSError, contract_read_model.ReadModelError) as exc:
             raise ContractDataError(f"invalid assignment preview: {exc}") from exc
         self.assignment_preview_key = source_key
         self.assignment_preview_decision = decision
@@ -452,7 +439,9 @@ class ContractData:
         unit = self.review_units_by_key[source_key]
         decision, is_preview = self.decision_for(source_key)
         assigned = (
-            cell_review._assignment_coordinates(decision.get("cell_assignments") or [])
+            contract_read_model.assignment_coordinates(
+                decision.get("cell_assignments") or []
+            )
             if decision is not None else {}
         )
         cells = self.expanded_cells(source_key)

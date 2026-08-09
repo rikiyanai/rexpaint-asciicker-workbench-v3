@@ -359,6 +359,9 @@ def test_viewer_module_writes_nothing_to_disk():
     import ast
 
     src = (PIPELINE_V3 / "scripts" / "source_layer_contract_viewer.py").read_text()
+    assert "build_upstream_xp_cell_review_queue" not in src
+    assert "compare_upstream_xp_cell_contracts" not in src
+    assert "record_upstream_xp_coordinate_cell_decision" not in src
     for forbidden in ("json.dump", "mkstemp", "os.replace", "Path.write_text", ".write_text("):
         assert forbidden not in src, f"viewer must not write: found {forbidden!r}"
     for node in ast.walk(ast.parse(src)):
@@ -377,6 +380,18 @@ def test_viewer_module_writes_nothing_to_disk():
                 mode_node = keyword.value
         mode = mode_node.value if isinstance(mode_node, ast.Constant) else "r"
         assert isinstance(mode, str) and not any(flag in mode for flag in "wax+")
+
+
+def test_contract_read_model_has_no_disk_write_surface():
+    src = (
+        PIPELINE_V3 / "scripts" / "source_layer_contract_read_model.py"
+    ).read_text()
+    for forbidden in (
+        "json.dump", "mkstemp", "os.replace", "Path.write_text", ".write_text(",
+        "build_upstream_xp_cell_review_queue",
+        "record_upstream_xp_coordinate_cell_decision",
+    ):
+        assert forbidden not in src
 
 
 # --- FL-4162 microscope: engine refs, neighbors, hand_note, match ids in one panel ---
@@ -617,7 +632,7 @@ def test_family_freeze_guards_fail_closed(monkeypatch, mutation, error):
         v.ContractData(SM)
 
 
-def test_assignment_preview_uses_coordinate_recorder_without_writing(tmp_path):
+def test_assignment_preview_uses_read_model_without_writing(tmp_path):
     import json
 
     data = _data()
