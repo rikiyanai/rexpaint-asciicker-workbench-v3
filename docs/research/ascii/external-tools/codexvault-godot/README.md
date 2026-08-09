@@ -33,8 +33,12 @@ Sketchpad companion assets:
 
 The CODEXVault ASCII page declares copyright 2025 Ariel Williams and “All
 Rights reserved.” No reusable implementation license was established for the
-captured pages. These files are retained as research references. Their source
-must not be copied into product code without a compatible grant.
+captured pages. This private custom-engine project does not classify that
+uncertainty as a technical non-vendorability verdict. The exact sources can be
+studied, retained, and adapted internally under the operator's private-use
+policy while their provenance and unresolved license state remain attached.
+Any later public distribution needs a separate license review; that future
+distribution question is not an implementation blocker for this archive.
 
 ## 1. ASCII Art Sketchpad
 
@@ -48,6 +52,62 @@ Its durable document is plain text. Share links compress that text with the
 browser `CompressionStream` API into a URL fragment. This makes the page a
 useful example of a low-friction cell sketch surface and a poor source for rich
 compiler metadata.
+
+### How pointer direction becomes a glyph
+
+The operator's observation is correct for the default ASCII drawing family.
+The page does not stamp one selected character into every visited cell. Its
+pointer handler retains the previous continuous grid coordinate, whether the
+stroke has started, and the previous normalized segment direction. A move is
+accepted once either cell-axis delta reaches 0.35. The accepted segment then
+enters a geometric rasterizer.
+
+The rasterizer computes `slope = dy / dx` and walks the grid boundaries crossed
+by that segment. For each crossed cell, it selects a character from the slope
+and the subcell crossing position:
+
+| Geometric case | Default ASCII family | Block family |
+|---|---|---|
+| near vertical, `abs(slope) > 1.6` | `|`, with `(` and `)` available at turns | `▌`, `▐`, `█` |
+| diagonal, `0.75 < abs(slope) <= 1.6` | `\` for positive slope, `/` for negative slope | `▚`, `▞` |
+| shallow segment | `-` plus `'`, `` ` ``, `´`, `.`, and `,` according to height and slope | `▀`, `▄`, `█` |
+
+The previous segment direction supplies a second input. The implementation
+computes the cross product and dot product between the previous and current
+unit directions. A nontrivial turn sets a signed turn value used by the ASCII
+selector; a near-horizontal reversal writes `>` and `<` at the reversal cell.
+This is why two gestures that visit similar cells can display different
+characters: slope, within-cell position, turn history, and traversal sequence
+all participate. It is deterministic geometric quantization of pointer
+samples, not glyph-atlas matching and not analysis of the pixels already on
+screen. Pointer event spacing can therefore affect a corner when it changes
+the segment sequence seen by the turn detector.
+
+Box-character drawing uses a distinct rule. A grid traversal enumerates every
+crossed cell. Each adjacent pair contributes left, right, up, and down bits to
+a four-bit connectivity mask. A 16-entry lookup maps the mask to `─`, `│`,
+rounded corners, tees, and `┼`. In this family, direction affects the visited
+path, while the final glyph comes from accumulated connectivity. Reversing a
+simple path should produce the same final mask. The mask exists only for the
+current gesture, so a later stroke does not parse and merge connectivity from
+previously painted box glyphs.
+
+The relevant pinned-source anchors are the default/block selectors `ce` and
+`le`, grid traversal `k`, connection accumulation `A`, connectivity lookup
+`pe`, segment rasterizer `me`, path reducer `he`, and pointer-move handler
+`St`, all on minified line 15 of
+`ASCII Art Sketchpad_files/index-CC-3q6yM.js`. The archive hash above pins the
+otherwise unstable minified names.
+
+For FL-4512, the transferable idea is deeper than the visible punctuation.
+A stroke can author structural facts: traversed cells, entry and exit edges,
+junction degree, turn class, tangent direction, endpoint role, and optional
+stroke order. The compiler should preserve those facts under stable glyph IDs,
+then compile legal structural glyph sequences. It should not treat the
+Sketchpad's emitted character as authoritative metadata. Undirected structure
+must canonicalize forward and reversed gestures to the same result. Directed
+semantics, such as an arrow and a temporal stroke order, need an explicit
+authored direction field instead of accidental pointer traversal order.
 
 Transfer value:
 
@@ -233,27 +293,121 @@ the FL-4512 destination. The selected ownership remains:
 4. Paper describes the accepted architecture and evidence after the owning
    product gates close.
 
-For a Godot port, split the concepts into typed components:
+For a Godot port, the browser prototypes should become a composed authoring
+application with explicit owners rather than one translated monolithic script.
 
-- `AsciiDocument` Resource for dimensions, frames, cells, colors, schema, and
-  provenance;
-- `GlyphAtlas` Resource for stable grapheme IDs plus compiled attributes;
-- `CanvasView` Control for presentation and coordinate conversion;
-- independent pencil, selection, structure, Braille, connectivity, and text
-  tools;
-- `HistoryService`, `FrameSequencer`, `ImportExportService`,
-  `ReferenceImageGuide`, and `PaletteProvider` components;
-- a root `Control` that wires signals and delegates work;
-- one shared Godot `Theme` Resource for palette, typography, spacing, and focus
-  states.
+### Godot ownership model
 
-This composition keeps document truth, compiled glyph truth, UI state,
-presentation, and interchange independently testable. It also prevents the
-single-file browser prototypes from becoming monolithic Godot scene scripts.
+| Owner | Godot shape | Sole responsibility | Must not own |
+|---|---|---|---|
+| `AsciiDocument` | session-owned `Resource` | document ID, dimensions, layers, frames, cell records, authored delays, schema, source provenance | viewport state, pointer handling, compiled measurements |
+| `CompiledGlyphAtlas` | immutable `Resource` | stable glyph IDs, font hashes, measured attributes, authored memberships, relation projections, profile tables, compiler receipt | current document edits, live scene facts, per-frame product choice |
+| `EditorSession` | `RefCounted` | active frame, selection, active tool ID, zoom, unsaved state | durable cell content, glyph facts |
+| `DocumentEditor` | `RefCounted` | validate and apply typed edit commands to the session document | input sampling, rendering, file-format parsing |
+| `CanvasView` | one custom `Control` | grid-to-screen transforms, visible-range calculation, batched cell drawing, overlays, dirty-region redraw | document mutation, glyph selection policy, history |
+| tool components | `RefCounted` strategies | convert normalized input into typed intents and edit commands | direct file writes, direct view mutation, runtime glyph selection |
+| `HistoryService` | `RefCounted` | transaction boundaries plus undo and redo stacks of changed-cell deltas | whole-document snapshots per pointer event, rendering |
+| `PlaybackClock` | lightweight `Node` | transient playback time and displayed-frame cursor | authored frame order and delay values |
+| `ImportExportService` | injected service with format adapters | TXT, ANSI, JSON, XP, compiler-source, and canonical binary boundaries | UI dialogs, document display, hidden fallback mapping |
+| `ReferenceImageState` | separate session `Resource` | image identity/hash, transform, opacity, visibility, lock state | glyph cells, compiler artifacts unless explicitly exported as a sidecar |
+| `PaletteProvider` | read-only query service | expose authored pools and atlas records to palette UI | committing edits, selecting the final live-game glyph |
+| `AsciiEditorRoot` | logic-light root `Control` | connect child signals, inject dependencies, call components downward | raster algorithms, serialization, history logic, document truth |
+
+`AsciiDocument` and `CompiledGlyphAtlas` are deliberately different Resource
+types. The first is mutable authoring truth owned by one editor session. A
+loaded template must be duplicated before mutation so another scene cannot
+share the same editable instance. The second is content-hash-pinned compiler
+output and stays read-only. A palette may query it, yet neither the palette nor
+the view may change it. Large cell arrays should use packed storage inside one
+document aggregate plus a canonical binary exchange format; forty thousand
+cell Nodes and thousands of individual `.tres` records would waste SceneTree
+and Resource overhead.
+
+The frame boundary also needs two owners. `AsciiDocument` owns authored frame
+order, frame content, and delay values because those facts must survive save
+and load. `PlaybackClock` owns only ephemeral elapsed time and the current
+preview cursor because `_process()` state does not belong in the saved
+document. Playback requests a frame projection from the document, then emits a
+display-frame signal. It never rewrites authored timing.
+
+The view should be a projection. One custom `Control` can draw the visible cell
+range in `_draw()`, using pinned font metrics and dirty rectangles. It should
+not create one `Label` per cell. `CanvasView` converts pointer coordinates into
+continuous grid coordinates, then emits normalized pointer samples upward. It
+does not decide that a slope means `/`; a stroke tool owns that policy and
+returns a command. The root passes the command to `DocumentEditor`, which opens
+one history transaction, applies validated cell deltas, and emits one
+document-changed signal back toward the view.
+
+The direction-sensitive tool can be represented as this deterministic flow:
+
+```text
+InputEvent
+    -> CanvasView coordinate conversion
+    -> StrokeSampler cell-space polyline
+    -> StrokeTopologyResolver edge masks + turns + endpoints
+    -> GlyphStructurePolicy authored structural roles
+    -> EditCommand changed-cell delta
+    -> DocumentEditor -> AsciiDocument
+                       -> HistoryService
+
+CompiledGlyphAtlas -> PaletteProvider -> operator glyph/pool intent
+AsciiDocument ------------------------> CanvasView projection
+ReferenceImageState ------------------> CanvasView guide overlay
+```
+
+For the FL-4512 architecture, `GlyphStructurePolicy` should produce structural
+attributes and legal authored memberships, not an untracked final character.
+The offline compiler consumes a frozen document/source snapshot and produces
+`CompiledGlyphAtlas`. The live 3D runtime later combines that immutable artifact
+with renderer-owned scene facts. The Godot editor therefore helps author the
+compiler inputs without becoming a second runtime selector.
+
+`ImportExportService` is the only interchange owner. Each adapter must map
+into the same typed document transaction and report unsupported data
+explicitly. The XP adapter preserves layer, foreground color, background
+color, frame, source coordinate, semantic anchor, and the declared
+CP437/Unicode/GlyphId mapping. TXT knowingly drops metadata. ANSI preserves
+text plus supported colors. Compiler-source export carries glyph identity,
+structural facts, memberships, schema version, font identity, and provenance.
+No format adapter may silently reconstruct data through a plausible fallback.
+
+`ReferenceImageState` remains separate because the guide is neither glyph
+content nor compiled truth. A saved editor sidecar can retain its file hash and
+transform when desired. Normal document export excludes it. `PaletteProvider`
+is similarly narrow: it filters compiler-owned pools, ramps, direction bins,
+morphology families, connectivity roles, and recent operator choices. Clicking
+a tile emits glyph intent; only `DocumentEditor` commits the resulting command.
+
+The root `Control` is an orchestrator in the strict Godot composition sense.
+Children emit signals upward. The root calls injected components downward.
+Sibling tools never call one another, views never reach into services, and
+services never search the scene tree. Exported typed references plus direct
+signals keep the scene testable in isolation.
+
+The minimum architecture tests follow directly from those boundaries:
+
+- forward and reversed undirected strokes compile to identical topology;
+- the same polyline sampled at different pointer-event rates yields the same
+  normalized cell path;
+- connectivity masks produce the expected endpoint, corner, tee, and junction
+  roles;
+- one pointer gesture creates one undoable transaction;
+- undo then redo reproduces the exact document hash;
+- XP import then export preserves every represented field;
+- atlas hashes and glyph IDs remain unchanged during editing;
+- reference-image changes never alter document and atlas hashes;
+- rendering the view never mutates the document;
+- the root contains wiring while domain algorithms remain in components.
+
+This separation is useful because it lets the private Godot tool evolve its UI,
+file adapters, compiler inputs, and renderer independently while retaining one
+owner for every truth surface. It also prevents the single-file browser
+prototypes from becoming monolithic Godot scene scripts.
 
 ## Evidence boundary
 
 The findings above come from HTTP status checks, exact byte archives, and
 static source inspection. No interactive browser session, Godot runtime,
 pipeline-v3 `.xp` round-trip, compiler execution, native game run, WebAssembly
-run, temporal product capture, and operator visual signoff were not performed.
+run, temporal product capture, and operator visual signoff were performed.
