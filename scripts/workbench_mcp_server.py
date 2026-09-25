@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Workbench MCP Server — FastMCP wrapper for the asciicker pipeline REST API.
+"""Workbench MCP Server — MCPServer wrapper for the asciicker pipeline REST API.
 
 Exposes 16 tools for pipeline operations, classic sessions, bundle lifecycle,
 and validation. Requires the workbench server running at WORKBENCH_URL
@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -26,7 +26,7 @@ from mcp.server.fastmcp import FastMCP
 WORKBENCH_URL = os.environ.get("WORKBENCH_URL", "http://127.0.0.1:5071")
 TIMEOUT = float(os.environ.get("MCP_HTTP_TIMEOUT", "60"))
 
-mcp = FastMCP(
+mcp = MCPServer(
     "workbench-api",
     instructions="Asciicker pipeline workbench API — skin conversion, bundles, validation",
 )
