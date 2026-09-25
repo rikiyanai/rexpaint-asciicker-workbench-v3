@@ -1,4 +1,4 @@
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 import sys
 import os
 import subprocess
@@ -15,7 +15,7 @@ except ImportError:
     XPLayer = None
 
 # Initialize the MCP server
-mcp = FastMCP("rex_manager")
+mcp = MCPServer("rex_manager")
 
 REXPAINT_WINE_PATH = os.environ.get(
     "WINE_PATH",
