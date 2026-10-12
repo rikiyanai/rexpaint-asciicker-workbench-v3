@@ -12698,3 +12698,59 @@ Review correction:
 - Operational thresholds now define `solid`, `close`, and `ambiguous`:
   `solid_bg_threshold`, `solid_feature_max_ratio`, and
   `score_delta_threshold`.
+
+## Operator Rejection — V3 Product Frame, Brush, UI, Browse Ownership, And Bundle Coverage (2026-10-12)
+
+**Status: OPEN.** This entry records the operator-directed product boundary and
+the gaps that must be audited before implementation. It does not claim that the
+current source has been changed or that a replacement UI has been accepted.
+
+### What failed
+
+1. The active session identified `https://rikiworld.com/xpedit` as Workbench
+   V3 and opened that surface in desktop and mobile Chrome tabs. The operator
+   rejected that identification: the authoritative V3 working tree for this
+   task is this repository at
+   `/Users/r/Projects/asciicker-Y9-2/pipeline-v3`.
+2. The current V3 product is missing the later custom brush that changes glyph
+   choice according to stroke direction/shape. The prior implementation and
+   its provenance must be found before a replacement is designed.
+3. The dark-blue, control-heavy presentation reads as generic AI-generated UI.
+   The requested direction is simplification: remove unnecessary buttons and
+   adopt the Refrog visual/font language rather than reskinning the same button
+   sprawl.
+4. The whole-sheet editor must live inside Browse as a first-class application,
+   not as a subordinate panel in a workflow wrapper. The product boundary is a
+   REXPaint clone plus the custom stroke-aware brush plus `Test This Skin`.
+5. `idle`, `attack`, and `death` are not an adequate action/presentation model.
+   The implementation and plan must be audited against the normalized XP bundle
+   contract and the current Y9-2 runtime presentation surface before changing
+   the UI.
+
+### Required audit before implementation
+
+- Locate the stroke-aware glyph brush in current or historical source and
+  record exact code/provenance rather than recreating it from memory.
+- Inventory visible controls by workflow and identify which controls survive,
+  move into contextual menus/drawers, or disappear under the stated product
+  boundary.
+- Identify the Refrog theme/font source and its reuse/licensing boundary.
+- Compare whole-sheet/Browse ownership in source with Section 1 of
+  `docs/plans/2026-03-23-workbench-canonical-spec.md`.
+- Derive presentation/action coverage from the normalized XP bundle contract,
+  not from the current three-tab template.
+- Define desktop and mobile user-reachable acceptance sequences before any
+  implementation or visual proof run.
+
+### Falsifiers
+
+- Falsified if the operator identifies a different V3 working tree for this
+  task.
+- The missing-brush finding is closed only by locating and exercising the
+  stroke-dependent glyph behavior through the shipped UI.
+- The UI finding is not closed by color substitution alone; unnecessary
+  controls must be removed or contextually demoted and the operator-directed
+  Browse/editor hierarchy must be visible in the real app.
+- The coverage finding is not closed by relabeling the same three action tabs;
+  the authoring surface must consume the reviewed normalized bundle/runtime
+  contract.
