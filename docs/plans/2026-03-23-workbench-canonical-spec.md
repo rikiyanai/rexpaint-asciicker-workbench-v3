@@ -4398,6 +4398,127 @@ existing compile step, not a new product surface.
 The existing blocking gates for `UQ-008` and generalized bundle-port readiness
 remain open. They are now also gated on `UQ-R15` completion.
 
+## 2.16 Operator-Directed V3 Product Audit — Browse-First Editor, Adaptive Stroke Brush, And Refrog Skin
+
+**Observed 2026-10-12 on `fl4306-evidence-sidebar` at `6b77032` plus the
+documentation-only rejection log commit `c84d395`. Audit only: no product code,
+deployment, or acceptance proof changed in this checkpoint.**
+
+The operator rejected the hosted `/xpedit` page as a sufficient identification
+of the V3 product and supplied a narrower product frame: a first-class
+whole-sheet editor in Browse, recognizable as a REXPaint clone, with the custom
+stroke-aware glyph brush and `Test This Skin` as its defining extensions. The
+current interface and capability surface do not yet satisfy that frame.
+
+### 2.16.1 Directly Observed State
+
+| Area | Evidence inspected | Audit result |
+|------|--------------------|--------------|
+| Whole-sheet ownership | `web/whole-sheet-init.js`; §§1.1, 1.8, and the XP editor acceptance contract | The root editor already owns whole-sheet document state, and Paint/Browse are peer modes. The implementation has a Browse document list, but the surrounding workbench still presents the editor as one dense panel among pipeline/debug surfaces rather than a first-class Browse app. |
+| Adaptive brush | `web/rexpaint-editor/tools/`; `web/whole-sheet-init.js`; all five remote branch tips and repository history | No stroke-aware glyph brush exists in V3. `CellTool` and the line/shape adapters receive one selected glyph and apply that fixed glyph. No deleted or remote-only V3 implementation was found. The exact later implementation named by the operator therefore remains a provenance gap and must not be guessed from generic line-tool code. |
+| Visual language | `web/styles.css`; `web/workbench.html` | The shipped shell uses a dark navy palette (including `#182131`, `#0f1420`, `#173860`, and related blues). The static HTML alone defines 122 buttons and 264 IDs before additional whole-sheet controls are built in JavaScript. This is the dense dark-blue surface the operator rejected. |
+| Refrog source | live GitHub read of `rikiyanai/refrog-app`, default branch `master`, observed 2026-10-12 | Refrog's canonical theme is `terminal`: white backgrounds, black text/borders, square zero-radius controls, 2 px DOS-style borders, and bundled `XanhMono-Regular.ttf` / `XanhMono-Italic.ttf`. `Xanh_Mono/OFL.txt` is present and the repository README declares MIT for the app. V3's current `DepartureMono-Regular` reference is not evidence of the Refrog font and must not be relabeled. |
+| Action coverage | `config/template_registry.json`; §§2.3.8–2.3.10, 2.9.1, 2.11, and the normalized XP inspector's read-only family topology contracts | The live authoring registry is already broader than three tabs: on-foot `player`, `attack`, `plydie`, plus authorable mounted `wolfie` and `wolack`; `bigbee` remains deferred and green variants remain proof-only. The normalized inspector is useful evidence but explicitly not runtime authority. The current product must derive enabled actions from the V3 registry and Y9-2 runtime identity contract, not hard-code idle/attack/death as the whole product. |
+| Repository readiness | `python3 scripts/conductor_tools.py status --auto-setup`; `python3 scripts/self_containment_audit.py`; `docs/INDEX.md` | Conductor reports READY, but self-containment fails with 47 blocking findings and 354 warnings. The index also cites missing `docs/AGENT_PROTOCOL.md` and root `CLAUDE.md`; the existing protocol is at `docs/agents/AGENT_PROTOCOL.md`. These defects block a truthful build/runtime/push-ready claim but do not invalidate the source-level product audit. |
+
+### 2.16.2 Product Boundary And Information Architecture Decision
+
+The supported product is one editor application, not a pipeline dashboard with
+an editor embedded inside it:
+
+1. **Browse is the front door.** It lists XP documents and keeps the selected
+   document's whole sheet visible. Open, rename, duplicate, delete, and new-file
+   operations act on root editor documents.
+2. **Edit is the document workspace.** It preserves REXPaint's whole-sheet,
+   layers, glyph, color, selection, and drawing model. Browse and Edit are modes
+   of the same document owner; neither may create a second state owner.
+3. **Adaptive Stroke is a first-class drawing tool.** A pointer stroke chooses
+   glyphs from stroke direction/continuity rather than stamping one glyph at
+   every visited cell. Its exact glyph vocabulary, junction/corner behavior,
+   erasure behavior, and undo transaction must be recovered from the later
+   operator-referenced implementation or separately accepted before code is
+   written.
+4. **Test This Skin is the singular runtime handoff.** It tests the current
+   whole-sheet/bundle state in Skin Dock. Alternate preview, launch, stream, and
+   verifier controls are implementation/support surfaces, not equal primary
+   calls to action.
+5. **Action navigation is registry-driven.** Present every currently authorable
+   family/action required by `template_registry.json`, including mounted idle
+   and mounted attack when their registry gates permit them. Deferred and
+   proof-only families must stay visibly classified instead of disappearing or
+   masquerading as completed authoring support.
+
+### 2.16.3 Control Reduction Decision
+
+The default shell keeps only the controls needed for the product loop:
+
+- **Persistent app controls:** Browse/Edit, New, Open, Save, Export, Test This
+  Skin, and Report Bug.
+- **Edit controls:** Adaptive Stroke, Cell, Line, Rectangle, Oval, Fill, Text,
+  Select, Pick, Erase, glyph, foreground/background color, layers, undo/redo,
+  zoom, and grid.
+- **Browse controls:** document list, open, rename, duplicate, delete, refresh,
+  and New.
+- **Contextual action controls:** registry-derived family/action navigation and
+  readiness state; not a permanently hard-coded idle/attack/death trio.
+
+The following controls leave the default product chrome. They may survive in a
+clearly labeled Advanced/Diagnostics surface only when still required by a
+verified workflow: PNG conversion and slicing controls, recorder controls,
+manual verification and dry-run controls, TERM++ launch/stream controls,
+separate preview/reload/apply variants, mounted calibration/review internals,
+legacy frame-inspector duplicates, and duplicate Save/Open/Export entrypoints.
+Removing a button from default chrome does not authorize deleting its capability
+until route and test ownership are traced.
+
+### 2.16.4 Refrog Presentation Pin
+
+The presentation target is pinned to the observed Refrog terminal theme, not to
+a vague "less blue" interpretation:
+
+- Xanh Mono regular as the UI typeface, vendored self-contained with its OFL;
+- white primary canvas/shell and light-gray secondary surfaces;
+- black text, focus, controls, and two-pixel square borders;
+- zero border radius; no navy gradients, glowing cards, or generic blue primary
+  buttons;
+- compact spacing and hierarchy through typography/borders, not card volume.
+
+Port the tokens and font assets; do not import Refrog's React Native component
+system or add a runtime dependency on another checkout.
+
+### 2.16.5 Required Implementation Order And Gates
+
+1. **Resolve brush provenance.** Identify the operator-referenced later brush
+   implementation or obtain an explicit behavior example. Record source commit,
+   license, input/output behavior, CP437 vocabulary, and tests. A generic fixed
+   Bresenham line is a falsifier, not an acceptable substitute.
+2. **Add a failing brush contract test first.** It must cover horizontal,
+   vertical, both diagonal directions, direction changes/corners, revisiting a
+   cell, bounds, one undo transaction per stroke, apply-mode interaction, and
+   pointer cancel.
+3. **Make Browse the first-class shell without changing document ownership.**
+   Preserve `whole-sheet-init.js` as sole root owner and prove Browse→Open→Edit→
+   Save round trips the same document.
+4. **Collapse default controls before reskinning.** Route duplicates to their
+   surviving owner; do not leave hidden competing state paths.
+5. **Apply the Refrog token/font pin as a presentation slice.** Vendor the font
+   and license inside V3, then verify contrast, overflow, desktop, and mobile.
+6. **Expand action navigation from registry truth.** Prove on-foot and mounted
+   authorable rows are represented honestly; keep deferred/proof-only status.
+7. **Run the real product loop:** Browse → Open/New → adaptive stroke edit →
+   Save → Export → Test This Skin. Only UI-reachable controls count. Root-hosted
+   and prefixed deployments both require proof before any `PASS`, `parity`, or
+   `fixed` claim.
+
+### 2.16.6 Current Verdict
+
+**AUDITED / NOT IMPLEMENTED.** The canonical architecture already supports a
+Browse-first whole-sheet product, but the current shell hierarchy, fixed-glyph
+drawing tools, dark-blue styling, duplicate controls, and incomplete primary
+action presentation contradict the operator's accepted product frame. Brush
+provenance and self-containment are blocking preconditions. No deployment or
+acceptance claim follows from this audit.
+
 ---
 
 
