@@ -12754,3 +12754,23 @@ current source has been changed or that a replacement UI has been accepted.
 - The coverage finding is not closed by relabeling the same three action tabs;
   the authoring surface must consume the reviewed normalized bundle/runtime
   contract.
+
+### Correction — the adaptive brush was already planned
+
+The first audit response incorrectly said the adaptive brush was only planned
+"now." That claim is false. The audit searched for the later descriptive terms
+`stroke-aware` and `adaptive brush` but failed to inspect the feature's existing
+REXPaint name:
+
+- the canonical spec has required Cell alternate mode
+  **Auto-wall/auto-box drawing** since commit `4abfd5a7` on 2026-04-17;
+- the archived roadmap defines it as **context-sensitive wall glyph selection**
+  and tracks it as Feature 35/37;
+- the archived Tier 1 checklist explicitly tests `c` twice to toggle
+  auto-walls.
+
+The corrected finding is: **the custom glyph-changing brush is a longstanding
+planned requirement and is missing from the current V3 implementation.** The
+operator's 2026-10-12 statement reaffirmed that requirement; it did not create
+it. The separate claim that a later implementation existed remains an active
+source-recovery task.

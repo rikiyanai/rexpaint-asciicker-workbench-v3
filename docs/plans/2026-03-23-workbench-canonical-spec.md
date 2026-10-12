@@ -4405,7 +4405,7 @@ documentation-only rejection log commit `c84d395`. Audit only: no product code,
 deployment, or acceptance proof changed in this checkpoint.**
 
 The operator rejected the hosted `/xpedit` page as a sufficient identification
-of the V3 product and supplied a narrower product frame: a first-class
+of the V3 product and reaffirmed the existing product frame: a first-class
 whole-sheet editor in Browse, recognizable as a REXPaint clone, with the custom
 stroke-aware glyph brush and `Test This Skin` as its defining extensions. The
 current interface and capability surface do not yet satisfy that frame.
@@ -4415,7 +4415,7 @@ current interface and capability surface do not yet satisfy that frame.
 | Area | Evidence inspected | Audit result |
 |------|--------------------|--------------|
 | Whole-sheet ownership | `web/whole-sheet-init.js`; §§1.1, 1.8, and the XP editor acceptance contract | The root editor already owns whole-sheet document state, and Paint/Browse are peer modes. The implementation has a Browse document list, but the surrounding workbench still presents the editor as one dense panel among pipeline/debug surfaces rather than a first-class Browse app. |
-| Adaptive brush | `web/rexpaint-editor/tools/`; `web/whole-sheet-init.js`; all five remote branch tips and repository history | No stroke-aware glyph brush exists in V3. `CellTool` and the line/shape adapters receive one selected glyph and apply that fixed glyph. No deleted or remote-only V3 implementation was found. The exact later implementation named by the operator therefore remains a provenance gap and must not be guessed from generic line-tool code. |
+| Adaptive brush | §1 REXPaint draw-mode contract; `docs/WORKBENCH_DOCS_ARCHIVE.md`; `web/rexpaint-editor/tools/`; `web/whole-sheet-init.js`; all five remote branch tips and repository history | **Longstanding plan, missing implementation.** The canonical spec has required Cell alternate mode `Auto-wall/auto-box drawing` since commit `4abfd5a7` (2026-04-17). Archived plans call it context-sensitive wall-glyph selection and track it as Feature 35/37. Current `CellTool` and line/shape adapters still receive one selected glyph and apply that fixed glyph. The 2026-10-12 audit initially missed the established `auto-wall`/`auto-box` name and incorrectly described the requirement as newly planned; this row corrects that error. The operator also reports a later implementation, whose exact source still must be recovered rather than replaced with generic line-tool code. |
 | Visual language | `web/styles.css`; `web/workbench.html` | The shipped shell uses a dark navy palette (including `#182131`, `#0f1420`, `#173860`, and related blues). The static HTML alone defines 122 buttons and 264 IDs before additional whole-sheet controls are built in JavaScript. This is the dense dark-blue surface the operator rejected. |
 | Refrog source | live GitHub read of `rikiyanai/refrog-app`, default branch `master`, observed 2026-10-12 | Refrog's canonical theme is `terminal`: white backgrounds, black text/borders, square zero-radius controls, 2 px DOS-style borders, and bundled `XanhMono-Regular.ttf` / `XanhMono-Italic.ttf`. `Xanh_Mono/OFL.txt` is present and the repository README declares MIT for the app. V3's current `DepartureMono-Regular` reference is not evidence of the Refrog font and must not be relabeled. |
 | Action coverage | `config/template_registry.json`; §§2.3.8–2.3.10, 2.9.1, 2.11, and the normalized XP inspector's read-only family topology contracts | The live authoring registry is already broader than three tabs: on-foot `player`, `attack`, `plydie`, plus authorable mounted `wolfie` and `wolack`; `bigbee` remains deferred and green variants remain proof-only. The normalized inspector is useful evidence but explicitly not runtime authority. The current product must derive enabled actions from the V3 registry and Y9-2 runtime identity contract, not hard-code idle/attack/death as the whole product. |
@@ -4432,12 +4432,12 @@ an editor embedded inside it:
 2. **Edit is the document workspace.** It preserves REXPaint's whole-sheet,
    layers, glyph, color, selection, and drawing model. Browse and Edit are modes
    of the same document owner; neither may create a second state owner.
-3. **Adaptive Stroke is a first-class drawing tool.** A pointer stroke chooses
-   glyphs from stroke direction/continuity rather than stamping one glyph at
-   every visited cell. Its exact glyph vocabulary, junction/corner behavior,
-   erasure behavior, and undo transaction must be recovered from the later
-   operator-referenced implementation or separately accepted before code is
-   written.
+3. **Auto-wall/auto-box Adaptive Stroke is a first-class drawing tool.** This is
+   the already-planned alternate Cell mode, not a new 2026-10-12 invention. A
+   pointer stroke chooses context-sensitive wall glyphs from stroke
+   direction/continuity rather than stamping one glyph at every visited cell.
+   The later operator-referenced implementation should be recovered so its
+   exact glyph vocabulary and junction/corner behavior are preserved.
 4. **Test This Skin is the singular runtime handoff.** It tests the current
    whole-sheet/bundle state in Skin Dock. Alternate preview, launch, stream, and
    verifier controls are implementation/support surfaces, not equal primary
@@ -4488,10 +4488,11 @@ system or add a runtime dependency on another checkout.
 
 ### 2.16.5 Required Implementation Order And Gates
 
-1. **Resolve brush provenance.** Identify the operator-referenced later brush
-   implementation or obtain an explicit behavior example. Record source commit,
-   license, input/output behavior, CP437 vocabulary, and tests. A generic fixed
-   Bresenham line is a falsifier, not an acceptable substitute.
+1. **Restore the planned brush.** Start from the canonical REXPaint Cell
+   alternate-mode contract and archived context-sensitive auto-wall/auto-box
+   plan. Locate the operator-referenced later implementation and record its
+   source commit, input/output behavior, CP437 vocabulary, and tests. A generic
+   fixed Bresenham line is a falsifier, not an acceptable substitute.
 2. **Add a failing brush contract test first.** It must cover horizontal,
    vertical, both diagonal directions, direction changes/corners, revisiting a
    cell, bounds, one undo transaction per stroke, apply-mode interaction, and
@@ -4515,9 +4516,11 @@ system or add a runtime dependency on another checkout.
 **AUDITED / NOT IMPLEMENTED.** The canonical architecture already supports a
 Browse-first whole-sheet product, but the current shell hierarchy, fixed-glyph
 drawing tools, dark-blue styling, duplicate controls, and incomplete primary
-action presentation contradict the operator's accepted product frame. Brush
-provenance and self-containment are blocking preconditions. No deployment or
-acceptance claim follows from this audit.
+action presentation contradict the operator's accepted product frame. The
+adaptive brush is a longstanding planned requirement that remains missing from
+the current implementation; recovering its later implementation and clearing
+self-containment are blocking preconditions. No deployment or acceptance claim
+follows from this audit.
 
 ---
 
