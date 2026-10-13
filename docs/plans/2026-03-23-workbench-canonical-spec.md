@@ -4513,14 +4513,15 @@ system or add a runtime dependency on another checkout.
 
 ### 2.16.6 Current Verdict
 
-**AUDITED / NOT IMPLEMENTED.** The canonical architecture already supports a
-Browse-first whole-sheet product, but the current shell hierarchy, fixed-glyph
-drawing tools, dark-blue styling, duplicate controls, and incomplete primary
-action presentation contradict the operator's accepted product frame. The
-adaptive brush is a longstanding planned requirement that remains missing from
-the current implementation; recovering its later implementation and clearing
-self-containment are blocking preconditions. No deployment or acceptance claim
-follows from this audit.
+**SUPERSEDED BY THE 2026-10-12 LOCAL IMPLEMENTATION CHECKPOINT BELOW.** At the
+time of this audit, the Browse-first shell, slope brush, Refrog presentation,
+control reduction, registry action selector, and mobile keyboard bridge were
+not implemented. They now exist locally at `5554f32`, but remain unaccepted and
+undeployed. Browse still lacks the selected whole-sheet preview; the end-to-end
+mobile authoring and PNG-conversion flow is incomplete; `Test This Skin` is not
+the normalized-contract CP437 runtime handoff; exact later-brush provenance is
+unrecovered; and self-containment still fails. No deployment or acceptance
+claim follows from the local checkpoint.
 
 ---
 
@@ -4608,3 +4609,36 @@ service-worker module was caught during proof; the cache namespace and brush
 module URL are now versioned. Repository-wide self-containment remains an
 independent failing gate, so this checkpoint does not claim overall ship
 readiness.
+
+## 2026-10-12 Parallel Product-Correction Priority
+
+The operator has explicitly reprioritized four co-equal top-level lanes. They
+may execute in parallel only with non-overlapping file/state ownership:
+
+1. normalized XP/Y9 contract correctness inside Workbench and `Test This Skin`;
+2. Browse-first desktop/mobile authoring, including first-class PNG/XP import;
+3. slope/adaptive brush provenance, behavioral reconciliation, and acceptance;
+4. closure of the active regressions and gates in the consolidated register at
+   `docs/PLAYWRIGHT_FAILURE_LOG.md`.
+
+This explicit operator reprioritization activates product work that older queue
+text labels `PARKED`, especially `UQ-013`. It does not waive runtime/compiler
+dependencies such as `UQ-R15` -> `UQ-008`, and it does not authorize competing
+owners. Lane 4 is the tracking, proof, documentation, and independent-regression
+lane supporting lanes 1-3; it does not duplicate their file ownership.
+`UQ-010` remains gated by the shared-contract/runtime prerequisites in its row.
+`UQ-011` remains parked until the operator explicitly starts public cutover;
+this priority decision alone is not that cutover authorization.
+
+The required integrated acceptance path is:
+
+`Browse -> select/preview whole sheet -> New/Open/PNG-or-XP import -> convert or
+slice when needed -> Edit on desktop/mobile -> adaptive/slope stroke -> Save ->
+Export -> Test This Skin through the normalized CP437 runtime contract`.
+
+Browse must not present a layer browser. Layers remain an Edit concern. Test
+This Skin must consume the current Workbench document/bundle and must not fall
+back to an ambient/default Y9-2 bundle. The normalized viewer is evidence and
+inspection infrastructure; runtime authority continues to come from the
+reviewed V3 registry and Y9-2 identity/runtime contract rather than a second
+viewer-owned model.
