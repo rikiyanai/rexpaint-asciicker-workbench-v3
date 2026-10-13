@@ -12988,3 +12988,71 @@ user-reachable desktop/mobile sequence. Runtime rows require the current
 document/bundle and normalized contract path. Deployment requires exact remote
 SHA readback and live headed proof. Operator acceptance is recorded separately
 from implementation and verification.
+
+## 2026-10-13 — Lane-D Evidence Checkpoint (Tracking/Proof Lane)
+
+**Status:** EXECUTED LOCALLY / NOT ACCEPTED / NOT DEPLOYED. Lane D owns only
+`tests/*`, `scripts/*` verifier/harness, and the two canon docs. No production
+file outside that ownership was edited; no row below is closed.
+
+### Status vocabulary (in place, never collapsed to done)
+
+- Implemented / Connected / Executed / Verified / Accepted / Deployed are
+  distinct stages. UI acceptance is recorded separately from
+  backend/grep/evaluate/diagnostic-only proof.
+- `993bec7` slices (normalized-contract Test This Skin handoff, Browse
+  selected-sheet preview, Open-stays-in-Edit, Layers-Edit-only, raw-XP primary
+  path, CP437 shade ladder, slope hardening) stand at Implemented/Connected;
+  headed verification, operator acceptance, and deployment remain open.
+
+### Queue truth (unchanged, confirmed current)
+
+- `UQ-006` open/blocked, `UQ-008` proof-blocked, `UQ-009` partial/support,
+  `UQ-010` gated open obligation, `UQ-011` parked, `UQ-013` active,
+  `UQ-R15`/`FL-3861` through `FL-3864` open. Canon gate table aligned in place
+  (`UQ-010` gated, `UQ-011` parked, `UQ-013` active); §2.16.6 verdict refreshed
+  to the `993bec7` state without claiming acceptance.
+- Non-blocking gaps stay tracked, not closed: wearable/item authoring,
+  proof-only color variants, `bigbee`, M2 headed PNG-export, RenderPlan
+  preview, structured export artifact, Bundle Mods E2E, promote-to-current
+  hash parity. `DR-*`/`XR-*` identifiers preserved; no misc-cleanup bucket.
+
+### Self-containment (D8)
+
+- Fixed the 9 live-script absolute paths across five scripts with CLI flags
+  plus env fallbacks and fail-closed actionable errors (missing corpus exits
+  non-zero, never silent): `derive_spatial_maps_from_layer_pngs.py`
+  (`--final-json`, `--png-root` / `$ASCIICKER_FINAL_JSON`,
+  `$ASCIICKER_PNG_ROOT`), `build_semantic_maps_from_final_json.py` (same two),
+  `convert_knight_24px.py` (`--knight-dir` / `$ASCIICKER_KNIGHT_DIR` with
+  per-file presence check), `build_upstream_xp_cell_contract_ledger.py`
+  (`--state-final` / `$ASCIICKER_STATE_FINAL`, SHA gate intact),
+  `build_review_provenance_manifest.py` (`--final` / `$ASCIICKER_STATE_FINAL`,
+  absent corpus records `file_present_on_this_machine=False`).
+- `python3 scripts/self_containment_audit.py`: blocking 47 → 38. The remaining
+  38 are stored CE-review JSON under `.context/` (historical evidence):
+  disposition is retain-and-record, not edited and not presented as fixed.
+  A truthful self-contained or product-push-ready claim is still blocked.
+
+### URL proof (local only, no public deploy)
+
+- Root-hosted: `/healthz` 200, `/workbench` 200,
+  `window.__WB_BASE_PATH = ""`.
+- Prefixed: `/xpedit/healthz` 200, `/xpedit/workbench` 200,
+  `window.__WB_BASE_PATH = "/xpedit"`, asset URLs `/xpedit`-prefixed.
+- `rikiworld.com/xpedit` out of scope and untouched.
+
+### Focused suites executed (evidence, not product acceptance)
+
+- `npm test`: template-gating 38/38 and action-navigation 7/7 pass, node
+  --test batch 22/22 pass (browse-first 9 incl. preview, no-layers-in-browse,
+  PNG-panel-into-root, raw-XP primary, mobile keyboard/branding; action
+  contracts; history-ownership; input-policy), adaptive-stroke 16/16 pass
+  (incl. slope/auto-wall separation and OOB-gap break).
+- `node --test tests/web/workbench-xp-preview-playback.test.mjs`: 3/3 pass.
+- `pytest tests/test_base_path.py` (+ provenance-manifest + ledger suites):
+  71 passed (root-hosted and `/xpedit` contract identity, no-fallback SHA
+  gates, current-doc payload paths covered by Lane A/B suites, not re-proven
+  here).
+- `git diff --check`: clean.
+- Open gap, not claimed: no service-worker freshness automation exists.

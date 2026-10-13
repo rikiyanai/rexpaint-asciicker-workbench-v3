@@ -32,10 +32,10 @@ from source_layer_contract_viewer import classify_cell  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 SM = REPO / "docs/research/ascii/semantic_maps"
-DEFAULT_STATE_FINAL = Path(
-    "/Users/r/Desktop/bundle_layer_audit_20260520/verifier_state_backups/"
-    "state_FINAL_20260521-163326.json"
-)
+# Operator-local immutable hand corpus (absent on CI / other machines by design).
+# Pass --state-final <path> (or $ASCIICKER_STATE_FINAL); the SHA gate below
+# stays fail-closed.
+DEFAULT_STATE_FINAL: Path | None = None
 EXPECTED_STATE_FINAL_SHA256 = "ecc9a16112ce48beaeb0e24beba2ccc7399c4efc50d32505f3fd54f8e8d76020"
 DEFAULT_OUT = SM / "upstream_xp_cell_contract"
 SCHEMA = "fl4162.upstream_xp_cell_contract.layer.v2"
@@ -467,10 +467,14 @@ def atomic_write(path: Path, data: bytes) -> None:
         raise
 
 
-def build_all(state_final: Path = DEFAULT_STATE_FINAL) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
+def build_all(state_final: Path | None = DEFAULT_STATE_FINAL) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
+    if state_final is None:
+        raise CellContractError(
+            "missing state_FINAL corpus: pass --state-final <path> or set "
+            "$ASCIICKER_STATE_FINAL"
+        )
     if sha256_path(state_final) != EXPECTED_STATE_FINAL_SHA256:
         raise CellContractError(f"state_FINAL SHA-256 mismatch: {state_final}")
-    state_rows = read_json(state_final)
     cards = read_jsonl(SM / "layer_evidence_cards.jsonl")
     card_by_key = index_unique(cards, "source_key", "evidence cards")
     manual_doc = read_json(SM / "manual_candidate_review.json")
@@ -585,7 +589,12 @@ def write_outputs(by_family: dict[str, list[dict[str, Any]]], manifest: dict[str
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--state-final", type=Path, default=DEFAULT_STATE_FINAL)
+    parser.add_argument(
+        "--state-final", type=Path,
+        default=(Path(os.environ["ASCIICKER_STATE_FINAL"])
+                 if os.environ.get("ASCIICKER_STATE_FINAL") else DEFAULT_STATE_FINAL),
+        help="operator-local state_FINAL corpus (or $ASCIICKER_STATE_FINAL)",
+    )
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--check", action="store_true", help="validate full corpus without writing")
     args = parser.parse_args(argv)
