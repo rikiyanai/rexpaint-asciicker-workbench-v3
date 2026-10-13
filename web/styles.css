@@ -171,6 +171,25 @@ body {
     padding: 12px;
     flex-shrink: 0;
   }
+  /* Lane B 390px clean: source/grid panels stack; grid children must not force
+     page-level horizontal overflow (grid items default min-width:auto). */
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+  .two-col > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+  input, select, textarea {
+    max-width: 100%;
+  }
+  .canvas-wrap,
+  .ws-scroll-wrap,
+  .ws-viewport-shell,
+  .output-shell,
+  .canvas-shell {
+    max-width: 100%;
+  }
 }
 
 @media (max-height: 500px) {
@@ -1410,6 +1429,137 @@ label.inline {
   .ws-frame-nav .frame-grid {
     min-height: auto;
   }
+}
+
+/* ── Lane B: desktop 390px mobile emulation (body.wb-viewport-mobile) ──────────
+   Mirrors the layout-critical rules of @media (max-width: 768px) above so the
+   Browse/home viewport toggle previews the mobile layout at desktop width.
+   Cosmetic-only rules (button colors, active states) are intentionally not
+   duplicated. Keep in sync with the 768px block when layout rules change. */
+body.wb-viewport-mobile .wrap {
+  max-width: 390px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 8px;
+  margin-top: 48px;
+  margin-bottom: 40px;
+  outline: 1px dashed #4ea1ff;
+  outline-offset: 4px;
+}
+body.wb-viewport-mobile .alpha-banner,
+body.wb-viewport-mobile #reportBugBtn,
+body.wb-viewport-mobile .registry-action-classifications,
+body.wb-viewport-mobile #productToolbar button:disabled {
+  display: none;
+}
+body.wb-viewport-mobile .two-col {
+  grid-template-columns: 1fr;
+}
+body.wb-viewport-mobile .two-col > * {
+  min-width: 0;
+  max-width: 100%;
+}
+body.wb-viewport-mobile .ws-sidebar {
+  display: contents;
+}
+body.wb-viewport-mobile .ws-canvas-area {
+  flex: 1;
+  width: 100%;
+  padding-top: 48px;
+  padding-bottom: 40px;
+}
+body.wb-viewport-mobile .ws-layout {
+  min-height: 0;
+  max-height: none;
+}
+body.wb-viewport-mobile .ws-scroll-wrap {
+  max-height: 80dvh;
+}
+body.wb-viewport-mobile .ws-mobile-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 44px;
+  padding: 0 8px;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: var(--panel, #161616);
+  border-bottom: 1px solid var(--border, #393939);
+  z-index: 90;
+  gap: 4px;
+}
+body.wb-viewport-mobile .ws-mobile-top-drawers {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+body.wb-viewport-mobile .ws-mobile-bottom-bar {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 36px;
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--panel, #161616);
+  border-top: 1px solid var(--border, #393939);
+  z-index: 90;
+  font-size: 12px;
+  color: #aaa;
+}
+body.wb-viewport-mobile .ws-drawer {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  max-height: 60vh;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  background: var(--panel, #161616);
+  z-index: 100;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  padding: 12px;
+  padding-bottom: env(safe-area-inset-bottom, 12px);
+}
+body.wb-viewport-mobile .ws-drawer.open {
+  transform: translateY(0);
+}
+body.wb-viewport-mobile .frame-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 4px;
+  padding: 4px;
+  min-height: auto;
+  -webkit-overflow-scrolling: touch;
+  grid-template-columns: none !important;
+}
+body.wb-viewport-mobile .frame-cell {
+  flex: 0 0 auto;
+  width: var(--wb-grid-cell-size, 48px);
+  height: var(--wb-grid-cell-size, 48px);
+}
+body.wb-viewport-mobile .frame-row-header {
+  flex: 0 0 auto;
+  min-width: 48px;
+  width: auto;
+}
+body.wb-viewport-mobile .row-drag-handle {
+  display: none;
+}
+body.wb-viewport-mobile .ws-frame-nav {
+  min-height: auto;
+  height: auto;
+  max-height: none;
+  resize: none;
+  overflow: visible;
 }
 
 /* ── U3: Floating touch selection toolbar ──────────────────────────────────── */

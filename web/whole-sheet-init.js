@@ -1754,7 +1754,11 @@ function _mobileKeyboardInput() {
 
 function _focusMobileKeyboard() {
   const input = _mobileKeyboardInput();
-  if (!input || !window.matchMedia?.('(max-width: 768px)').matches) return false;
+  // Desktop 390px emulation (body.wb-viewport-mobile) counts as mobile: layout
+  // mirrors the narrow media query, so keyboard focus must work there too.
+  const narrowViewport = window.matchMedia?.('(max-width: 768px)').matches
+    || document.body.classList.contains('wb-viewport-mobile');
+  if (!input || !narrowViewport) return false;
   try {
     input.focus({ preventScroll: true });
     input.setSelectionRange(input.value.length, input.value.length);

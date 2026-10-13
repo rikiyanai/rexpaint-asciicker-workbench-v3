@@ -11,6 +11,7 @@
   const DEFAULT_LAYER_NAMES = ["Metadata", "Layer 1", "Visual", "Layer 3"];
   const VERIFY_CMD_TEMPLATE_STORAGE_KEY = "wb_verify_command_template_v1";
   const TERM_STREAM_REGION_STORAGE_KEY = "wb_termpp_stream_region_v1";
+  const VIEWPORT_MODE_STORAGE_KEY = "wb_viewport_mode_v1";
   const INSPECTOR_SWATCHES = [
     [0, 0, 0],
     [255, 255, 255],
@@ -8736,6 +8737,35 @@
     if (editor && typeof editor.setMode === "function") editor.setMode(next === "browse" ? "browse" : "paint");
   }
 
+  // ── Desktop/mobile viewport toggle (Browse/home front door) ──
+  // Tier C UI preference: persists in localStorage, never touches Tier A drafts
+  // or Tier B files. Emulation constrains the shell to 390px via
+  // body.wb-viewport-mobile (see styles.css); real narrow viewports match the
+  // same layout through the max-width media queries.
+  function getViewportMode() {
+    try {
+      return localStorage.getItem(VIEWPORT_MODE_STORAGE_KEY) === "mobile" ? "mobile" : "desktop";
+    } catch (_e) {
+      return "desktop";
+    }
+  }
+
+  function setViewportMode(mode) {
+    const next = mode === "mobile" ? "mobile" : "desktop";
+    const mobile = next === "mobile";
+    document.body.classList.toggle("wb-viewport-mobile", mobile);
+    const btn = $("viewportToggleBtn");
+    if (btn) {
+      btn.setAttribute("aria-pressed", mobile ? "true" : "false");
+      btn.textContent = mobile ? "Desktop view" : "Mobile view";
+      btn.classList.toggle("tool-active", mobile);
+    }
+    try {
+      localStorage.setItem(VIEWPORT_MODE_STORAGE_KEY, next);
+    } catch (_e) { /* preference only — ignore */ }
+    return next;
+  }
+
   function attachProductBrowseApp() {
     const editor = window.__wholeSheetEditor;
     const container = $("productBrowseSurface");
@@ -8761,6 +8791,9 @@
     movePanelsToBottom();
     $("productBrowseBtn")?.addEventListener("click", () => setProductShellMode("browse"));
     $("productEditBtn")?.addEventListener("click", () => setProductShellMode("edit"));
+    $("viewportToggleBtn")?.addEventListener("click", () => {
+      setViewportMode(getViewportMode() === "mobile" ? "desktop" : "mobile");
+    });
     $("mobileKeyboardBtn")?.addEventListener("click", () => {
       setProductShellMode("edit");
       const editor = window.__wholeSheetEditor;
@@ -8776,6 +8809,7 @@
       window.addEventListener("whole-sheet-editor-ready", attachProductBrowseApp, { once: true });
     }
     syncProductShellMode("browse");
+    setViewportMode(getViewportMode());
     void fetchTemplateRegistry();
     renderInspectorPaletteSwatches();
     updateSessionDirtyBadge();
@@ -9991,6 +10025,8 @@
       renderAll();
       return { activeLayer: state.activeLayer, layerCount: state.layers.length };
     },
+    getViewportMode: () => getViewportMode(),
+    setViewportMode: (mode) => setViewportMode(mode),
   };
   installUiRecorderHooks();
   refreshUiRecorderUi();
