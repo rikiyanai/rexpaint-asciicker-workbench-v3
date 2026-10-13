@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local ASCII Editor References</title>
+  <style>
+    :root { color-scheme: dark; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0b0d10; color: #e6edf3; }
+    main { width: min(880px, calc(100% - 32px)); }
+    h1 { font-size: clamp(24px, 5vw, 44px); margin-bottom: 8px; }
+    p { color: #9aa7b3; line-height: 1.55; }
+    nav { display: grid; gap: 14px; margin-top: 28px; }
+    a { display: block; padding: 20px; color: inherit; text-decoration: none; border: 1px solid #293241; border-radius: 12px; background: #12161c; }
+    a:hover, a:focus-visible { border-color: #7c3aed; outline: none; transform: translateY(-1px); }
+    strong { display: block; color: #fff; font-size: 18px; margin-bottom: 5px; }
+    span { color: #aab4c2; line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Local ASCII editor references</h1>
+    <p>Self-contained behavioral research copies. Each editor runs from this localhost server without loading its application code from the network.</p>
+    <nav aria-label="Reference editors">
+      <a href="./patorjk-ascii-art-sketchpad/"><strong>PatorJK ASCII Art Sketchpad</strong><span>Semantic ASCII, half-block, box-connectivity, shape, selection, and history behavior.</span></a>
+      <a href="./codexvault-glyphlab/"><strong>CODEXVault GlyphLab</strong><span>Local font loading, cmap inspection, Unicode search, and virtualized glyph browsing.</span></a>
+      <a href="./codexvault-grid-studio/"><strong>CODEXVault ASCII/Unicode Grid Studio</strong><span>Unicode grid painting, specialized tools, color, tracing, frames, playback, and export workflows.</span></a>
+    </nav>
+  </main>
+</body>
+</html>

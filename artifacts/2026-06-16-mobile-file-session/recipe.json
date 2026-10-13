@@ -1,0 +1,14 @@
+{
+  "mode": "mobile_file_session",
+  "generated_at": "2026-06-16T22:12:42.792Z",
+  "template": "player_native_idle_only",
+  "glyph": 68,
+  "fg": "#ee44ff",
+  "bg": "#001133",
+  "persist_block": {
+    "x": 3,
+    "y": 3,
+    "w": 3,
+    "h": 3
+  }
+}

@@ -543,7 +543,7 @@ def test_validate_manifest_with_mount_target(tmp_path):
             "character_key": "human_player",
             "presentation_kind": "idle_walk",
             "layer_owner_kind": "mount",
-            "slot": "mount_composite",
+            "slot": "mount_rear",
             "presentation_target_key": "wolfie_mounted_idle_body",
             "angle": 0,
             "frame": 0,

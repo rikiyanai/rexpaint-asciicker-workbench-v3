@@ -1,0 +1,84 @@
+{
+  "layerInfo": [
+    {
+      "index": 0,
+      "name": "Layer 0",
+      "active": false,
+      "visible": true,
+      "locked": true
+    },
+    {
+      "index": 1,
+      "name": "Layer 1",
+      "active": false,
+      "visible": false,
+      "locked": false
+    },
+    {
+      "index": 2,
+      "name": "Layer 2",
+      "active": true,
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "armed": {
+    "armed": true,
+    "greenArmed": true,
+    "pasteMode": true
+  },
+  "beforePaste": {
+    "glyph": 32,
+    "fg": [
+      0,
+      0,
+      0
+    ],
+    "bg": [
+      255,
+      0,
+      255
+    ]
+  },
+  "after20_20": {
+    "glyph": 65,
+    "fg": [
+      0,
+      255,
+      255
+    ],
+    "bg": [
+      34,
+      34,
+      0
+    ]
+  },
+  "after21_20": {
+    "glyph": 65,
+    "fg": [
+      0,
+      255,
+      255
+    ],
+    "bg": [
+      34,
+      34,
+      0
+    ]
+  },
+  "after30_25": {
+    "glyph": 65,
+    "fg": [
+      0,
+      255,
+      255
+    ],
+    "bg": [
+      34,
+      34,
+      0
+    ]
+  },
+  "pasteWorkedWithLockedVisible": true,
+  "greenPlusAffordance": true
+}

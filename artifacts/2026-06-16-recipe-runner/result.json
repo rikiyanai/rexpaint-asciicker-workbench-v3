@@ -1,0 +1,142 @@
+{
+  "overall": "PASS",
+  "recipe": {
+    "seed": 1,
+    "glyph": 71,
+    "fg": "#ff6600",
+    "bg": "#000022",
+    "drawBlock": {
+      "x": 5,
+      "y": 5,
+      "w": 2,
+      "h": 2
+    },
+    "eraseAt": {
+      "x": 5,
+      "y": 5
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "name": "fresh-first-screen",
+      "status": "PASS",
+      "error": null,
+      "firstScreen": true
+    },
+    {
+      "step": 2,
+      "name": "create-from-template",
+      "status": "PASS",
+      "error": null,
+      "gridCols": 126,
+      "gridRows": 80
+    },
+    {
+      "step": 3,
+      "name": "set-draw-state",
+      "status": "PASS",
+      "error": null,
+      "activeTool": "cell",
+      "drawGlyph": 71
+    },
+    {
+      "step": 4,
+      "name": "draw-2x2-block",
+      "status": "PASS",
+      "error": null,
+      "cell66": 71
+    },
+    {
+      "step": 5,
+      "name": "erase-5-5",
+      "status": "PASS",
+      "error": null,
+      "before": 71,
+      "after": 0,
+      "erased": true
+    },
+    {
+      "step": 6,
+      "name": "frames-col-right",
+      "status": "PASS",
+      "error": null,
+      "colBefore": 0,
+      "colAfter": 1,
+      "moved": true
+    },
+    {
+      "step": 7,
+      "name": "frames-add-frame",
+      "status": "PASS",
+      "error": null,
+      "countBefore": 72,
+      "countAfter": 80,
+      "added": true
+    },
+    {
+      "step": 8,
+      "name": "layers-toggle-vis",
+      "status": "PASS",
+      "error": null,
+      "visBefore": "V",
+      "visAfter": "-",
+      "toggled": true
+    },
+    {
+      "step": 9,
+      "name": "layers-restore-vis",
+      "status": "PASS",
+      "error": null,
+      "visRestored": "V"
+    },
+    {
+      "step": 10,
+      "name": "layers-add-layer",
+      "status": "PASS",
+      "error": null,
+      "countBefore": 4,
+      "countAfter": 5,
+      "added": true
+    },
+    {
+      "step": 11,
+      "name": "save",
+      "status": "PASS",
+      "error": null,
+      "saved": true,
+      "sessionId": "f6d8ca33-6732-4a74-a3f5-a2762fb03e32"
+    },
+    {
+      "step": 12,
+      "name": "reload-url-restore",
+      "status": "PASS",
+      "error": null,
+      "hitsAfterReload": 0,
+      "erased55": true,
+      "c65": 0
+    },
+    {
+      "step": 13,
+      "name": "export",
+      "status": "PASS",
+      "error": null,
+      "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-f6d8ca33-6732-4a74-a3f5-a2762fb03e32.xp"
+    },
+    {
+      "step": 14,
+      "name": "share-download",
+      "status": "PASS",
+      "error": null,
+      "triggered": false
+    },
+    {
+      "step": 15,
+      "name": "artifact-oracle",
+      "status": "PASS",
+      "error": null,
+      "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-f6d8ca33-6732-4a74-a3f5-a2762fb03e32.xp",
+      "glyphGCount": 3
+    }
+  ]
+}

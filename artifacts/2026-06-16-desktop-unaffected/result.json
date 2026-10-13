@@ -1,0 +1,252 @@
+{
+  "overallPass": true,
+  "results": [
+    {
+      "name": "desktop-fresh-load",
+      "pass": true,
+      "error": "",
+      "data": {
+        "firstScreenComputed": "none",
+        "topBarComputed": "none"
+      },
+      "pre": {
+        "wsSessionLoaded": false,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "post": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsSessionLoaded": false,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "screenshot": "artifacts/2026-06-16-desktop-unaffected/01-desktop-fresh-load.png"
+    },
+    {
+      "name": "apply-template",
+      "pass": true,
+      "error": "",
+      "data": {
+        "sessionId": "885fa1cb",
+        "wsAdvanced": false
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsSessionLoaded": false,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "post": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": false,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "screenshot": "artifacts/2026-06-16-desktop-unaffected/02-apply-template.png"
+    },
+    {
+      "name": "whole-sheet-editor",
+      "pass": true,
+      "error": "",
+      "data": {
+        "panelHidden": false,
+        "hasCanvas": true,
+        "gridCols": 126,
+        "gridRows": 80
+      },
+      "pre": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": false,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "post": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": false,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "screenshot": "artifacts/2026-06-16-desktop-unaffected/03-whole-sheet-editor.png"
+    },
+    {
+      "name": "dashboard-controls",
+      "pass": true,
+      "error": "",
+      "data": {
+        "templateBtnVisible": true,
+        "exportBtnVisible": true,
+        "webbuildPanelInDom": true
+      },
+      "pre": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": false,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "post": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": false,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "screenshot": "artifacts/2026-06-16-desktop-unaffected/04-dashboard-controls.png"
+    },
+    {
+      "name": "author-cells",
+      "pass": true,
+      "error": "",
+      "data": {
+        "cells": 9,
+        "sessionDirty": true,
+        "setupOk": {
+          "ok": true,
+          "hasTool": true
+        },
+        "rect": {
+          "left": 481,
+          "top": 234.21875,
+          "width": 679,
+          "height": 431
+        }
+      },
+      "pre": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": false,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "post": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": true,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "screenshot": "artifacts/2026-06-16-desktop-unaffected/05-author-cells.png"
+    },
+    {
+      "name": "save-session",
+      "pass": true,
+      "error": "",
+      "data": {
+        "sessionDirty": false,
+        "sessionId": "885fa1cb"
+      },
+      "pre": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": true,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "post": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": false,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "screenshot": "artifacts/2026-06-16-desktop-unaffected/06-save-session.png"
+    },
+    {
+      "name": "export-xp",
+      "pass": true,
+      "error": "",
+      "data": {
+        "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-885fa1cb-e3b0-451a-b401-9ef0cca75a11.xp"
+      },
+      "pre": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": false,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "post": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": false,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "screenshot": "artifacts/2026-06-16-desktop-unaffected/07-export-xp.png"
+    },
+    {
+      "name": "artifact-oracle",
+      "pass": true,
+      "error": "",
+      "data": {
+        "oracleCount": 9,
+        "expected": 9,
+        "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-885fa1cb-e3b0-451a-b401-9ef0cca75a11.xp"
+      },
+      "pre": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": false,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "post": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": false,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "screenshot": "artifacts/2026-06-16-desktop-unaffected/08-artifact-oracle.png"
+    },
+    {
+      "name": "desktop-layout-intact",
+      "pass": true,
+      "error": "",
+      "data": {
+        "mobileFirstVisible": false,
+        "mobileTopVisible": false,
+        "wsAdvanced": false,
+        "sessionLoaded": true
+      },
+      "pre": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": false,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "post": {
+        "sessionId": "885fa1cb-e3b0-451a-b401-9ef0cca75a11",
+        "sessionDirty": false,
+        "wsSessionLoaded": true,
+        "wsAdvanced": false,
+        "mobileFirstScreenVisible": false,
+        "mobileTopBarVisible": false
+      },
+      "screenshot": "artifacts/2026-06-16-desktop-unaffected/09-desktop-layout-intact.png"
+    }
+  ]
+}

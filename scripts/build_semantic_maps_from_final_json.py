@@ -10,6 +10,9 @@ End-to-end pipeline:
   5. emit one {family}-roles.json per family
 
 Run:
+  BUNDLE_LAYER_AUDIT_DIR=/path/to/bundle_layer_audit_20260520 \
+    python3 pipeline-v3/scripts/build_semantic_maps_from_final_json.py [--limit N]
+  # or explicitly:
   python3 pipeline-v3/scripts/build_semantic_maps_from_final_json.py \
     --final-json <STATE_FINAL_JSON> --png-root <PNG_LAYERS_DIR> [--limit N]
 """
@@ -39,23 +42,49 @@ from glyph_assignment.matcher import default_font_path
 SEMANTIC_MAPS_DIR = ROOT / "docs" / "research" / "ascii" / "semantic_maps"
 WORK_DIR = Path("/tmp/glyph_e1e3")
 
+# Layout inside the May-20 bundle layer audit directory.
+FINAL_JSON_RELPATH = Path("verifier_state_backups") / "state_FINAL_20260521-163326.json"
+PNG_ROOT_RELPATH = Path("png_layers")
 
-def _resolve_required(value: Path | None, env_key: str, flag: str) -> Path:
-    raw = value or (os.environ.get(env_key) or "")
-    if not raw:
+
+def _resolve_audit_inputs(args: argparse.Namespace) -> tuple[Path, Path]:
+    """FINAL JSON ledger + per-layer PNG root.
+
+    Precedence per path: explicit --final-json / --png-root, then
+    --audit-dir / $BUNDLE_LAYER_AUDIT_DIR joined with the known relative
+    layout. The audit bundle lives outside this repo, so there is no
+    repo-relative default; fail fast rather than emit wrong semantic maps.
+    """
+    audit_raw = args.audit_dir or os.environ.get("BUNDLE_LAYER_AUDIT_DIR")
+    audit_dir = Path(audit_raw).expanduser() if audit_raw else None
+
+    def pick(explicit: str | None, relpath: Path, flag: str, legacy_env: str) -> Path:
+        if explicit:
+            return Path(explicit).expanduser()
+        if audit_dir is not None:
+            return audit_dir / relpath
+        legacy = os.environ.get(legacy_env)
+        if legacy:
+            return Path(legacy).expanduser()
         raise SystemExit(
-            f"missing required input: pass {flag} <path> or set ${env_key}"
+            "Bundle layer audit inputs not configured. Set "
+            "BUNDLE_LAYER_AUDIT_DIR (or pass --audit-dir) to the "
+            "bundle_layer_audit_20260520 directory containing "
+            f"{FINAL_JSON_RELPATH.parent}/ and {PNG_ROOT_RELPATH}/, "
+            f"pass {flag} explicitly, or set ${legacy_env}."
         )
-    path = Path(raw)
-    if not path.exists():
-        raise SystemExit(f"{flag} does not exist: {path}")
-    return path
+
+    final_json = pick(args.final_json, FINAL_JSON_RELPATH, "--final-json", "ASCIICKER_FINAL_JSON")
+    png_root = pick(args.png_root, PNG_ROOT_RELPATH, "--png-root", "ASCIICKER_PNG_ROOT")
+    if not final_json.is_file():
+        raise SystemExit(f"FINAL JSON ledger not found: {final_json}")
+    if not png_root.is_dir():
+        raise SystemExit(f"PNG layer root not found: {png_root}")
+    return final_json, png_root
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--final-json", type=Path, default=None)
-    parser.add_argument("--png-root", type=Path, default=None)
     parser.add_argument(
         "--limit", type=int, default=None,
         help="process only the first N families (mainly for debugging)",
@@ -68,11 +97,24 @@ def main() -> int:
         "--no-emit", action="store_true",
         help="run extraction but do not write semantic_maps/ JSONs",
     )
-    args = parser.parse_args()
-    final_json = _resolve_required(
-        args.final_json, "ASCIICKER_FINAL_JSON", "--final-json"
+    parser.add_argument(
+        "--audit-dir", default=None,
+        help="bundle_layer_audit_20260520 directory (defaults to "
+             "$BUNDLE_LAYER_AUDIT_DIR)",
     )
-    png_root = _resolve_required(args.png_root, "ASCIICKER_PNG_ROOT", "--png-root")
+    parser.add_argument(
+        "--final-json", default=None,
+        help="explicit path to the FINAL JSON ledger (overrides --audit-dir)",
+    )
+    parser.add_argument(
+        "--png-root", default=None,
+        help="explicit path to the per-layer PNG root (overrides --audit-dir)",
+    )
+    args = parser.parse_args()
+    # Audit inputs come from --final-json/--png-root, --audit-dir /
+    # $BUNDLE_LAYER_AUDIT_DIR, or legacy $ASCIICKER_FINAL_JSON /
+    # $ASCIICKER_PNG_ROOT (see _resolve_audit_inputs).
+    final_json, png_root = _resolve_audit_inputs(args)
 
     WORK_DIR.mkdir(parents=True, exist_ok=True)
 

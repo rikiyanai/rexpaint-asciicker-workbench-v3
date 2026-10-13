@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -57,6 +58,75 @@ def discover_submodule_dirs(root: Path) -> set[str]:
 
 
 SUBMODULE_DIRS = discover_submodule_dirs(REPO_ROOT)
+
+
+def _git_lines(root: Path, args: list[str]) -> list[str] | None:
+    """Run a read-only git command in `root`; return stdout lines, or None if git is unusable."""
+    try:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except Exception:
+        # git missing, not a repo, or command failed -> caller falls back to
+        # the previous behavior of scanning everything.
+        return None
+    return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+
+
+def discover_git_ignored(root: Path) -> tuple[frozenset[str], tuple[str, ...]]:
+    """Repo-relative paths git ignores, split into exact files and directory prefixes.
+
+    `git ls-files --others --ignored --exclude-standard --directory` only reports
+    UNTRACKED paths, and collapses a directory only when nothing inside it is
+    tracked, so nothing here can ever shadow a tracked file.
+    """
+    lines = _git_lines(
+        root, ["ls-files", "--others", "--ignored", "--exclude-standard", "--directory"]
+    )
+    if lines is None:
+        return frozenset(), ()
+    files: set[str] = set()
+    dirs: list[str] = []
+    for entry in lines:
+        if entry.endswith("/"):
+            dirs.append(entry)
+        else:
+            files.add(entry)
+    return frozenset(files), tuple(dirs)
+
+
+def discover_tracked(root: Path) -> tuple[frozenset[str], frozenset[str]]:
+    """Tracked file paths plus every directory that contains a tracked file."""
+    lines = _git_lines(root, ["ls-files"])
+    if lines is None:
+        return frozenset(), frozenset()
+    files = set(lines)
+    dirs: set[str] = set()
+    for rel in files:
+        parent = Path(rel).parent
+        while parent != Path("."):
+            dirs.add(parent.as_posix())
+            parent = parent.parent
+    return frozenset(files), frozenset(dirs)
+
+
+GIT_IGNORED_FILES, GIT_IGNORED_DIRS = discover_git_ignored(REPO_ROOT)
+TRACKED_FILES, TRACKED_DIRS = discover_tracked(REPO_ROOT)
+
+
+def is_git_ignored(rel: str) -> bool:
+    """True when `rel` is untracked scratch that git ignores (never for tracked content)."""
+    # Hard guard: a tracked file (or a directory holding one) is never skipped,
+    # regardless of what the ignore listing says.
+    if rel in TRACKED_FILES or rel in TRACKED_DIRS:
+        return False
+    if rel in GIT_IGNORED_FILES:
+        return True
+    return any(rel == d.rstrip("/") or rel.startswith(d) for d in GIT_IGNORED_DIRS)
 
 # Symlinks that are allowed to point outside the repo (vendored from sibling repos)
 VENDORED_SYMLINKS = {
@@ -125,6 +195,13 @@ def classify_path(path: Path) -> str:
         return "doc"
     if rel.startswith(".claude/") or rel.startswith(".mcp") or rel == ".mcp.json":
         return "local_config"
+    # artifacts/ stores recorded run evidence (telemetry receipts, claim records).
+    # An absolute path in there is the CONTENT of a historical record -- the
+    # session transcript a receipt was derived from -- not a runtime dependency
+    # of the repo, and rewriting it would destroy the provenance it exists to
+    # prove. Report such references, but as warnings rather than blocking errors.
+    if rel.startswith("artifacts/"):
+        return "evidence"
     if rel.startswith(("src/", "scripts/", "web/", "runtime/", "tests/", ".githooks/")):
         return "live"
     if path.suffix.lower() in {
@@ -143,6 +220,10 @@ def iter_repo_paths(root: Path):
             continue
         rel = Path(*parts).as_posix()
         if any(rel == submodule or rel.startswith(f"{submodule}/") for submodule in SUBMODULE_DIRS):
+            continue
+        # Untracked, git-ignored scratch (local venvs, caches, .scratch/) is not
+        # part of the shipped repository, so it is not audited for containment.
+        if is_git_ignored(rel):
             continue
         yield path
 
@@ -204,7 +285,16 @@ def scan_text_files(strict_docs: bool) -> list[Finding]:
             if is_inside_repo(candidate):
                 continue
             rel = str(path.relative_to(REPO_ROOT))
-            if category in {"doc", "local_config"} and not strict_docs:
+            if category == "evidence":
+                findings.append(
+                    Finding(
+                        kind="external_path_evidence",
+                        severity="warning",
+                        path=rel,
+                        detail=f"recorded-evidence file references external absolute path: {raw}",
+                    )
+                )
+            elif category in {"doc", "local_config"} and not strict_docs:
                 findings.append(
                     Finding(
                         kind=f"external_path_{category}",

@@ -1,0 +1,23 @@
+{
+  "ts_utc": "2026-08-14T03:22:19.185019+00:00",
+  "repo_root": "/Users/r/Downloads/asciicker-pipeline-v3",
+  "mode": "claude",
+  "ok": true,
+  "results": [
+    {
+      "name": "hooks-integrity",
+      "status": "warn",
+      "summary": "hook registrations missing or malformed \u2014 run `python3 scripts/maintainer/install_hooks.py --apply` to repair"
+    },
+    {
+      "name": "multiplayer-canon-guard",
+      "status": "ok",
+      "summary": "  pipeline failure log present: /Users/r/Downloads/asciicker-pipeline-v3/docs/PLAYWRIGHT_FAILURE_LOG.md"
+    },
+    {
+      "name": "maintainer-smoke",
+      "status": "ok",
+      "summary": "no output"
+    }
+  ]
+}

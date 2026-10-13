@@ -201,6 +201,7 @@ class ActorVisualProfile:
     schema_version: int = 1
     variation: str | None = None
     mount_composition: MountComposition | None = None
+    rig_definition_id: str | None = None
     source_refs: SourceRefs | None = None
     quality_gates: QualityGates | None = None
     metadata: dict[str, Any] | None = None
@@ -213,6 +214,21 @@ class ActorVisualProfile:
             raise ValueError(f"Unsupported schema_version: {self.schema_version}")
         if not self.layers:
             raise ValueError("At least one layer is required")
+        
+        # P2: Enforce Literal type constraints at runtime
+        valid_domains = {"skin", "wearable", "weapon", "shield", "mount"}
+        if self.domain not in valid_domains:
+            raise ValueError(f"Invalid domain: {self.domain!r}. Must be one of: {sorted(valid_domains)}")
+        
+        valid_kinds = {"idle_walk", "attack", "plydie"}
+        if self.presentation_kind not in valid_kinds:
+            raise ValueError(f"Invalid presentation_kind: {self.presentation_kind!r}. Must be one of: {sorted(valid_kinds)}")
+        
+        # Validate layer slots
+        valid_slots = {"body", "head", "chest", "weapon", "shield", "mount_rear", "mount_rider", "mount_front", "armor"}
+        for i, layer in enumerate(self.layers):
+            if layer.slot not in valid_slots:
+                raise ValueError(f"Invalid slot in layer {i}: {layer.slot!r}. Must be one of: {sorted(valid_slots)}")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to JSON-compatible dict."""
@@ -228,6 +244,8 @@ class ActorVisualProfile:
             result["variation"] = self.variation
         if self.mount_composition is not None:
             result["mount_composition"] = self.mount_composition.to_dict()
+        if self.rig_definition_id is not None:
+            result["rig_definition_id"] = self.rig_definition_id
         if self.source_refs is not None:
             result["source_refs"] = self.source_refs.to_dict()
         if self.quality_gates is not None:
@@ -248,6 +266,7 @@ class ActorVisualProfile:
             layers=[LayerAssignment.from_dict(layer) for layer in data["layers"]],
             variation=data.get("variation"),
             mount_composition=MountComposition.from_dict(data["mount_composition"]) if data.get("mount_composition") else None,
+            rig_definition_id=data.get("rig_definition_id") or None,
             source_refs=SourceRefs.from_dict(data["source_refs"]) if data.get("source_refs") else None,
             quality_gates=QualityGates.from_dict(data["quality_gates"]) if data.get("quality_gates") else None,
             metadata=data.get("metadata"),
@@ -285,6 +304,7 @@ class ActorVisualProfile:
             "presentation_kind_id": self.presentation_kind,  # Will be mapped to ID at compile time
             "variation": self.variation or "default",
             "domain": self.domain,
+            "rig_definition_id": self.rig_definition_id,
             "slot_state": self._get_slot_state(),
             "mount_state": self._get_mount_state(),
         }

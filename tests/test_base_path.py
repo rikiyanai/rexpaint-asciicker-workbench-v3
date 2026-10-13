@@ -149,6 +149,12 @@ class TestHtmlInjectionRootHosted:
         html = r.data.decode()
         assert 'src="/whole-sheet-init.js?' in html
 
+    def test_workbench_manifest_and_persistence_root_relative(self, client):
+        r = client.get("/workbench")
+        html = r.data.decode()
+        assert 'href="/manifest.json?' in html
+        assert 'src="/persistence.mjs?' in html
+
     def test_wizard_styles_root_relative(self, client):
         r = client.get("/wizard")
         html = r.data.decode()
@@ -217,6 +223,22 @@ class TestHtmlInjectionPrefixed:
         r = self.client.get("/xpedit/workbench")
         html = r.data.decode()
         assert 'src="/xpedit/whole-sheet-init.js?' in html
+
+    def test_workbench_manifest_and_persistence_prefixed(self):
+        r = self.client.get("/xpedit/workbench")
+        html = r.data.decode()
+        assert 'href="/xpedit/manifest.json?' in html
+        assert 'src="/xpedit/persistence.mjs?' in html
+        assert "register((window.__WB_BASE_PATH || '') + '/sw.js')" in html
+
+        manifest = self.client.get("/xpedit/manifest.json").get_json()
+        assert manifest["start_url"] == "./workbench"
+        assert manifest["scope"] == "./"
+
+        worker = self.client.get("/xpedit/sw.js").data.decode()
+        assert "'workbench'" in worker
+        assert "'/workbench.html'" not in worker
+        assert "url.pathname.indexOf('/api/') !== -1" in worker
 
     def test_wizard_styles_prefixed(self):
         r = self.client.get("/xpedit/wizard")

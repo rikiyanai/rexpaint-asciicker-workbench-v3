@@ -1,0 +1,37 @@
+{
+  "mode": "mobile_editing_parity",
+  "generated_at": "2026-06-16T11:30:03.186Z",
+  "template": "player_native_idle_only",
+  "glyph_a": 65,
+  "fg1": "#ff4040",
+  "bg1": "#1a1a2e",
+  "glyph_b": 66,
+  "fg2": "#00cc88",
+  "bg2": "#330044",
+  "block_a": {
+    "x": 2,
+    "y": 2,
+    "w": 3,
+    "h": 3
+  },
+  "block_b": {
+    "x": 8,
+    "y": 2,
+    "w": 3,
+    "h": 3
+  },
+  "paste_loc1": {
+    "x": 14,
+    "y": 2
+  },
+  "paste_loc2": {
+    "x": 2,
+    "y": 8
+  },
+  "clear_region": {
+    "x": 8,
+    "y": 2,
+    "w": 2,
+    "h": 2
+  }
+}

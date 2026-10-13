@@ -15,23 +15,23 @@
       288,
       160
     ],
-    "workbench_session_id": "32bde395-0570-440b-9ae5-23e55bbe363f",
+    "workbench_session_id": "f793a223-4ea3-46de-a0bb-acbe88b4769f",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2812,
+    "low_confidence_cells": 2347,
     "transparent_cells": 42508,
     "top_glyphs": [
       {
         "glyph": 221,
-        "count": 776
+        "count": 900
       },
       {
         "glyph": 222,
-        "count": 601
+        "count": 846
       },
       {
         "glyph": 219,
@@ -39,31 +39,31 @@
       },
       {
         "glyph": 220,
-        "count": 380
-      },
-      {
-        "glyph": 95,
-        "count": 282
+        "count": 564
       },
       {
         "glyph": 223,
-        "count": 219
+        "count": 355
       },
       {
         "glyph": 178,
-        "count": 136
+        "count": 104
       },
       {
-        "glyph": 211,
-        "count": 102
+        "glyph": 95,
+        "count": 36
       },
       {
-        "glyph": 254,
-        "count": 65
+        "glyph": 47,
+        "count": 26
       },
       {
         "glyph": 55,
-        "count": 47
+        "count": 20
+      },
+      {
+        "glyph": 84,
+        "count": 14
       }
     ]
   },
@@ -83,55 +83,55 @@
       288,
       160
     ],
-    "workbench_session_id": "fd671c62-e9df-4bd9-ba68-02679edc9d65",
+    "workbench_session_id": "0312094d-6191-4701-b3dd-a94391a77a80",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2716,
+    "low_confidence_cells": 2269,
     "transparent_cells": 42508,
     "top_glyphs": [
       {
         "glyph": 221,
-        "count": 776
+        "count": 904
+      },
+      {
+        "glyph": 222,
+        "count": 842
       },
       {
         "glyph": 219,
         "count": 656
       },
       {
-        "glyph": 222,
-        "count": 606
-      },
-      {
         "glyph": 220,
-        "count": 315
-      },
-      {
-        "glyph": 95,
-        "count": 254
+        "count": 484
       },
       {
         "glyph": 223,
-        "count": 202
+        "count": 329
       },
       {
         "glyph": 178,
-        "count": 138
+        "count": 108
       },
       {
-        "glyph": 211,
-        "count": 102
+        "glyph": 95,
+        "count": 36
       },
       {
-        "glyph": 254,
-        "count": 63
+        "glyph": 47,
+        "count": 30
       },
       {
         "glyph": 55,
-        "count": 47
+        "count": 20
+      },
+      {
+        "glyph": 91,
+        "count": 20
       }
     ]
   },
@@ -151,23 +151,23 @@
       252,
       160
     ],
-    "workbench_session_id": "6d64ac01-1367-4bb7-bb90-1394687b8284",
+    "workbench_session_id": "32b1e79a-ab8e-42ab-88e3-f7098fab93b6",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 1856,
+    "low_confidence_cells": 1560,
     "transparent_cells": 37416,
     "top_glyphs": [
       {
         "glyph": 221,
-        "count": 653
+        "count": 797
       },
       {
         "glyph": 222,
-        "count": 525
+        "count": 635
       },
       {
         "glyph": 219,
@@ -175,31 +175,31 @@
       },
       {
         "glyph": 223,
-        "count": 168
-      },
-      {
-        "glyph": 254,
-        "count": 128
-      },
-      {
-        "glyph": 95,
-        "count": 102
-      },
-      {
-        "glyph": 178,
-        "count": 90
+        "count": 288
       },
       {
         "glyph": 220,
-        "count": 75
+        "count": 139
       },
       {
-        "glyph": 186,
-        "count": 65
+        "glyph": 178,
+        "count": 86
+      },
+      {
+        "glyph": 95,
+        "count": 66
       },
       {
         "glyph": 179,
         "count": 62
+      },
+      {
+        "glyph": 186,
+        "count": 57
+      },
+      {
+        "glyph": 91,
+        "count": 47
       }
     ]
   },
@@ -219,14 +219,14 @@
       220,
       176
     ],
-    "workbench_session_id": "cf401e68-b505-4be7-8443-416ff9a0820d",
+    "workbench_session_id": "0036ca80-2f3f-42a7-b498-ce6ff6de5d28",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2234,
+    "low_confidence_cells": 1875,
     "transparent_cells": 35360,
     "top_glyphs": [
       {
@@ -235,38 +235,38 @@
       },
       {
         "glyph": 220,
-        "count": 656
+        "count": 720
       },
       {
         "glyph": 223,
-        "count": 527
+        "count": 560
       },
       {
         "glyph": 221,
-        "count": 295
+        "count": 399
       },
       {
         "glyph": 222,
-        "count": 247
+        "count": 319
       },
       {
         "glyph": 95,
         "count": 160
       },
       {
-        "glyph": 178,
-        "count": 138
-      },
-      {
-        "glyph": 34,
-        "count": 80
+        "glyph": 47,
+        "count": 104
       },
       {
         "glyph": 254,
-        "count": 80
+        "count": 41
       },
       {
-        "glyph": 47,
+        "glyph": 55,
+        "count": 40
+      },
+      {
+        "glyph": 72,
         "count": 40
       }
     ]
@@ -287,14 +287,14 @@
       288,
       160
     ],
-    "workbench_session_id": "1e9253d7-afa2-4566-a197-be34450cbf4d",
+    "workbench_session_id": "d0e8eaad-5ebd-47c2-8d58-f59cd7c81041",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 3096,
+    "low_confidence_cells": 2604,
     "transparent_cells": 41328,
     "top_glyphs": [
       {
@@ -303,39 +303,39 @@
       },
       {
         "glyph": 221,
-        "count": 857
+        "count": 1021
       },
       {
         "glyph": 222,
-        "count": 656
+        "count": 926
       },
       {
         "glyph": 220,
-        "count": 348
-      },
-      {
-        "glyph": 95,
-        "count": 286
+        "count": 524
       },
       {
         "glyph": 223,
-        "count": 267
+        "count": 408
       },
       {
         "glyph": 178,
-        "count": 136
+        "count": 109
       },
       {
-        "glyph": 211,
-        "count": 100
+        "glyph": 95,
+        "count": 48
       },
       {
-        "glyph": 254,
-        "count": 79
+        "glyph": 47,
+        "count": 38
+      },
+      {
+        "glyph": 91,
+        "count": 28
       },
       {
         "glyph": 55,
-        "count": 41
+        "count": 20
       }
     ]
   },
@@ -355,23 +355,23 @@
       252,
       160
     ],
-    "workbench_session_id": "32779a03-242c-402a-8706-b1a437a7740e",
+    "workbench_session_id": "d3b0dfcf-c9e1-4ee7-862d-0c0588aa3bd7",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2007,
+    "low_confidence_cells": 1677,
     "transparent_cells": 37180,
     "top_glyphs": [
       {
         "glyph": 221,
-        "count": 681
+        "count": 817
       },
       {
         "glyph": 222,
-        "count": 555
+        "count": 685
       },
       {
         "glyph": 219,
@@ -379,31 +379,31 @@
       },
       {
         "glyph": 223,
-        "count": 250
-      },
-      {
-        "glyph": 95,
-        "count": 143
-      },
-      {
-        "glyph": 254,
-        "count": 116
+        "count": 390
       },
       {
         "glyph": 220,
-        "count": 115
+        "count": 177
+      },
+      {
+        "glyph": 95,
+        "count": 95
       },
       {
         "glyph": 178,
-        "count": 104
-      },
-      {
-        "glyph": 91,
-        "count": 52
+        "count": 92
       },
       {
         "glyph": 179,
         "count": 47
+      },
+      {
+        "glyph": 91,
+        "count": 42
+      },
+      {
+        "glyph": 36,
+        "count": 35
       }
     ]
   },
@@ -423,14 +423,14 @@
       220,
       176
     ],
-    "workbench_session_id": "7bc1f1f5-60b2-421d-ad15-07c8cd36a8d2",
+    "workbench_session_id": "284f2c41-5146-4363-8b7a-734df4105787",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2234,
+    "low_confidence_cells": 1875,
     "transparent_cells": 35360,
     "top_glyphs": [
       {
@@ -439,38 +439,38 @@
       },
       {
         "glyph": 220,
-        "count": 656
+        "count": 720
       },
       {
         "glyph": 223,
-        "count": 527
+        "count": 560
       },
       {
         "glyph": 221,
-        "count": 295
+        "count": 399
       },
       {
         "glyph": 222,
-        "count": 247
+        "count": 319
       },
       {
         "glyph": 95,
         "count": 160
       },
       {
-        "glyph": 178,
-        "count": 138
-      },
-      {
-        "glyph": 34,
-        "count": 80
+        "glyph": 47,
+        "count": 104
       },
       {
         "glyph": 254,
-        "count": 80
+        "count": 41
       },
       {
-        "glyph": 47,
+        "glyph": 55,
+        "count": 40
+      },
+      {
+        "glyph": 72,
         "count": 40
       }
     ]
@@ -491,23 +491,23 @@
       252,
       160
     ],
-    "workbench_session_id": "20ce7595-9350-4c3b-85d2-d4ef2ce573ca",
+    "workbench_session_id": "b5494a60-7270-4bdd-bb28-281f5b357280",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 1952,
+    "low_confidence_cells": 1658,
     "transparent_cells": 37416,
     "top_glyphs": [
       {
         "glyph": 221,
-        "count": 618
+        "count": 762
       },
       {
         "glyph": 222,
-        "count": 502
+        "count": 602
       },
       {
         "glyph": 219,
@@ -515,23 +515,19 @@
       },
       {
         "glyph": 223,
-        "count": 198
+        "count": 338
       },
       {
         "glyph": 220,
-        "count": 128
+        "count": 186
       },
       {
         "glyph": 178,
-        "count": 122
-      },
-      {
-        "glyph": 254,
-        "count": 118
+        "count": 112
       },
       {
         "glyph": 95,
-        "count": 98
+        "count": 66
       },
       {
         "glyph": 179,
@@ -539,7 +535,11 @@
       },
       {
         "glyph": 91,
-        "count": 54
+        "count": 42
+      },
+      {
+        "glyph": 186,
+        "count": 40
       }
     ]
   },
@@ -559,19 +559,19 @@
       220,
       176
     ],
-    "workbench_session_id": "cd08aff6-42f0-4af4-a724-11befe410982",
+    "workbench_session_id": "730a357b-22f2-4b40-ac87-8e98de9cf1db",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2170,
+    "low_confidence_cells": 1875,
     "transparent_cells": 35360,
     "top_glyphs": [
       {
         "glyph": 220,
-        "count": 736
+        "count": 800
       },
       {
         "glyph": 219,
@@ -579,34 +579,34 @@
       },
       {
         "glyph": 223,
-        "count": 447
+        "count": 480
       },
       {
         "glyph": 221,
-        "count": 295
+        "count": 399
       },
       {
         "glyph": 222,
-        "count": 247
+        "count": 319
       },
       {
         "glyph": 95,
         "count": 160
       },
       {
-        "glyph": 178,
-        "count": 138
-      },
-      {
-        "glyph": 34,
-        "count": 80
+        "glyph": 47,
+        "count": 104
       },
       {
         "glyph": 254,
-        "count": 80
+        "count": 41
       },
       {
-        "glyph": 47,
+        "glyph": 55,
+        "count": 40
+      },
+      {
+        "glyph": 72,
         "count": 40
       }
     ]
@@ -627,14 +627,14 @@
       288,
       160
     ],
-    "workbench_session_id": "3b126268-1208-44f9-939f-ee6884aaa79e",
+    "workbench_session_id": "bfabaa78-ab51-4f6d-aec9-62947c0c647d",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 3184,
+    "low_confidence_cells": 2674,
     "transparent_cells": 41328,
     "top_glyphs": [
       {
@@ -643,39 +643,39 @@
       },
       {
         "glyph": 221,
-        "count": 857
+        "count": 1013
       },
       {
         "glyph": 222,
-        "count": 659
+        "count": 926
       },
       {
         "glyph": 220,
-        "count": 405
-      },
-      {
-        "glyph": 95,
-        "count": 306
+        "count": 592
       },
       {
         "glyph": 223,
-        "count": 284
+        "count": 430
       },
       {
         "glyph": 178,
-        "count": 134
+        "count": 109
       },
       {
-        "glyph": 211,
-        "count": 100
+        "glyph": 95,
+        "count": 48
       },
       {
-        "glyph": 254,
-        "count": 69
+        "glyph": 47,
+        "count": 34
       },
       {
         "glyph": 55,
-        "count": 41
+        "count": 20
+      },
+      {
+        "glyph": 91,
+        "count": 20
       }
     ]
   },
@@ -695,55 +695,55 @@
       252,
       160
     ],
-    "workbench_session_id": "0dd3f263-c06d-4af7-bcaf-0926d052661d",
+    "workbench_session_id": "7c1fcc04-a060-4450-8663-012f50e38624",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2060,
+    "low_confidence_cells": 1726,
     "transparent_cells": 37180,
     "top_glyphs": [
       {
         "glyph": 221,
-        "count": 664
+        "count": 790
       },
       {
         "glyph": 222,
-        "count": 542
+        "count": 662
+      },
+      {
+        "glyph": 223,
+        "count": 436
       },
       {
         "glyph": 219,
         "count": 400
       },
       {
-        "glyph": 223,
-        "count": 274
-      },
-      {
         "glyph": 220,
-        "count": 170
-      },
-      {
-        "glyph": 95,
-        "count": 134
+        "count": 226
       },
       {
         "glyph": 178,
-        "count": 126
-      },
-      {
-        "glyph": 254,
         "count": 106
       },
       {
-        "glyph": 91,
-        "count": 47
+        "glyph": 95,
+        "count": 90
       },
       {
         "glyph": 179,
         "count": 47
+      },
+      {
+        "glyph": 91,
+        "count": 37
+      },
+      {
+        "glyph": 36,
+        "count": 35
       }
     ]
   },
@@ -763,19 +763,19 @@
       220,
       176
     ],
-    "workbench_session_id": "1ff8228d-b662-4b66-8794-664ccb9f6d73",
+    "workbench_session_id": "b3bb7578-4e03-4209-b6ca-334a5ed21621",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2170,
+    "low_confidence_cells": 1875,
     "transparent_cells": 35360,
     "top_glyphs": [
       {
         "glyph": 220,
-        "count": 736
+        "count": 800
       },
       {
         "glyph": 219,
@@ -783,34 +783,34 @@
       },
       {
         "glyph": 223,
-        "count": 447
+        "count": 480
       },
       {
         "glyph": 221,
-        "count": 295
+        "count": 399
       },
       {
         "glyph": 222,
-        "count": 247
+        "count": 319
       },
       {
         "glyph": 95,
         "count": 160
       },
       {
-        "glyph": 178,
-        "count": 138
-      },
-      {
-        "glyph": 34,
-        "count": 80
+        "glyph": 47,
+        "count": 104
       },
       {
         "glyph": 254,
-        "count": 80
+        "count": 41
       },
       {
-        "glyph": 47,
+        "glyph": 55,
+        "count": 40
+      },
+      {
+        "glyph": 72,
         "count": 40
       }
     ]
@@ -831,55 +831,55 @@
       288,
       160
     ],
-    "workbench_session_id": "6334d763-08b5-4fbf-ae24-298ca2fcbd5c",
+    "workbench_session_id": "580ceb4a-f838-42f0-a706-615bec4dd858",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2666,
+    "low_confidence_cells": 2182,
     "transparent_cells": 42472,
     "top_glyphs": [
+      {
+        "glyph": 221,
+        "count": 875
+      },
+      {
+        "glyph": 222,
+        "count": 820
+      },
       {
         "glyph": 219,
         "count": 736
       },
       {
-        "glyph": 221,
-        "count": 733
-      },
-      {
-        "glyph": 222,
-        "count": 599
-      },
-      {
         "glyph": 220,
-        "count": 364
+        "count": 481
       },
       {
         "glyph": 223,
-        "count": 265
-      },
-      {
-        "glyph": 95,
-        "count": 218
+        "count": 423
       },
       {
         "glyph": 178,
-        "count": 137
+        "count": 95
       },
       {
-        "glyph": 254,
-        "count": 88
+        "glyph": 44,
+        "count": 28
       },
       {
-        "glyph": 211,
-        "count": 83
+        "glyph": 217,
+        "count": 24
       },
       {
-        "glyph": 34,
-        "count": 30
+        "glyph": 47,
+        "count": 20
+      },
+      {
+        "glyph": 55,
+        "count": 20
       }
     ]
   },
@@ -899,55 +899,55 @@
       288,
       160
     ],
-    "workbench_session_id": "6370110e-74e2-4b78-95eb-12975f0ab991",
+    "workbench_session_id": "40fb536c-c048-43f0-b618-03bdcc91a80f",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2654,
+    "low_confidence_cells": 2124,
     "transparent_cells": 42464,
     "top_glyphs": [
       {
         "glyph": 221,
-        "count": 761
+        "count": 915
+      },
+      {
+        "glyph": 222,
+        "count": 836
       },
       {
         "glyph": 219,
         "count": 744
       },
       {
-        "glyph": 222,
-        "count": 612
-      },
-      {
         "glyph": 220,
-        "count": 300
+        "count": 421
       },
       {
         "glyph": 223,
-        "count": 253
-      },
-      {
-        "glyph": 95,
-        "count": 216
+        "count": 393
       },
       {
         "glyph": 178,
-        "count": 136
+        "count": 87
       },
       {
-        "glyph": 254,
-        "count": 88
+        "glyph": 44,
+        "count": 28
       },
       {
-        "glyph": 211,
-        "count": 75
+        "glyph": 95,
+        "count": 28
       },
       {
-        "glyph": 34,
-        "count": 38
+        "glyph": 217,
+        "count": 24
+      },
+      {
+        "glyph": 55,
+        "count": 20
       }
     ]
   },
@@ -967,55 +967,55 @@
       252,
       160
     ],
-    "workbench_session_id": "935cdb55-a55b-457e-b953-f7b9c0bf381d",
+    "workbench_session_id": "d72322f6-b818-44f6-ae10-6544a024c3aa",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 1862,
+    "low_confidence_cells": 1504,
     "transparent_cells": 37416,
     "top_glyphs": [
       {
         "glyph": 221,
-        "count": 658
+        "count": 740
+      },
+      {
+        "glyph": 222,
+        "count": 648
       },
       {
         "glyph": 219,
         "count": 518
       },
       {
-        "glyph": 222,
-        "count": 506
-      },
-      {
         "glyph": 223,
-        "count": 174
+        "count": 312
       },
       {
-        "glyph": 254,
-        "count": 167
+        "glyph": 220,
+        "count": 153
       },
       {
         "glyph": 178,
         "count": 126
       },
       {
-        "glyph": 220,
-        "count": 91
-      },
-      {
-        "glyph": 211,
-        "count": 59
-      },
-      {
-        "glyph": 192,
-        "count": 44
+        "glyph": 254,
+        "count": 47
       },
       {
         "glyph": 72,
-        "count": 42
+        "count": 38
+      },
+      {
+        "glyph": 179,
+        "count": 37
+      },
+      {
+        "glyph": 36,
+        "count": 35
       }
     ]
   },
@@ -1035,43 +1035,35 @@
       220,
       176
     ],
-    "workbench_session_id": "659191a8-4d28-43a2-80f0-0589ade6eebc",
+    "workbench_session_id": "ff196067-455f-4018-85dd-3d39c2801e42",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2234,
+    "low_confidence_cells": 1836,
     "transparent_cells": 35280,
     "top_glyphs": [
+      {
+        "glyph": 223,
+        "count": 839
+      },
       {
         "glyph": 219,
         "count": 800
       },
       {
-        "glyph": 223,
-        "count": 736
-      },
-      {
         "glyph": 220,
-        "count": 696
+        "count": 760
       },
       {
         "glyph": 221,
-        "count": 288
+        "count": 320
       },
       {
         "glyph": 222,
-        "count": 208
-      },
-      {
-        "glyph": 34,
-        "count": 152
-      },
-      {
-        "glyph": 178,
-        "count": 112
+        "count": 240
       },
       {
         "glyph": 91,
@@ -1082,8 +1074,16 @@
         "count": 80
       },
       {
-        "glyph": 254,
-        "count": 72
+        "glyph": 178,
+        "count": 80
+      },
+      {
+        "glyph": 47,
+        "count": 64
+      },
+      {
+        "glyph": 86,
+        "count": 40
       }
     ]
   },
@@ -1103,14 +1103,14 @@
       288,
       160
     ],
-    "workbench_session_id": "82596735-0b60-4fd9-af36-5c401d19a64f",
+    "workbench_session_id": "ce5e4511-856f-4390-ba3e-88be0a713357",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 3018,
+    "low_confidence_cells": 2430,
     "transparent_cells": 41284,
     "top_glyphs": [
       {
@@ -1119,39 +1119,39 @@
       },
       {
         "glyph": 221,
-        "count": 848
+        "count": 1032
       },
       {
         "glyph": 222,
-        "count": 682
-      },
-      {
-        "glyph": 220,
-        "count": 323
+        "count": 932
       },
       {
         "glyph": 223,
-        "count": 314
+        "count": 456
       },
       {
-        "glyph": 95,
-        "count": 248
+        "glyph": 220,
+        "count": 445
       },
       {
         "glyph": 178,
-        "count": 131
-      },
-      {
-        "glyph": 254,
         "count": 91
       },
       {
-        "glyph": 211,
-        "count": 73
+        "glyph": 95,
+        "count": 40
       },
       {
-        "glyph": 34,
-        "count": 36
+        "glyph": 44,
+        "count": 32
+      },
+      {
+        "glyph": 47,
+        "count": 26
+      },
+      {
+        "glyph": 55,
+        "count": 24
       }
     ]
   },
@@ -1171,55 +1171,55 @@
       252,
       160
     ],
-    "workbench_session_id": "2c91216e-0c56-40ff-8712-1f99e2de5462",
+    "workbench_session_id": "94d87139-92db-4003-b3b2-8886733c8db6",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 1987,
+    "low_confidence_cells": 1587,
     "transparent_cells": 37180,
     "top_glyphs": [
       {
         "glyph": 221,
-        "count": 678
+        "count": 750
+      },
+      {
+        "glyph": 222,
+        "count": 669
       },
       {
         "glyph": 219,
         "count": 552
       },
       {
-        "glyph": 222,
-        "count": 517
-      },
-      {
         "glyph": 223,
-        "count": 285
+        "count": 451
       },
       {
         "glyph": 220,
-        "count": 147
-      },
-      {
-        "glyph": 254,
-        "count": 147
+        "count": 219
       },
       {
         "glyph": 178,
-        "count": 131
-      },
-      {
-        "glyph": 95,
-        "count": 78
-      },
-      {
-        "glyph": 211,
-        "count": 50
+        "count": 121
       },
       {
         "glyph": 72,
-        "count": 40
+        "count": 36
+      },
+      {
+        "glyph": 36,
+        "count": 35
+      },
+      {
+        "glyph": 91,
+        "count": 32
+      },
+      {
+        "glyph": 179,
+        "count": 32
       }
     ]
   },
@@ -1239,43 +1239,35 @@
       220,
       176
     ],
-    "workbench_session_id": "7d97790e-b780-4646-b62f-46e9e18df0f7",
+    "workbench_session_id": "f30e630b-bfc3-4da7-b923-fb8a5ddc67e9",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2234,
+    "low_confidence_cells": 1836,
     "transparent_cells": 35280,
     "top_glyphs": [
+      {
+        "glyph": 223,
+        "count": 839
+      },
       {
         "glyph": 219,
         "count": 800
       },
       {
-        "glyph": 223,
-        "count": 736
-      },
-      {
         "glyph": 220,
-        "count": 696
+        "count": 760
       },
       {
         "glyph": 221,
-        "count": 288
+        "count": 320
       },
       {
         "glyph": 222,
-        "count": 208
-      },
-      {
-        "glyph": 34,
-        "count": 152
-      },
-      {
-        "glyph": 178,
-        "count": 112
+        "count": 240
       },
       {
         "glyph": 91,
@@ -1286,8 +1278,16 @@
         "count": 80
       },
       {
-        "glyph": 254,
-        "count": 72
+        "glyph": 178,
+        "count": 80
+      },
+      {
+        "glyph": 47,
+        "count": 64
+      },
+      {
+        "glyph": 86,
+        "count": 40
       }
     ]
   },
@@ -1307,55 +1307,55 @@
       252,
       160
     ],
-    "workbench_session_id": "87b82ba3-a411-42e7-90a2-cd9325559bce",
+    "workbench_session_id": "f58337bc-c787-4386-9362-73261f6e1123",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 1874,
+    "low_confidence_cells": 1516,
     "transparent_cells": 37416,
     "top_glyphs": [
       {
         "glyph": 221,
-        "count": 641
+        "count": 717
+      },
+      {
+        "glyph": 222,
+        "count": 618
       },
       {
         "glyph": 219,
         "count": 518
       },
       {
-        "glyph": 222,
-        "count": 492
-      },
-      {
         "glyph": 223,
-        "count": 199
-      },
-      {
-        "glyph": 254,
-        "count": 170
-      },
-      {
-        "glyph": 178,
-        "count": 133
+        "count": 347
       },
       {
         "glyph": 220,
-        "count": 111
+        "count": 169
       },
       {
-        "glyph": 211,
-        "count": 59
+        "glyph": 178,
+        "count": 135
       },
       {
-        "glyph": 192,
-        "count": 44
+        "glyph": 254,
+        "count": 48
       },
       {
-        "glyph": 91,
-        "count": 38
+        "glyph": 179,
+        "count": 37
+      },
+      {
+        "glyph": 72,
+        "count": 36
+      },
+      {
+        "glyph": 36,
+        "count": 35
       }
     ]
   },
@@ -1375,43 +1375,35 @@
       220,
       176
     ],
-    "workbench_session_id": "4def2966-1bf1-432e-8e4b-ed49bcd314cc",
+    "workbench_session_id": "35b971cd-15f8-470c-bc90-4b817d75d7ef",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2154,
+    "low_confidence_cells": 1756,
     "transparent_cells": 35280,
     "top_glyphs": [
+      {
+        "glyph": 223,
+        "count": 839
+      },
       {
         "glyph": 219,
         "count": 800
       },
       {
-        "glyph": 223,
-        "count": 736
-      },
-      {
         "glyph": 220,
-        "count": 696
+        "count": 760
       },
       {
         "glyph": 221,
-        "count": 288
+        "count": 320
       },
       {
         "glyph": 222,
-        "count": 208
-      },
-      {
-        "glyph": 34,
-        "count": 152
-      },
-      {
-        "glyph": 178,
-        "count": 112
+        "count": 240
       },
       {
         "glyph": 91,
@@ -1422,8 +1414,16 @@
         "count": 80
       },
       {
-        "glyph": 254,
-        "count": 72
+        "glyph": 178,
+        "count": 80
+      },
+      {
+        "glyph": 47,
+        "count": 64
+      },
+      {
+        "glyph": 86,
+        "count": 40
       }
     ]
   },
@@ -1443,14 +1443,14 @@
       288,
       160
     ],
-    "workbench_session_id": "b35b96b9-36ee-43c4-82c6-3a440520ed11",
+    "workbench_session_id": "5ddcb4ed-1cd4-4362-a648-c640bcc4e6b6",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2918,
+    "low_confidence_cells": 2533,
     "transparent_cells": 41312,
     "top_glyphs": [
       {
@@ -1459,39 +1459,39 @@
       },
       {
         "glyph": 221,
-        "count": 738
+        "count": 898
       },
       {
         "glyph": 222,
-        "count": 550
-      },
-      {
-        "glyph": 220,
-        "count": 354
+        "count": 811
       },
       {
         "glyph": 223,
-        "count": 328
+        "count": 522
+      },
+      {
+        "glyph": 220,
+        "count": 499
       },
       {
         "glyph": 178,
-        "count": 182
+        "count": 113
       },
       {
-        "glyph": 95,
-        "count": 158
+        "glyph": 47,
+        "count": 28
       },
       {
-        "glyph": 211,
-        "count": 117
+        "glyph": 91,
+        "count": 28
       },
       {
-        "glyph": 254,
-        "count": 100
+        "glyph": 102,
+        "count": 17
       },
       {
-        "glyph": 171,
-        "count": 50
+        "glyph": 39,
+        "count": 16
       }
     ]
   },
@@ -1511,55 +1511,55 @@
       252,
       160
     ],
-    "workbench_session_id": "1b4733e0-d0c2-4831-a37a-46f904a238c2",
+    "workbench_session_id": "2951f603-5a7c-4174-99e3-11bc3e6c7f6d",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 1841,
+    "low_confidence_cells": 1591,
     "transparent_cells": 37168,
     "top_glyphs": [
+      {
+        "glyph": 221,
+        "count": 669
+      },
       {
         "glyph": 219,
         "count": 636
       },
       {
-        "glyph": 221,
-        "count": 609
-      },
-      {
         "glyph": 222,
-        "count": 524
-      },
-      {
-        "glyph": 220,
-        "count": 317
+        "count": 620
       },
       {
         "glyph": 223,
-        "count": 254
+        "count": 416
+      },
+      {
+        "glyph": 220,
+        "count": 387
       },
       {
         "glyph": 178,
-        "count": 186
+        "count": 150
       },
       {
-        "glyph": 254,
-        "count": 94
+        "glyph": 252,
+        "count": 30
+      },
+      {
+        "glyph": 33,
+        "count": 28
       },
       {
         "glyph": 95,
-        "count": 62
+        "count": 28
       },
       {
-        "glyph": 211,
-        "count": 40
-      },
-      {
-        "glyph": 192,
-        "count": 38
+        "glyph": 186,
+        "count": 24
       }
     ]
   },
@@ -1579,14 +1579,14 @@
       220,
       176
     ],
-    "workbench_session_id": "f2c0f468-d214-4b67-aab6-4f4670bac486",
+    "workbench_session_id": "120663de-34f1-4e64-9baa-39985d47d64e",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2404,
+    "low_confidence_cells": 2166,
     "transparent_cells": 35280,
     "top_glyphs": [
       {
@@ -1595,19 +1595,19 @@
       },
       {
         "glyph": 220,
-        "count": 655
+        "count": 721
       },
       {
         "glyph": 221,
-        "count": 448
-      },
-      {
-        "glyph": 178,
-        "count": 311
+        "count": 480
       },
       {
         "glyph": 222,
-        "count": 256
+        "count": 320
+      },
+      {
+        "glyph": 178,
+        "count": 279
       },
       {
         "glyph": 223,
@@ -1615,11 +1615,11 @@
       },
       {
         "glyph": 95,
-        "count": 146
+        "count": 80
       },
       {
-        "glyph": 34,
-        "count": 80
+        "glyph": 47,
+        "count": 64
       },
       {
         "glyph": 55,
@@ -1647,14 +1647,14 @@
       288,
       160
     ],
-    "workbench_session_id": "d37036c4-be0c-465c-bb20-d80b5a9aae0d",
+    "workbench_session_id": "bfff38e3-657c-4332-b722-e36d28dd57b2",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2280,
+    "low_confidence_cells": 1791,
     "transparent_cells": 42736,
     "top_glyphs": [
       {
@@ -1663,39 +1663,39 @@
       },
       {
         "glyph": 221,
-        "count": 706
+        "count": 803
       },
       {
         "glyph": 222,
-        "count": 562
+        "count": 729
       },
       {
         "glyph": 220,
-        "count": 351
+        "count": 496
       },
       {
         "glyph": 223,
-        "count": 141
-      },
-      {
-        "glyph": 95,
-        "count": 132
-      },
-      {
-        "glyph": 211,
-        "count": 82
+        "count": 218
       },
       {
         "glyph": 178,
-        "count": 57
+        "count": 48
       },
       {
-        "glyph": 254,
-        "count": 46
+        "glyph": 47,
+        "count": 40
       },
       {
         "glyph": 91,
         "count": 40
+      },
+      {
+        "glyph": 95,
+        "count": 17
+      },
+      {
+        "glyph": 55,
+        "count": 16
       }
     ]
   },
@@ -1715,55 +1715,55 @@
       252,
       160
     ],
-    "workbench_session_id": "56082b12-c314-4690-afe8-77ec02b3a04e",
+    "workbench_session_id": "07492236-987f-433d-be23-e43d324bc98e",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 1627,
+    "low_confidence_cells": 1313,
     "transparent_cells": 37544,
     "top_glyphs": [
+      {
+        "glyph": 221,
+        "count": 680
+      },
       {
         "glyph": 219,
         "count": 610
       },
       {
-        "glyph": 221,
-        "count": 590
-      },
-      {
         "glyph": 222,
-        "count": 497
+        "count": 569
       },
       {
         "glyph": 223,
-        "count": 114
-      },
-      {
-        "glyph": 254,
-        "count": 78
+        "count": 254
       },
       {
         "glyph": 220,
-        "count": 77
+        "count": 123
       },
       {
         "glyph": 178,
-        "count": 76
+        "count": 84
       },
       {
         "glyph": 186,
-        "count": 58
+        "count": 56
       },
       {
-        "glyph": 91,
-        "count": 47
+        "glyph": 179,
+        "count": 35
       },
       {
-        "glyph": 211,
-        "count": 45
+        "glyph": 55,
+        "count": 32
+      },
+      {
+        "glyph": 252,
+        "count": 30
       }
     ]
   },
@@ -1783,23 +1783,23 @@
       220,
       176
     ],
-    "workbench_session_id": "8d986c0f-74ee-49be-b82e-c23578c6cff1",
+    "workbench_session_id": "c3a9bb72-3531-43fa-8959-ccec67ca03d8",
     "glyph_assignment_mode": "dominant-bg-cp437-mask-v1",
     "font_path": "/Users/r/Downloads/asciicker-pipeline-v3/runtime/termpp-skin-lab-static/termpp-web-flat/fonts/cp437_6x6.png.bdf",
     "target_cell_size": [
       6,
       6
     ],
-    "low_confidence_cells": 2071,
+    "low_confidence_cells": 1872,
     "transparent_cells": 35520,
     "top_glyphs": [
       {
-        "glyph": 219,
-        "count": 640
+        "glyph": 220,
+        "count": 680
       },
       {
-        "glyph": 220,
-        "count": 577
+        "glyph": 219,
+        "count": 640
       },
       {
         "glyph": 221,
@@ -1807,30 +1807,30 @@
       },
       {
         "glyph": 223,
-        "count": 296
-      },
-      {
-        "glyph": 95,
-        "count": 286
+        "count": 360
       },
       {
         "glyph": 222,
         "count": 280
       },
       {
-        "glyph": 34,
-        "count": 80
+        "glyph": 95,
+        "count": 247
+      },
+      {
+        "glyph": 47,
+        "count": 104
       },
       {
         "glyph": 254,
         "count": 80
       },
       {
-        "glyph": 178,
-        "count": 72
+        "glyph": 55,
+        "count": 40
       },
       {
-        "glyph": 47,
+        "glyph": 72,
         "count": 40
       }
     ]

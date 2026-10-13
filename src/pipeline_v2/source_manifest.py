@@ -33,7 +33,6 @@ VALID_SLOTS = frozenset({
     "armor", "chestplate",
     "mount_rear",
     "mount_front",
-    "mount_composite",  # transitional — blocker text in blueprint
 })
 
 
@@ -285,10 +284,10 @@ def validate_manifest(
             # Wearable must be item-owned, attached to a character, not claiming to own the character
             pass  # OK — wearable has its own owner but belongs to character
 
-        if lok == "mount" and slot not in ("mount_rear", "mount_front", "mount_composite"):
+        if lok == "mount" and slot not in ("mount_rear", "mount_front"):
             errors.append(
                 f"regions[{i}] ({rid}): mount layer_owner_kind requires slot in "
-                f"(mount_rear, mount_front, mount_composite), got {slot!r}"
+                f"(mount_rear, mount_front), got {slot!r}"
             )
 
         # Duplicate target tuple check

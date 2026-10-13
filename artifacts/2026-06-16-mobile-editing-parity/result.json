@@ -1,0 +1,721 @@
+{
+  "overallPass": true,
+  "finalXpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-a8f8e5d0-9461-43f0-9cd9-2d7fbef41fac.xp",
+  "results": [
+    {
+      "name": "fresh-mobile-first-screen",
+      "pass": true,
+      "error": "",
+      "data": {
+        "visible": true
+      },
+      "pre": {
+        "activeTool": "cell",
+        "selectionBounds": null,
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": false,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "post": {
+        "activeTool": "cell",
+        "selectionBounds": null,
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": false,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/01-fresh-mobile-first-screen.png"
+    },
+    {
+      "name": "apply-template",
+      "pass": true,
+      "error": "",
+      "data": {
+        "template": "player_native_idle_only"
+      },
+      "pre": {
+        "activeTool": "cell",
+        "selectionBounds": null,
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": false,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "post": {
+        "activeTool": "cell",
+        "selectionBounds": null,
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": false,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/02-apply-template.png"
+    },
+    {
+      "name": "set-draw-state-1",
+      "pass": true,
+      "error": "",
+      "data": {
+        "glyph": 65,
+        "fg": "#ff4040",
+        "bg": "#1a1a2e",
+        "confirmed_drawGlyph": 65
+      },
+      "pre": {
+        "activeTool": "cell",
+        "selectionBounds": null,
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": false,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "post": {
+        "activeTool": "cell",
+        "selectionBounds": null,
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": false,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/03-set-draw-state-1.png"
+    },
+    {
+      "name": "paint-block-a",
+      "pass": true,
+      "error": "",
+      "data": {
+        "cells": 9,
+        "mismatches": []
+      },
+      "pre": {
+        "activeTool": "cell",
+        "selectionBounds": null,
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": false,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "post": {
+        "activeTool": "cell",
+        "selectionBounds": null,
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/04-paint-block-a.png"
+    },
+    {
+      "name": "set-draw-state-2",
+      "pass": true,
+      "error": "",
+      "data": {
+        "glyph": 66,
+        "fg": "#00cc88",
+        "bg": "#330044"
+      },
+      "pre": {
+        "activeTool": "cell",
+        "selectionBounds": null,
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": true
+      },
+      "post": {
+        "activeTool": "cell",
+        "selectionBounds": null,
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/05-set-draw-state-2.png"
+    },
+    {
+      "name": "paint-block-b",
+      "pass": true,
+      "error": "",
+      "data": {
+        "cells": 9,
+        "mismatches": []
+      },
+      "pre": {
+        "activeTool": "cell",
+        "selectionBounds": null,
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": true
+      },
+      "post": {
+        "activeTool": "cell",
+        "selectionBounds": null,
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/06-paint-block-b.png"
+    },
+    {
+      "name": "select-block-a",
+      "pass": true,
+      "error": "",
+      "data": {
+        "selectionBounds": {
+          "x": 2,
+          "y": 2,
+          "width": 3,
+          "height": 3
+        },
+        "wsAdvanced": false
+      },
+      "pre": {
+        "activeTool": "cell",
+        "selectionBounds": null,
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": true
+      },
+      "post": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 2,
+          "y": 2,
+          "width": 3,
+          "height": 3
+        },
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/07-select-block-a.png"
+    },
+    {
+      "name": "copy-selection",
+      "pass": true,
+      "error": "",
+      "data": {
+        "hasClipboard": true,
+        "clipboardCellCount": 9
+      },
+      "pre": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 2,
+          "y": 2,
+          "width": 3,
+          "height": 3
+        },
+        "hasClipboard": false,
+        "clipboardCellCount": 0,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "post": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 2,
+          "y": 2,
+          "width": 3,
+          "height": 3
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/08-copy-selection.png"
+    },
+    {
+      "name": "paste-at-loc1",
+      "pass": true,
+      "error": "",
+      "data": {
+        "pasteMode": false,
+        "mismatches": []
+      },
+      "pre": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 2,
+          "y": 2,
+          "width": 3,
+          "height": 3
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "post": {
+        "activeTool": "cell",
+        "selectionBounds": {
+          "x": 2,
+          "y": 2,
+          "width": 3,
+          "height": 3
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/09-paste-at-loc1.png"
+    },
+    {
+      "name": "cut-pasted-loc1",
+      "pass": true,
+      "error": "",
+      "data": {
+        "clipboardCellCount": 9,
+        "cleared": [
+          {
+            "x": 14,
+            "y": 2,
+            "glyph": 0,
+            "isCleared": true
+          },
+          {
+            "x": 15,
+            "y": 2,
+            "glyph": 0,
+            "isCleared": true
+          },
+          {
+            "x": 16,
+            "y": 2,
+            "glyph": 0,
+            "isCleared": true
+          },
+          {
+            "x": 14,
+            "y": 3,
+            "glyph": 0,
+            "isCleared": true
+          },
+          {
+            "x": 15,
+            "y": 3,
+            "glyph": 0,
+            "isCleared": true
+          },
+          {
+            "x": 16,
+            "y": 3,
+            "glyph": 0,
+            "isCleared": true
+          },
+          {
+            "x": 14,
+            "y": 4,
+            "glyph": 0,
+            "isCleared": true
+          },
+          {
+            "x": 15,
+            "y": 4,
+            "glyph": 0,
+            "isCleared": true
+          },
+          {
+            "x": 16,
+            "y": 4,
+            "glyph": 0,
+            "isCleared": true
+          }
+        ]
+      },
+      "pre": {
+        "activeTool": "cell",
+        "selectionBounds": {
+          "x": 2,
+          "y": 2,
+          "width": 3,
+          "height": 3
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": true
+      },
+      "post": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 14,
+          "y": 2,
+          "width": 3,
+          "height": 3
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/10-cut-pasted-loc1.png"
+    },
+    {
+      "name": "paste-at-loc2",
+      "pass": true,
+      "error": "",
+      "data": {
+        "mismatches": []
+      },
+      "pre": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 14,
+          "y": 2,
+          "width": 3,
+          "height": 3
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": true
+      },
+      "post": {
+        "activeTool": "cell",
+        "selectionBounds": {
+          "x": 14,
+          "y": 2,
+          "width": 3,
+          "height": 3
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/11-paste-at-loc2.png"
+    },
+    {
+      "name": "clear-region",
+      "pass": true,
+      "error": "",
+      "data": {
+        "selectionBounds": {
+          "x": 8,
+          "y": 2,
+          "width": 2,
+          "height": 2
+        },
+        "cleared": [
+          {
+            "x": 8,
+            "y": 2,
+            "glyph": 0,
+            "isCleared": true
+          },
+          {
+            "x": 9,
+            "y": 2,
+            "glyph": 0,
+            "isCleared": true
+          },
+          {
+            "x": 8,
+            "y": 3,
+            "glyph": 0,
+            "isCleared": true
+          },
+          {
+            "x": 9,
+            "y": 3,
+            "glyph": 0,
+            "isCleared": true
+          }
+        ]
+      },
+      "pre": {
+        "activeTool": "cell",
+        "selectionBounds": {
+          "x": 14,
+          "y": 2,
+          "width": 3,
+          "height": 3
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": true
+      },
+      "post": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 8,
+          "y": 2,
+          "width": 2,
+          "height": 2
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/12-clear-region.png"
+    },
+    {
+      "name": "undo-redo",
+      "pass": true,
+      "error": "",
+      "data": {
+        "undoRestored": true,
+        "redoCleared": true
+      },
+      "pre": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 8,
+          "y": 2,
+          "width": 2,
+          "height": 2
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": true
+      },
+      "post": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 8,
+          "y": 2,
+          "width": 2,
+          "height": 2
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/13-undo-redo.png"
+    },
+    {
+      "name": "save-via-topbar",
+      "pass": true,
+      "error": "",
+      "data": {
+        "sessionDirty": false
+      },
+      "pre": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 8,
+          "y": 2,
+          "width": 2,
+          "height": 2
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "post": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 8,
+          "y": 2,
+          "width": 2,
+          "height": 2
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/14-save-via-topbar.png"
+    },
+    {
+      "name": "export-via-files-drawer",
+      "pass": true,
+      "error": "",
+      "data": {
+        "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-a8f8e5d0-9461-43f0-9cd9-2d7fbef41fac.xp"
+      },
+      "pre": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 8,
+          "y": 2,
+          "width": 2,
+          "height": 2
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "post": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 8,
+          "y": 2,
+          "width": 2,
+          "height": 2
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/15-export-via-files-drawer.png"
+    },
+    {
+      "name": "artifact-oracle",
+      "pass": true,
+      "error": "",
+      "data": {
+        "checks": 2,
+        "allPassed": true,
+        "oracleResults": [
+          {
+            "glyph": 65,
+            "fg": "#ff4040",
+            "bg": "#1a1a2e",
+            "count": 18,
+            "expectedCount": 18,
+            "ok": true,
+            "label": "glyph-a-count-18"
+          },
+          {
+            "glyph": 66,
+            "fg": "#00cc88",
+            "bg": "#330044",
+            "count": 5,
+            "expectedCount": 5,
+            "ok": true,
+            "label": "glyph-b-survivor-5"
+          }
+        ]
+      },
+      "pre": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 8,
+          "y": 2,
+          "width": 2,
+          "height": 2
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "post": {
+        "activeTool": "select",
+        "selectionBounds": {
+          "x": 8,
+          "y": 2,
+          "width": 2,
+          "height": 2
+        },
+        "hasClipboard": true,
+        "clipboardCellCount": 9,
+        "pasteMode": false,
+        "canUndo": true,
+        "canRedo": false,
+        "wsAdvanced": false,
+        "sessionDirty": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-editing-parity/16-artifact-oracle.png"
+    }
+  ]
+}

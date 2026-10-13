@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "$id": "rig_contract_schema",
+  "title": "RigContract",
+  "description": "Named socket/anchor attachment contract for a 2D sprite rig. Defines per-angle offsets for each socket type and the compiler-owned layer ordering.",
+  "type": "object",
+  "required": ["rig_definition_id", "version", "sockets", "layer_order"],
+  "additionalProperties": false,
+  "properties": {
+    "rig_definition_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable identifier for this rig contract (e.g. 'wolfie_crossbow_v1')."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of this rig contract."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Schema version for this contract. Bump when adding new socket types."
+    },
+    "sockets": {
+      "type": "object",
+      "description": "Per-socket attachment definitions, keyed by socket name.",
+      "required": ["rider_pelvis", "mount_saddle", "weapon_grip", "mount_rear_occlusion", "mount_front_occlusion"],
+      "additionalProperties": false,
+      "properties": {
+        "rider_pelvis": { "$ref": "#/$defs/socket" },
+        "mount_saddle": { "$ref": "#/$defs/socket" },
+        "weapon_grip": { "$ref": "#/$defs/socket" },
+        "mount_rear_occlusion": { "$ref": "#/$defs/socket" },
+        "mount_front_occlusion": { "$ref": "#/$defs/socket" }
+      }
+    },
+    "layer_order": {
+      "type": "array",
+      "description": "Compiler-owned layer render sequence. Runtime applies this order verbatim.",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "socket": {
+      "type": "object",
+      "required": ["angle_offsets", "visibility"],
+      "additionalProperties": false,
+      "properties": {
+        "angle_offsets": {
+          "type": "array",
+          "description": "Per-angle dx/dy offsets. Must have exactly 8 entries (angles 0-7).",
+          "minItems": 8,
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/angle_offset" }
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["always", "angle_range"],
+          "description": "'always' means visible at all angles. 'angle_range' means only visible at angles listed in visible_angles."
+        },
+        "visible_angles": {
+          "type": "array",
+          "description": "Required when visibility is 'angle_range'. Lists the angle indices where this socket is visible.",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 7
+          }
+        }
+      }
+    },
+    "angle_offset": {
+      "type": "object",
+      "required": ["angle", "dx", "dy"],
+      "additionalProperties": false,
+      "properties": {
+        "angle": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 7,
+          "description": "Angle index (0-7)."
+        },
+        "dx": {
+          "type": "integer",
+          "description": "Horizontal offset in XP cell space."
+        },
+        "dy": {
+          "type": "integer",
+          "description": "Vertical offset in XP cell space."
+        }
+      }
+    }
+  }
+}

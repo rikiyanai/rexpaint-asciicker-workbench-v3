@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "fetched_at": "2026-08-10T18:41:11.689421+00:00",
+  "editors": [
+    {
+      "id": "patorjk-ascii-art-sketchpad",
+      "source": "https://patorjk.com/ascii-art-sketchpad/",
+      "source_last_modified": "Mon, 27 Jul 2026 04:11:36 GMT",
+      "entry": "patorjk-ascii-art-sketchpad/index.html",
+      "files": [
+        {
+          "path": "patorjk-ascii-art-sketchpad/index.html",
+          "bytes": 587,
+          "sha256": "46a45f6ae6711a88f17d90a964099b8a517b8e1a153436e0e9fe9b0fdf452760"
+        },
+        {
+          "path": "patorjk-ascii-art-sketchpad/assets/index-Be_EdwvU.css",
+          "bytes": 33656,
+          "sha256": "f7f63b40a600ee2a9f755c2c34e6ff784837c86eab7eacf5342826cb8bab8fb9"
+        },
+        {
+          "path": "patorjk-ascii-art-sketchpad/assets/index-CC-3q6yM.js",
+          "bytes": 228896,
+          "sha256": "7abd94fcbb613932e65a9ce03e76909154d1401dbb9318b1fb734b28de2cd204"
+        },
+        {
+          "path": "patorjk-ascii-art-sketchpad/favicon.svg",
+          "bytes": 1173,
+          "sha256": "d3590a8aaa86960ee0fc1b238a9ff2fca6714507832c53b9172325cd3ca11e6c"
+        },
+        {
+          "path": "patorjk-ascii-art-sketchpad/assets/ms_sans_serif-C3pax6mQ.woff",
+          "bytes": 8540,
+          "sha256": "11318ea166b8c0112088af3fa038da18071a3fe93d0a39c894998a940e804ba0"
+        },
+        {
+          "path": "patorjk-ascii-art-sketchpad/assets/ms_sans_serif-Du8rjN1q.woff2",
+          "bytes": 6508,
+          "sha256": "11b5a68acb6b967d1faa5a3f58432028e9c9cada37c8778d9dcc7415dca73a32"
+        },
+        {
+          "path": "patorjk-ascii-art-sketchpad/assets/ms_sans_serif_bold-B8yxhAcs.woff",
+          "bytes": 8304,
+          "sha256": "e7b28b601df431c5f7b62c466380ac9869395eacf4c9fafec5f4d7a67040e963"
+        },
+        {
+          "path": "patorjk-ascii-art-sketchpad/assets/ms_sans_serif_bold-D5dpRRHG.woff2",
+          "bytes": 6264,
+          "sha256": "5f3fbc5790b315fc158b749078e7fd1d74e1f9b463f6b7266c1908cb82a450ae"
+        }
+      ]
+    },
+    {
+      "id": "codexvault-glyphlab",
+      "source": "https://fromariel.github.io/CODEXVault_GODOT/tools/glyph.html",
+      "source_last_modified": "Tue, 04 Aug 2026 01:43:01 GMT",
+      "entry": "codexvault-glyphlab/index.html",
+      "files": [
+        {
+          "path": "codexvault-glyphlab/index.html",
+          "bytes": 62996,
+          "sha256": "3c904ddcfeb0a42d6e2fe6e8396802219dc60aa841e56a59dee145a19c2aa6c1"
+        }
+      ]
+    },
+    {
+      "id": "codexvault-grid-studio",
+      "source": "https://fromariel.github.io/CODEXVault_GODOT/tools/ascii.html",
+      "source_last_modified": "Tue, 04 Aug 2026 01:43:01 GMT",
+      "entry": "codexvault-grid-studio/index.html",
+      "files": [
+        {
+          "path": "codexvault-grid-studio/index.html",
+          "bytes": 169394,
+          "sha256": "de5a3bc27dc0f2b28cf586f6b747e46a87ecfc216eb66bc32a1b4feba5244c1d"
+        },
+        {
+          "path": "codexvault-grid-studio/ascii_settings.json",
+          "bytes": 3,
+          "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+        }
+      ]
+    }
+  ]
+}

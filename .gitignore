@@ -8,3 +8,11 @@ data/
 SMALLTESTPNGs/
 .DS_Store
 .worktrees/
+
+# Durable agent working directory (not /tmp, which gets emptied)
+.scratch/
+
+# Local media/tooling scratch (untracked)
+.venv*/
+.venv-media311/
+youtube-dl/

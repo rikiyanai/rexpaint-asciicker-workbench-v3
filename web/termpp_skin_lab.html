@@ -176,7 +176,7 @@
     <section class="panel controls">
       <div>
         <h1>TERM++ Skin Lab (Static)</h1>
-        <div class="small muted">Browser-only skin preview. Upload an <code>.xp</code> file and inject it into the webbuild runtime. No backend required for preview.</div>
+        <div class="small muted">Upload an <code>.xp</code> file for a one-shot preview in the packaged web runtime.</div>
       </div>
 
       <div>
@@ -184,7 +184,7 @@
         <div class="row">
           <div>
             <label for="webbuildPath">Webbuild Path</label>
-            <input id="webbuildPath" type="text" value="./termpp-web/index.html?solo=1&player=player">
+            <input id="webbuildPath" type="text" value="./termpp-web-flat/index.html?solo=1&player=player">
           </div>
           <div>
             <label for="playerName">Player Name</label>
@@ -214,11 +214,9 @@
             <input id="xpFile" type="file" accept=".xp,application/octet-stream">
           </div>
           <div>
-            <label for="overrideMode">Override Set</label>
-            <select id="overrideMode">
-              <option value="player_common">Player Common (recommended)</option>
-              <option value="single_player_nude">Single file: player-nude.xp</option>
-              <option value="all_visible_test">All test aliases</option>
+            <label for="overrideMode">Runtime Target</label>
+            <select id="overrideMode" disabled>
+              <option value="topology">Resolved from XP topology</option>
             </select>
           </div>
         </div>
@@ -232,7 +230,7 @@
           Auto-start game after skin apply (avoids staying on login screen)
         </label>
         <div class="small muted" style="margin-top:8px;">
-          The current terrain/map is whatever the bundled webbuild ships in <code>index.data</code>. This page only swaps sprite XP files at runtime.
+          Valid XP is installed into its exact packaged target before the engine constructs sprite state.
         </div>
       </div>
 
