@@ -354,6 +354,8 @@ let editorState = {
   onBrowseRename: null,
   onBrowseDuplicate: null,
   onBrowseDelete: null,
+  onBrowsePreview: null,
+  onBrowseNewRaw: null,
   onDocumentStateChange: null,
   onHistoryStateChange: null,
   // U3: tap-hold inspect state
@@ -693,6 +695,8 @@ async function mount({
   onBrowseRename,
   onBrowseDuplicate,
   onBrowseDelete,
+  onBrowsePreview,
+  onBrowseNewRaw,
   onDocumentStateChange,
   onHistoryStateChange,
 }) {
@@ -734,6 +738,8 @@ async function mount({
   editorState.onBrowseRename = onBrowseRename || null;
   editorState.onBrowseDuplicate = onBrowseDuplicate || null;
   editorState.onBrowseDelete = onBrowseDelete || null;
+  editorState.onBrowsePreview = onBrowsePreview || null;
+  editorState.onBrowseNewRaw = onBrowseNewRaw || null;
   editorState.onDocumentStateChange = onDocumentStateChange || null;
   editorState.onHistoryStateChange = onHistoryStateChange || null;
   editorState.history = [];
@@ -2392,11 +2398,47 @@ function _buildBrowseDrawer() {
   reloadBtn.addEventListener('click', () => { void _refreshBrowseItems({ preserveSelection: true }); });
   browseSection.appendChild(reloadBtn);
 
+  const newRawBtn = document.createElement('button');
+  newRawBtn.id = 'wsBrowseNewRaw';
+  newRawBtn.className = 'ws-tool-btn';
+  newRawBtn.textContent = 'New raw XP (no template)';
+  newRawBtn.title = 'Create a blank raw XP document without template or bundle selection';
+  newRawBtn.style.width = '100%';
+  newRawBtn.style.marginTop = '4px';
+  newRawBtn.addEventListener('click', () => { void _browseNewRawSelected(); });
+  browseSection.appendChild(newRawBtn);
+
   const browseStatus = document.createElement('div');
   browseStatus.id = 'wsBrowseStatus';
   browseStatus.className = 'ws-placeholder';
   browseStatus.textContent = 'Loading documents...';
   browseSection.appendChild(browseStatus);
+
+  const previewWrap = document.createElement('div');
+  previewWrap.id = 'wsBrowsePreviewWrap';
+  previewWrap.className = 'ws-browse-preview-wrap';
+  const previewMeta = document.createElement('div');
+  previewMeta.id = 'wsBrowsePreviewMeta';
+  previewMeta.className = 'ws-placeholder';
+  previewMeta.textContent = 'Select a document to preview its whole sheet.';
+  previewWrap.appendChild(previewMeta);
+  const previewCanvas = document.createElement('canvas');
+  previewCanvas.id = 'wsBrowsePreview';
+  previewCanvas.className = 'ws-browse-preview-canvas';
+  previewCanvas.style.imageRendering = 'pixelated';
+  previewCanvas.style.maxWidth = '100%';
+  previewWrap.appendChild(previewCanvas);
+  browseSection.appendChild(previewWrap);
+
+  const sliceBtn = document.createElement('button');
+  sliceBtn.id = 'wsBrowseSliceSource';
+  sliceBtn.className = 'ws-tool-btn';
+  sliceBtn.textContent = 'Slice source…';
+  sliceBtn.title = 'Open the Edit workspace at the source-slicing surface';
+  sliceBtn.style.width = '100%';
+  sliceBtn.style.marginTop = '4px';
+  sliceBtn.addEventListener('click', () => { _browseGotoSourceSlicing(); });
+  browseSection.appendChild(sliceBtn);
 
   const browseList = document.createElement('div');
   browseList.id = 'wsBrowseList';
@@ -2759,17 +2801,17 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
 
   const toolCellBtn = document.createElement('button');
   toolCellBtn.id = 'wsToolCell';
+  toolCellBtn.dataset.tool = 'cell';
   toolCellBtn.textContent = 'Cell';
   toolCellBtn.className = 'ws-tool-btn ws-tool-active';
-  toolCellBtn.title = 'Cell draw tool (C)';
   toolCellBtn.addEventListener('click', () => _switchTool('cell'));
   drawCol.appendChild(toolCellBtn);
 
   const toolSlopeBtn = document.createElement('button');
   toolSlopeBtn.id = 'wsToolSlope';
+  toolSlopeBtn.dataset.tool = 'slope';
   toolSlopeBtn.textContent = 'Slope brush';
   toolSlopeBtn.className = 'ws-tool-btn';
-  toolSlopeBtn.title = 'Stroke-direction brush: -, |, /, or \\ (press C)';
   toolSlopeBtn.addEventListener('click', () => _switchTool('slope'));
   drawCol.appendChild(toolSlopeBtn);
 
@@ -2781,6 +2823,7 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
 
   const toolAdaptiveBtn = document.createElement('button');
   toolAdaptiveBtn.id = 'wsToolAdaptive';
+  toolAdaptiveBtn.dataset.tool = 'adaptive';
   toolAdaptiveBtn.textContent = 'Auto-wall';
   toolAdaptiveBtn.className = 'ws-tool-btn';
   toolAdaptiveBtn.title = 'Context-sensitive auto-wall / auto-box brush (press C again)';
@@ -2789,6 +2832,7 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
 
   const toolEyedropperBtn = document.createElement('button');
   toolEyedropperBtn.id = 'wsToolEyedropper';
+  toolEyedropperBtn.dataset.tool = 'eyedropper';
   toolEyedropperBtn.textContent = 'Pick';
   toolEyedropperBtn.className = 'ws-tool-btn';
   toolEyedropperBtn.title = 'Eyedropper (D)';
@@ -2797,6 +2841,7 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
 
   const toolEraseBtn = document.createElement('button');
   toolEraseBtn.id = 'wsToolErase';
+  toolEraseBtn.dataset.tool = 'erase';
   toolEraseBtn.textContent = 'Erase';
   toolEraseBtn.className = 'ws-tool-btn';
   toolEraseBtn.title = 'Erase tool (E)';
@@ -2805,6 +2850,7 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
 
   const toolLineBtn = document.createElement('button');
   toolLineBtn.id = 'wsToolLine';
+  toolLineBtn.dataset.tool = 'line';
   toolLineBtn.textContent = 'Line';
   toolLineBtn.className = 'ws-tool-btn';
   toolLineBtn.title = 'Line tool (L)';
@@ -2813,6 +2859,7 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
 
   const toolRectBtn = document.createElement('button');
   toolRectBtn.id = 'wsToolRect';
+  toolRectBtn.dataset.tool = 'rect';
   toolRectBtn.textContent = 'Rect';
   toolRectBtn.className = 'ws-tool-btn';
   toolRectBtn.title = 'Rectangle tool (R)';
@@ -2821,6 +2868,7 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
 
   const toolOvalBtn = document.createElement('button');
   toolOvalBtn.id = 'wsToolOval';
+  toolOvalBtn.dataset.tool = 'oval';
   toolOvalBtn.textContent = 'Oval';
   toolOvalBtn.className = 'ws-tool-btn';
   toolOvalBtn.title = 'Oval tool (O)';
@@ -2829,6 +2877,7 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
 
   const toolFillBtn = document.createElement('button');
   toolFillBtn.id = 'wsToolFill';
+  toolFillBtn.dataset.tool = 'fill';
   toolFillBtn.textContent = 'Fill';
   toolFillBtn.className = 'ws-tool-btn';
   toolFillBtn.title = 'Flood fill tool (I)';
@@ -2837,6 +2886,7 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
 
   const toolSelectBtn = document.createElement('button');
   toolSelectBtn.id = 'wsToolSelect';
+  toolSelectBtn.dataset.tool = 'select';
   toolSelectBtn.textContent = 'Select';
   toolSelectBtn.className = 'ws-tool-btn';
   toolSelectBtn.title = 'Selection tool (S)';
@@ -2845,6 +2895,7 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
 
   const toolTextBtn = document.createElement('button');
   toolTextBtn.id = 'wsToolText';
+  toolTextBtn.dataset.tool = 'text';
   toolTextBtn.textContent = 'Text';
   toolTextBtn.className = 'ws-tool-btn';
   toolTextBtn.title = 'Text tool (T)';
@@ -2959,6 +3010,18 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
   bulkGroup.appendChild(replaceBgBtn);
 
   moreDrawTools.appendChild(bulkGroup);
+  // Mobile authoring: keep all brushes and grouped actions visible on narrow
+  // screens instead of buried in collapsed <details> (UQ-013 small-screen lane).
+  const _narrowScreenQuery = window.matchMedia ? window.matchMedia('(max-width: 768px)') : null;
+  const _syncMobileDetailsOpen = () => {
+    if (!_narrowScreenQuery || !_narrowScreenQuery.matches) return;
+    moreDrawTools.open = true;
+    duplicateFileActions.open = true;
+  };
+  _syncMobileDetailsOpen();
+  if (_narrowScreenQuery && typeof _narrowScreenQuery.addEventListener === 'function') {
+    _narrowScreenQuery.addEventListener('change', _syncMobileDetailsOpen);
+  }
 
   idCols.appendChild(imageCol);
   idCols.appendChild(drawCol);
@@ -3082,8 +3145,9 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
   toolsDrawer.appendChild(frSection);
   sidebar.appendChild(toolsDrawer);
 
-  // 3.6 Layers
+  // 3.6 Layers (Edit concern: hidden in Browse via paint modeScope)
   const layersSection = _buildSection('Layers');
+  layersSection.dataset.modeScope = 'paint';
   const layersPanel = document.createElement('div');
   layersPanel.id = 'wsLayersPanel';
   layersPanel.className = 'ws-layers-panel';
@@ -3239,6 +3303,134 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
   return sidebar;
 }
 
+// ── Browse whole-sheet preview ──
+// Row select fetches the selected session read-only (no document switch) and
+// renders its whole sheet into the Browse drawer preview canvas. Open still
+// owns the real document switch via onBrowseOpen.
+let browsePreviewCache = new Map();
+let browsePreviewPendingId = '';
+
+function _browsePreviewCell(cell) {
+  if (!cell) return { glyph: 0, fg: [0, 0, 0], bg: [255, 0, 255] };
+  const glyph = Number(cell.glyph ?? cell[0] ?? 0) || 0;
+  const fg = Array.isArray(cell.fg) ? cell.fg.map(Number) : (Array.isArray(cell[1]) ? cell[1].map(Number) : [255, 255, 255]);
+  const bg = Array.isArray(cell.bg) ? cell.bg.map(Number) : (Array.isArray(cell[2]) ? cell[2].map(Number) : [0, 0, 0]);
+  return { glyph, fg, bg };
+}
+
+function _normalizeBrowsePreview(data) {
+  const cols = Math.max(1, Number(data?.grid_cols || data?.gridCols || 0) || 1);
+  const rows = Math.max(1, Number(data?.grid_rows || data?.gridRows || 0) || 1);
+  let layer = null;
+  const layers = Array.isArray(data?.layers) ? data.layers : null;
+  if (layers && layers.length) {
+    // Prefer the topmost non-empty layer so raw-XP imports preview their art.
+    for (let li = layers.length - 1; li >= 0; li--) {
+      const flat = Array.isArray(layers[li]) ? layers[li] : [];
+      const nonEmpty = flat.some((c) => Number(c?.glyph ?? c?.[0] ?? 0) > 32);
+      if (nonEmpty) { layer = flat; break; }
+    }
+    if (!layer) layer = Array.isArray(layers[0]) ? layers[0] : [];
+  } else if (Array.isArray(data?.cells)) {
+    layer = data.cells;
+  }
+  return { cols, rows, cells: Array.isArray(layer) ? layer : [] };
+}
+
+function _drawBrowsePreview(canvas, meta, item, preview) {
+  const label = String(item?.label || item?.session_id || 'session');
+  const cols = Math.max(1, preview.cols | 0);
+  const rows = Math.max(1, preview.rows | 0);
+  const scale = Math.max(1, Math.floor(Math.min(220 / cols, 140 / rows)));
+  canvas.width = cols * scale;
+  canvas.height = rows * scale;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  const css = (c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const { glyph, fg, bg } = _browsePreviewCell(preview.cells[y * cols + x]);
+      const px = x * scale;
+      const py = y * scale;
+      if (glyph === 223) {
+        ctx.fillStyle = css(fg); ctx.fillRect(px, py, scale, Math.ceil(scale / 2));
+        ctx.fillStyle = css(bg); ctx.fillRect(px, py + Math.ceil(scale / 2), scale, Math.floor(scale / 2));
+      } else if (glyph === 220) {
+        ctx.fillStyle = css(bg); ctx.fillRect(px, py, scale, Math.ceil(scale / 2));
+        ctx.fillStyle = css(fg); ctx.fillRect(px, py + Math.ceil(scale / 2), scale, Math.floor(scale / 2));
+      } else {
+        ctx.fillStyle = css(glyph > 32 ? fg : bg); ctx.fillRect(px, py, scale, scale);
+      }
+    }
+  }
+  if (meta) {
+    const kind = item?.session_kind ? ` · ${item.session_kind}` : '';
+    meta.textContent = `${label} · ${cols}\u00d7${rows}${kind}`;
+  }
+}
+
+async function _previewBrowseSelected() {
+  const canvas = document.getElementById('wsBrowsePreview');
+  const meta = document.getElementById('wsBrowsePreviewMeta');
+  if (!canvas) return;
+  const selected = _selectedBrowseItem();
+  if (!selected) {
+    if (meta) meta.textContent = editorState.browseItems.length ? 'Select a document to preview its whole sheet.' : 'No documents';
+    return;
+  }
+  const sid = String(selected.session_id || '');
+  const cached = browsePreviewCache.get(sid);
+  if (cached) { _drawBrowsePreview(canvas, meta, selected, cached); return; }
+  if (typeof editorState.onBrowsePreview !== 'function') {
+    if (meta) meta.textContent = 'Preview unavailable';
+    return;
+  }
+  if (browsePreviewPendingId === sid) return;
+  browsePreviewPendingId = sid;
+  if (meta) meta.textContent = `Loading preview: ${selected.label || sid.slice(0, 8)}…`;
+  try {
+    const data = await editorState.onBrowsePreview(sid);
+    browsePreviewCache.set(sid, _normalizeBrowsePreview(data));
+    if (String(editorState.browseSelectedId || '') === sid) {
+      _drawBrowsePreview(canvas, meta, selected, browsePreviewCache.get(sid));
+    }
+  } catch (err) {
+    if (String(editorState.browseSelectedId || '') === sid && meta) {
+      meta.textContent = `Preview failed: ${String(err)}`;
+    }
+  } finally {
+    if (browsePreviewPendingId === sid) browsePreviewPendingId = '';
+  }
+}
+
+async function _browseNewRawSelected() {
+  if (typeof editorState.onBrowseNewRaw !== 'function') {
+    _setBrowseStatus('New raw XP unavailable');
+    return;
+  }
+  try {
+    _setBrowseStatus('Creating raw XP…');
+    const created = await editorState.onBrowseNewRaw();
+    if (created && created.session_id) {
+      editorState.currentSessionId = String(created.session_id);
+      browsePreviewCache.delete(String(created.session_id));
+    }
+    await _refreshBrowseItems({ preserveSelection: false });
+    _setMode('paint');
+  } catch (err) {
+    _setBrowseStatus(`New raw XP failed: ${String(err)}`);
+  }
+}
+
+function _browseGotoSourceSlicing() {
+  _setMode('paint');
+  window.dispatchEvent(new CustomEvent('browse-goto-source-slicing'));
+  const target = document.getElementById('sourceCanvasShell') || document.getElementById('uploadConvertPanel');
+  if (target && typeof target.scrollIntoView === 'function') {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
 function _selectedBrowseItem() {
   return editorState.browseItems.find((item) => String(item.session_id || '') === String(editorState.browseSelectedId || '')) || null;
 }
@@ -3304,6 +3496,7 @@ function _renderBrowseList() {
 
     const details = [];
     if (item.grid_cols && item.grid_rows) details.push(`${item.grid_cols}x${item.grid_rows}`);
+    if (item.session_kind) details.push(String(item.session_kind));
     if (item.action_key) details.push(String(item.action_key));
     else if (item.family) details.push(String(item.family));
     if (item.bundle_owner && item.bundle_owner.bundle_id) {
@@ -3319,12 +3512,14 @@ function _renderBrowseList() {
     row.addEventListener('click', () => {
       editorState.browseSelectedId = String(item.session_id || '');
       _renderBrowseList();
+      void _previewBrowseSelected();
     });
     row.addEventListener('dblclick', () => { void _browseOpenSelected(); });
     listEl.appendChild(row);
   }
 
   _updateBrowseControls();
+  void _previewBrowseSelected();
 }
 
 async function _refreshBrowseItems({ preserveSelection = true } = {}) {
@@ -3363,7 +3558,7 @@ async function _refreshBrowseItems({ preserveSelection = true } = {}) {
   }
 }
 
-function mountBrowseApp({ container, currentSessionId, onBrowseList, onBrowseOpen, onBrowseRename, onBrowseDuplicate, onBrowseDelete } = {}) {
+function mountBrowseApp({ container, currentSessionId, onBrowseList, onBrowseOpen, onBrowseRename, onBrowseDuplicate, onBrowseDelete, onBrowsePreview, onBrowseNewRaw } = {}) {
   if (!container) return false;
   browseAppHostEl = container;
   editorState.currentSessionId = String(currentSessionId || editorState.currentSessionId || '');
@@ -3372,6 +3567,8 @@ function mountBrowseApp({ container, currentSessionId, onBrowseList, onBrowseOpe
   editorState.onBrowseRename = onBrowseRename || editorState.onBrowseRename;
   editorState.onBrowseDuplicate = onBrowseDuplicate || editorState.onBrowseDuplicate;
   editorState.onBrowseDelete = onBrowseDelete || editorState.onBrowseDelete;
+  editorState.onBrowsePreview = onBrowsePreview || editorState.onBrowsePreview;
+  editorState.onBrowseNewRaw = onBrowseNewRaw || editorState.onBrowseNewRaw;
 
   const existingDrawer = document.getElementById('wsBrowseSection')?.closest('[data-drawer="browse"]');
   const browseDrawer = existingDrawer || _buildBrowseDrawer();
@@ -3399,7 +3596,10 @@ async function _browseOpenSelected() {
   try {
     await editorState.onBrowseOpen(String(selected.session_id || ''));
     editorState.currentSessionId = String(selected.session_id || '');
-    _setMode('browse');
+    // Open leaves Browse: the loaded sheet stays visible in the Edit workspace.
+    _setMode('paint');
+    _setBrowseStatus(`Editing ${selected.label || selected.session_id || 'session'}`);
+    void _refreshBrowseItems({ preserveSelection: true });
   } catch (err) {
     _setBrowseStatus(`Open failed: ${String(err)}`);
   }
@@ -3463,6 +3663,15 @@ function _applyModeUI() {
     section.style.display = scope === mode ? '' : 'none';
   }
 
+  // Browse is documents + previews: layer chrome stays an Edit concern.
+  const browse = mode === 'browse';
+  for (const drawer of document.querySelectorAll('.ws-drawer[data-drawer="layers"]')) {
+    drawer.style.display = browse ? 'none' : '';
+  }
+  for (const toggle of document.querySelectorAll('[data-drawer-toggle="layers"]')) {
+    toggle.style.display = browse ? 'none' : '';
+  }
+
   const canvasEl = document.getElementById('wholeSheetCanvas');
   const scrollWrap = document.getElementById('wholeSheetScroll');
   if (canvasEl) {
@@ -3491,6 +3700,10 @@ function _setMode(mode) {
   _applyModeUI();
   window.dispatchEvent(new CustomEvent('whole-sheet-mode-change', { detail: { mode: nextMode } }));
   if (nextMode === 'browse') {
+    // The current document may have been edited: drop its cached preview so
+    // reselecting it re-fetches a fresh whole sheet. Other documents cannot
+    // change without being opened, so their cached previews stay valid.
+    browsePreviewCache.delete(String(editorState.currentSessionId || ''));
     void _refreshBrowseItems({ preserveSelection: true });
   }
 }
@@ -4198,6 +4411,8 @@ function unmount() {
     onBrowseRename: null,
     onBrowseDuplicate: null,
     onBrowseDelete: null,
+    onBrowsePreview: null,
+    onBrowseNewRaw: null,
     onDocumentStateChange: null,
     onHistoryStateChange: null,
     _strokeDirty: false,
@@ -4471,6 +4686,7 @@ window.__wholeSheetEditor = {
   cutSelection: _cutSelection,
   pasteClipboard: _enterPasteMode,
   deleteSelection: _deleteSelection,
+  setTool: _switchTool,
   openMobileKeyboard,
 };
 window.dispatchEvent(new Event('whole-sheet-editor-ready'));

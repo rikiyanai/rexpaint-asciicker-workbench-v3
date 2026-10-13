@@ -7,14 +7,30 @@
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/rexpaint-editor/styles.css">
   <link rel="manifest" href="/manifest.json">
+<style>
+/* Brush/mobile authoring touch targets (UQ-013 small-screen lane). Sizes only;
+   Refrog square-corner 2px-border presentation inherits from styles.css. */
+@media (max-width: 768px) {
+  .ws-mobile-top-bar button { min-height: 44px; padding: 8px 12px; font-size: 12px; }
+  .ws-drawer .ws-tool-btn,
+  .ws-drawer .ws-toggle,
+  .ws-drawer summary { min-height: 44px; }
+  .ws-drawer .ws-ta-col .ws-tool-btn { padding: 10px 8px; font-size: 12px; }
+  .ws-touch-toolbar button { min-height: 44px; padding: 10px 14px; font-size: 12px; }
+  #productBrowsePanel button,
+  #uploadConvertPanel button { min-height: 44px; }
+}
+</style>
 </head>
 <body>
 <!-- U6: Mobile top chrome bar — editor drawers (document actions stay in the product toolbar) -->
 <div class="ws-mobile-top-bar">
   <div class="ws-mobile-top-drawers">
-    <button data-drawer-toggle="tools" title="Tools">Tools</button>
+    <button data-drawer-toggle="tools" title="Brushes and draw tools">Tools</button>
     <button data-drawer-toggle="layers" title="Layers">Layers</button>
+    <button data-drawer-toggle="info" title="Canvas info and status">Info</button>
     <button id="productMobileBrowseBtn" data-product-mode="browse" title="Browse documents">Browse</button>
+    <button data-action="import-png" title="Import a PNG for conversion">Import</button>
     <button id="mobileKeyboardBtn" type="button" title="Use the on-screen keyboard">Keyboard</button>
   </div>
 </div>
@@ -52,7 +68,32 @@
   <section id="productBrowsePanel" class="panel" aria-label="Browse XP documents">
     <h3>Browse Documents</h3>
     <div id="productBrowseSurface" data-integration-hook="root-editor-browse"></div>
+    <div class="row" style="margin-top:8px; align-items:center;">
+      <button id="browseImportPngBtn" class="primary" title="Import a PNG sprite sheet, then Convert it to XP">Import PNG</button>
+      <span class="small">New / Open / Import PNG &rarr; Convert &rarr; Edit &rarr; Save / Export &rarr; Test This Skin. Drafts auto-save in the browser (Tier A); Open / Save to File use local files (Tier B).</span>
+    </div>
   </section>
+  <div class="panel" id="uploadConvertPanel" data-panel-number="7 upload-convert">
+    <h3>Upload + Convert (<span id="uploadPanelLabel">Workbench Direct</span>)</h3>
+    <div class="small">Import a PNG sprite sheet, <strong>Upload PNG</strong>, then <strong>Convert to XP</strong> — then Edit, Save / Export, and Test This Skin below.</div>
+    <div class="row">
+      <input id="wbFile" type="file" accept=".png">
+      <button id="wbUpload" class="primary">Upload PNG</button>
+      <button id="wbRun" class="success" disabled>Convert to XP</button>
+    </div>
+    <div class="row">
+      <div><label>Name</label><input id="wbName" value="wb_sprite"></div>
+      <div style="min-width:280px;">
+        <label>Auto Plan</label>
+        <div id="wbAutoPlan" class="small muted">Derived automatically from the uploaded PNG at convert time.</div>
+      </div>
+    </div>
+    <div id="wbRunOutShell" class="subpanel-shell output-shell" data-panel-number="7A" data-panel-tag="convert-json">
+      <div id="wbRunOutViewport" class="output-viewport">
+        <pre id="wbRunOut"></pre>
+      </div>
+    </div>
+  </div>
   <div id="productEditEmptyState" class="panel hidden">Open or create an XP document to edit it here.</div>
   <div id="draftRestoreBanner" class="panel draft-restore-banner hidden" data-panel-number="3b draft-restore">
     <div class="draft-restore-row">
@@ -76,6 +117,16 @@
     <div class="row"><span id="webbuildState" class="small">Webbuild not loaded</span></div>
     <div id="webbuildHint" class="small">Tests the current whole-sheet document or ready bundle in the embedded Skin Dock/runtime.</div>
     <iframe id="webbuildFrame" title="Asciicker Webbuild" class="hidden" style="width:100%; height:360px; border:1px solid #334; background:#000;"></iframe>
+    <div id="docContractPanel" class="small" aria-label="Normalized document contract">
+      <div id="docContractKind">doc: (no document)</div>
+      <div id="docContractGeom">geom: —</div>
+      <div id="docContractL0">l0: —</div>
+      <div id="docContractDock">dock skin: none (ambient/default Y9-2 sprites — not the document)</div>
+      <details id="docContractDetails">
+        <summary class="small">Normalized contract JSON</summary>
+        <pre id="docContractOut"></pre>
+      </details>
+    </div>
     <details id="webbuildAdvancedDetails">
       <summary>Advanced / Diagnostics</summary>
       <div class="row" style="margin-top:8px;">
@@ -235,26 +286,6 @@
     <div id="uiRecorderSummary" class="small">0 events</div>
   </details>
 
-  <div class="panel" data-panel-number="7 upload-convert">
-    <h3>Upload + Convert (<span id="uploadPanelLabel">Workbench Direct</span>)</h3>
-    <div class="row">
-      <input id="wbFile" type="file" accept=".png">
-      <button id="wbUpload" class="primary">Upload PNG</button>
-      <button id="wbRun" class="success" disabled>Convert to XP</button>
-    </div>
-    <div class="row">
-      <div><label>Name</label><input id="wbName" value="wb_sprite"></div>
-      <div style="min-width:280px;">
-        <label>Auto Plan</label>
-        <div id="wbAutoPlan" class="small muted">Derived automatically from the uploaded PNG at convert time.</div>
-      </div>
-    </div>
-    <div id="wbRunOutShell" class="subpanel-shell output-shell" data-panel-number="7A" data-panel-tag="convert-json">
-      <div id="wbRunOutViewport" class="output-viewport">
-        <pre id="wbRunOut"></pre>
-      </div>
-    </div>
-  </div>
 
   <div class="two-col">
     <div class="panel" data-panel-number="8 source">
@@ -396,6 +427,7 @@
   <div class="two-col">
     <div class="panel" data-panel-number="12 xp-preview">
       <h3>XP Preview</h3>
+      <div class="row"><span id="previewDocLabel" class="small">preview: no document loaded</span></div>
       <div class="row">
         <button id="playBtn">Play</button>
         <button id="stopBtn">Stop</button>

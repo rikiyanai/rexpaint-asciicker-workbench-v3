@@ -250,5 +250,55 @@ run('slope brush breaks the path across an out-of-bounds pointer gap', () => {
   assert.equal(glyphAt(canvas, 3, 3), 45);
 });
 
+run('slope brush applies draw colors to every painted cell', () => {
+  const canvas = new MemoryCanvas();
+  const tool = new SlopeStrokeTool();
+  tool.setCanvas(canvas);
+  tool.setColors([10, 20, 30], [40, 50, 60]);
+  drawStroke(tool, canvas, [{ x: 0, y: 0 }, { x: 2, y: 2 }]);
+  for (const [x, y] of [[0, 0], [1, 1], [2, 2]]) {
+    assert.deepEqual(canvas.getCell(x, y).fg, [10, 20, 30]);
+    assert.deepEqual(canvas.getCell(x, y).bg, [40, 50, 60]);
+  }
+});
+
+run('slope brush honors disabled apply modes', () => {
+  const canvas = new MemoryCanvas();
+  canvas.setCell(0, 0, 65, [1, 2, 3], [4, 5, 6]);
+  const tool = new SlopeStrokeTool();
+  tool.setCanvas(canvas);
+  tool.setColors([20, 30, 40], [50, 60, 70]);
+  tool.setApplyModes({ glyph: false, foreground: false, background: false });
+  drawStroke(tool, canvas, [{ x: 0, y: 0 }, { x: 2, y: 0 }]);
+  assert.equal(glyphAt(canvas, 1, 0), 0);
+  assert.deepEqual(canvas.getCell(0, 0).fg, [1, 2, 3]);
+  assert.deepEqual(canvas.getCell(1, 0).bg, [0, 0, 0]);
+});
+
+run('slope brush revisiting a cell repaints it with the current segment glyph', () => {
+  const canvas = new MemoryCanvas();
+  const tool = new SlopeStrokeTool();
+  tool.setCanvas(canvas);
+  drawStroke(tool, canvas, [{ x: 0, y: 1 }, { x: 2, y: 1 }, { x: 2, y: 0 }, { x: 0, y: 0 }]);
+  assert.equal(glyphAt(canvas, 1, 1), 45);
+  assert.equal(glyphAt(canvas, 2, 1), 124);
+  assert.equal(glyphAt(canvas, 1, 0), 45);
+});
+
+run('a whole slope stroke is one undoable canvas operation with stable redo', () => {
+  const canvas = new MemoryCanvas();
+  const tool = new SlopeStrokeTool();
+  tool.setCanvas(canvas);
+  const command = drawStroke(tool, canvas, [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 2, y: 2 }]);
+  assert.equal(canvas.operationCount, 1);
+  assert.equal(command.label, 'adaptive-stroke');
+  command.undo();
+  assert.equal(glyphAt(canvas, 1, 0), 0);
+  assert.equal(glyphAt(canvas, 2, 1), 0);
+  command.redo();
+  assert.equal(glyphAt(canvas, 1, 0), 45);
+  assert.equal(glyphAt(canvas, 2, 1), 124);
+});
+
 if (process.exitCode) process.exit(process.exitCode);
-process.stdout.write('11 passed, 0 failed\n');
+process.stdout.write('15 passed, 0 failed\n');
