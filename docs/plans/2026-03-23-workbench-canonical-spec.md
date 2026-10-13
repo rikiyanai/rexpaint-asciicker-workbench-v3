@@ -4573,3 +4573,38 @@ when a verified test run or headed proof is committed with a dated evidence ref.
 Do not remove rows when gates PASS - update Status in-place with the evidence ref.
 
 **Ship gate:** Do not surface the `[3] ASSET PIPELINE` launcher node until the blocking queue rows required for a supported front door are PASS. At minimum that means honest Section 1 proof (`UQ-003`), stable Section 2 backend/wrapper truth (`UQ-004` through `UQ-009`), Y9-2 gateway wiring (`UQ-010`), and the Y9-2 Step 7.12 VERIFY gate. FL-813 is now blocked by end-to-end support truth, not by a missing Section 2.10 backend API implementation.
+
+## 2026-10-12 REXPaint Web Implementation Checkpoint
+
+**Stage: Verified locally, not accepted or deployed.** The product shell and
+PWA are now named **REXPaint Web**. Browse remains the front door and the same
+root whole-sheet owner supplies Edit. Registry action coverage is presented in
+one grouped selector rather than six permanent buttons; it still includes the
+authorable mounted and on-foot actions and labels deferred/proof-only families.
+
+The editor now exposes two distinct stroke-aware tools rather than conflating
+them:
+
+- **Slope brush** quantizes each pointer segment to ASCII `-`, `|`, `/`, or
+  `\\` from its slope and changes glyph when direction changes.
+- **Auto-wall** retains the planned REXPaint Cell alternate behavior using
+  CP437 connectivity masks for walls, corners, tees, and junctions.
+
+Cell, Slope brush, Select, and Text remain visible; Auto-wall and the secondary
+drawing/selection operations are under one `More tools` disclosure. Refrog's
+vendored Xanh Mono and monochrome square-border presentation remain pinned.
+
+Mobile has a 390 px verified no-horizontal-overflow layout. `Keyboard` switches
+to Text, focuses the `inputmode=text` bridge, and calls the Virtual Keyboard API
+when the browser provides it. Desktop Chrome device emulation verifies focus
+and mode changes but cannot prove that Android/iOS displayed its native OS
+keyboard; that last observation remains a real-device acceptance check.
+
+Focused evidence on 2026-10-12: 11 adaptive/slope brush contracts, 18 shell and
+whole-sheet contracts, 38 template-gating contracts, 7 action-navigation
+contracts, and the 38-test npm suite passed. Headed Chrome proved the desktop
+Slope brush control active and the mobile keyboard bridge focused. A stale
+service-worker module was caught during proof; the cache namespace and brush
+module URL are now versioned. Repository-wide self-containment remains an
+independent failing gate, so this checkpoint does not claim overall ship
+readiness.

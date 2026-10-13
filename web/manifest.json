@@ -1,6 +1,6 @@
 {
-  "name": "ASCIICKER XPEdit",
-  "short_name": "XPEdit",
+  "name": "REXPaint Web — Asciicker",
+  "short_name": "REXPaint Web",
   "description": "Browser-based ASCII art editor with XP format support",
   "start_url": "/workbench.html",
   "display": "standalone",

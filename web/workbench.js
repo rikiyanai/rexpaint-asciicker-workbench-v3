@@ -230,6 +230,10 @@
     },
   };
 
+  // Product chrome mirrors the root editor's Browse/Paint mode. The editor
+  // remains the single owner of document and mode state.
+  let productMode = "browse";
+
   function status(text, cls) {
     const el = $("wbStatus");
     el.className = "small " + (cls || "");
@@ -3801,6 +3805,8 @@
     state.inspectorCol = Math.max(0, col);
     state.inspectorHover = null;
     state.inspectorLastHoverAnchor = null;
+    const diagnostics = $("advancedDiagnostics");
+    if (diagnostics) diagnostics.open = true;
     const panel = $("cellInspectorPanel");
     if (panel) panel.classList.remove("hidden");
     renderInspector();
@@ -6788,6 +6794,7 @@
           : `${st.gridCols}\u00d7${st.gridRows}, ${st.layerCount} layers (font fallback)`;
       }
       updateUndoRedoButtons();
+      syncProductShellMode(productMode);
     }).catch((err) => {
       console.error("[whole-sheet] mount failed:", err);
       if (wsStatus) wsStatus.textContent = "mount failed";
@@ -7450,7 +7457,10 @@
   }
 
   async function fetchTemplateRegistry() {
-    if (state.templateRegistry) return state.templateRegistry;
+    if (state.templateRegistry) {
+      renderRegistryActionNavigation();
+      return state.templateRegistry;
+    }
     try {
       const r = await fetch(bp("/api/workbench/templates"));
       if (!r.ok) {
@@ -7467,6 +7477,7 @@
         return state.templateRegistry;
       }
       state.templateRegistry = await r.json();
+      renderRegistryActionNavigation();
       // Surface degraded registry state from registry_status
       const rs = state.templateRegistry?.registry_status;
       if (rs) {
@@ -7508,6 +7519,7 @@
   // Null-guard: if the gating script failed to load (e.g. cache staleness, 404),
   // provide safe no-op fallbacks so the IIFE doesn't crash.
   const _gating = window.__workbenchTemplateGating || null;
+  const _actionNavigation = window.__workbenchActionNavigation || null;
   if (!_gating) {
     console.error('[workbench] workbench-template-gating.js not loaded — template gating features will be unavailable');
   }
@@ -7521,6 +7533,93 @@
 
   function getEnabledActions(ts) {
     return _getEnabledActions(ts, state.templateRegistry, state.templateSetKey);
+  }
+
+  function populateTemplateSelectFromRegistry(model) {
+    const select = $("templateSelect");
+    if (!select || !model?.valid) return;
+    const selected = select.value;
+    select.replaceChildren();
+    for (const templateSet of model.templateSets) {
+      const option = document.createElement("option");
+      option.value = templateSet.templateSetKey;
+      option.textContent = templateSet.label;
+      select.appendChild(option);
+    }
+    if ([...select.options].some((option) => option.value === selected)) select.value = selected;
+  }
+
+  function renderRegistryActionNavigation() {
+    const catalog = $("registryActionCatalog");
+    if (!catalog) return;
+    if (!_actionNavigation || !state.templateRegistry) {
+      catalog.textContent = "Registry action navigation unavailable.";
+      catalog.className = "registry-action-catalog small warn";
+      return;
+    }
+    const model = _actionNavigation.getRegistryActionNavigation(state.templateRegistry);
+    if (!model.valid) {
+      catalog.textContent = `Registry unavailable: ${model.errors.join("; ")}`;
+      catalog.className = "registry-action-catalog small err";
+      return;
+    }
+    populateTemplateSelectFromRegistry(model);
+    catalog.className = "registry-action-catalog";
+    catalog.replaceChildren();
+
+    const authorableSets = model.templateSets.filter((entry) => entry.actions.some((action) => action.authorable));
+    const label = document.createElement("label");
+    label.className = "registry-action-picker-label";
+    label.setAttribute("for", "registryActionSelect");
+    label.textContent = "Skin / action";
+    const actionSelect = document.createElement("select");
+    actionSelect.id = "registryActionSelect";
+    actionSelect.className = "registry-action-picker";
+    for (const templateSet of authorableSets) {
+      const group = document.createElement("optgroup");
+      group.label = templateSet.label;
+      for (const action of templateSet.actions.filter((entry) => entry.authorable)) {
+        const option = document.createElement("option");
+        option.value = `${action.templateSetKey}:${action.actionKey}`;
+        option.textContent = action.label;
+        option.dataset.templateSetKey = action.templateSetKey;
+        option.dataset.actionKey = action.actionKey;
+        option.selected = state.templateSetKey === action.templateSetKey && state.activeActionKey === action.actionKey;
+        group.appendChild(option);
+      }
+      actionSelect.appendChild(group);
+    }
+    actionSelect.addEventListener("change", () => {
+      const option = actionSelect.selectedOptions[0];
+      const templateSetKey = option?.dataset.templateSetKey;
+      const actionKey = option?.dataset.actionKey;
+      const templateSet = authorableSets.find((entry) => entry.templateSetKey === templateSetKey);
+      const action = templateSet?.actions.find((entry) => entry.actionKey === actionKey);
+      if (!templateSet || !action) return;
+      if (state.bundleId && state.templateSetKey === templateSetKey && state.actionStates[actionKey]) {
+        void switchBundleAction(actionKey);
+        return;
+      }
+      const templateSelect = $("templateSelect");
+      if (templateSelect) templateSelect.value = templateSetKey;
+      status(`${templateSet.label} / ${action.label} selected — Apply Template to start authoring`, "ok");
+    });
+    catalog.appendChild(label);
+    catalog.appendChild(actionSelect);
+
+    const unavailable = [];
+    for (const family of model.families) {
+      for (const prefix of family.prefixes) {
+        if (prefix.proofOnly) unavailable.push(`${prefix.label}: proof-only`);
+        else if (prefix.deferred) unavailable.push(`${prefix.label}: deferred`);
+      }
+    }
+    if (unavailable.length) {
+      const note = document.createElement("div");
+      note.className = "registry-action-classifications small";
+      note.textContent = unavailable.join(" · ");
+      catalog.appendChild(note);
+    }
   }
 
   function isBundleActionReadyStatus(statusValue) {
@@ -8355,9 +8454,74 @@
     if (saveAsBtn) saveAsBtn.disabled = !hasSession;
   }
 
+  function syncProductShellMode(mode = productMode) {
+    const requested = String(mode || "browse").toLowerCase();
+    productMode = requested === "paint" || requested === "edit" ? "edit" : "browse";
+    const browsePanel = $("productBrowsePanel");
+    const editEmptyState = $("productEditEmptyState");
+    const editor = window.__wholeSheetEditor;
+    const editorState = editor && typeof editor.getState === "function" ? editor.getState() : null;
+    const hasDocument = !!(editorState?.mounted && state.sessionId);
+    if (browsePanel) browsePanel.classList.toggle("hidden", productMode !== "browse");
+    if (editEmptyState) editEmptyState.classList.toggle("hidden", productMode !== "edit" || hasDocument);
+    const shell = $("productShell");
+    if (shell) shell.dataset.mode = productMode;
+    for (const [id, modeName] of [["productBrowseBtn", "browse"], ["productEditBtn", "edit"]]) {
+      const button = $(id);
+      if (!button) continue;
+      const active = productMode === modeName;
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+      button.classList.toggle("primary", active);
+    }
+  }
+
+  function setProductShellMode(mode) {
+    const requested = String(mode || "").toLowerCase();
+    const next = requested === "edit" || requested === "paint" ? "edit" : "browse";
+    syncProductShellMode(next);
+    const editor = window.__wholeSheetEditor;
+    if (editor && typeof editor.setMode === "function") editor.setMode(next === "browse" ? "browse" : "paint");
+  }
+
+  function attachProductBrowseApp() {
+    const editor = window.__wholeSheetEditor;
+    const container = $("productBrowseSurface");
+    if (!editor || typeof editor.mountBrowseApp !== "function" || !container) return false;
+    editor.mountBrowseApp({
+      container,
+      currentSessionId: state.sessionId,
+      onBrowseList: browseListSessions,
+      onBrowseOpen: browseOpenSession,
+      onBrowseRename: browseRenameSession,
+      onBrowseDuplicate: browseDuplicateSession,
+      onBrowseDelete: browseDeleteSession,
+    });
+    if (typeof editor.setMode === "function") editor.setMode(productMode === "browse" ? "browse" : "paint");
+    syncProductShellMode(productMode);
+    return true;
+  }
+
   function bindUI() {
     moveWebbuildDockToBottom();
     movePanelsToBottom();
+    $("productBrowseBtn")?.addEventListener("click", () => setProductShellMode("browse"));
+    $("productEditBtn")?.addEventListener("click", () => setProductShellMode("edit"));
+    $("mobileKeyboardBtn")?.addEventListener("click", () => {
+      setProductShellMode("edit");
+      const editor = window.__wholeSheetEditor;
+      if (editor && typeof editor.openMobileKeyboard === "function") editor.openMobileKeyboard();
+    });
+    document.querySelectorAll("[data-product-mode]").forEach((button) => {
+      button.addEventListener("click", () => setProductShellMode(button.dataset.productMode));
+    });
+    window.addEventListener("whole-sheet-mode-change", (event) => {
+      syncProductShellMode(event?.detail?.mode || "browse");
+    });
+    if (!attachProductBrowseApp()) {
+      window.addEventListener("whole-sheet-editor-ready", attachProductBrowseApp, { once: true });
+    }
+    syncProductShellMode("browse");
+    void fetchTemplateRegistry();
     renderInspectorPaletteSwatches();
     updateSessionDirtyBadge();
     updateBugReportPreview();
@@ -9609,7 +9773,8 @@
     });
   });
 
-  // Top bar: action buttons delegate to existing handlers
+  // Mobile/touch data-action hooks delegate to existing operations. Product
+  // file actions now live only in the persistent app toolbar.
   document.querySelectorAll('[data-action]').forEach(function(btn) {
     btn.addEventListener('click', function() {
       switch (btn.dataset.action) {
@@ -9920,7 +10085,7 @@
       banner.style.boxShadow = '0 2px 8px rgba(0,0,0,0.4)';
 
       var label = document.createElement('span');
-      label.textContent = 'Install XPEdit for offline use';
+      label.textContent = 'Install REXPaint Web for offline use';
 
       var installBtn = document.createElement('button');
       installBtn.textContent = 'Install';
@@ -9958,7 +10123,7 @@
 
 // ── Workbench ID Overlay ─────────────────────────────────────────────────────
 // Shows the id= value of every button, input, select, textarea, canvas, and
-// iframe as a small fixed badge. Toggle with Alt+I or the "hide IDs" button.
+// iframe as a diagnostic overlay. It is off by default; toggle with Alt+I.
 // Call window.rebuildWbIdOverlay() after dynamic content is added.
 (function wbIdOverlay() {
   'use strict';
@@ -9988,9 +10153,9 @@
     'box-sizing:border-box',
   ].join(';');
 
-  const EXCLUDE = new Set(['wb-id-toggle-btn']);
+  const EXCLUDE = new Set();
 
-  let on = true;
+  let on = false;
   let entries = [];
   let raf = null;
 
@@ -10030,31 +10195,7 @@
   function setOn(v) {
     on = v;
     schedule();
-    var btn = document.getElementById('wb-id-toggle-btn');
-    if (btn) btn.textContent = v ? 'hide IDs' : 'show IDs';
   }
-
-  // Fixed toggle button (bottom-right corner)
-  var toggleBtn = document.createElement('button');
-  toggleBtn.id = 'wb-id-toggle-btn';
-  toggleBtn.textContent = 'hide IDs';
-  toggleBtn.style.cssText = [
-    'position:fixed',
-    'bottom:10px',
-    'right:10px',
-    'z-index:100000',
-    'font-size:9px',
-    'font-family:Consolas,monaco,monospace',
-    'font-weight:700',
-    'padding:2px 7px',
-    'background:#182131',
-    'border:1px solid #4c5c7b',
-    'color:#b8c9e7',
-    'cursor:pointer',
-    'border-radius:0',
-  ].join(';');
-  toggleBtn.addEventListener('click', function() { setOn(!on); });
-  document.body.appendChild(toggleBtn);
 
   // Alt+I keyboard shortcut
   document.addEventListener('keydown', function(e) {

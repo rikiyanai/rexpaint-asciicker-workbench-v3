@@ -1,26 +1,28 @@
 @font-face {
-  font-family: 'DepartureMono-Regular';
-  src: url('https://intdev-global.s3.us-west-2.amazonaws.com/public/internet-dev/2ed59eb2-a4a6-490c-8d70-757b68af681d.woff') format('woff');
+  font-family: 'Xanh Mono';
+  src: url('./assets/fonts/xanh-mono/XanhMono-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 :root {
-  --bg: #000000;
-  --panel: #161616;
-  --fg: #ffffff;
-  --muted: #6f6f6f;
-  --ok: #198038;
-  --warn: #ef6300;
-  --err: #da1e28;
-  --accent: #f1c21b;
-  --border: #393939;
+  --bg: #ffffff;
+  --panel: #f5f5f5;
+  --surface-secondary: #ebebeb;
+  --surface-input: #fafafa;
+  --fg: #000000;
+  --muted: #505050;
+  --ok: #176329;
+  --warn: #8a3b00;
+  --err: #a61924;
+  --accent: #000000;
+  --border: #000000;
 }
 
 body {
   margin: 0;
-  font-family: 'DepartureMono-Regular', Consolas, monaco, monospace;
+  font-family: 'Xanh Mono', Consolas, monaco, monospace;
   background: var(--bg);
   color: var(--fg);
 }
@@ -641,7 +643,7 @@ label.inline {
   padding: 6px 0;
   font-size: 12px;
   color: var(--muted);
-  font-family: 'DepartureMono-Regular', Consolas, monaco, monospace;
+  font-family: 'Xanh Mono', Consolas, monaco, monospace;
 }
 .ws-scroll-wrap {
   overflow: auto;
@@ -725,7 +727,7 @@ label.inline {
 .ws-toolbar-value {
   font-size: 12px;
   color: var(--fg);
-  font-family: 'DepartureMono-Regular', Consolas, monaco, monospace;
+  font-family: 'Xanh Mono', Consolas, monaco, monospace;
 }
 .ws-tool-group {
   display: flex;
@@ -854,7 +856,7 @@ label.inline {
 .ws-browse-item-title {
   font-size: 11px;
   color: var(--fg);
-  font-family: 'DepartureMono-Regular', Consolas, monaco, monospace;
+  font-family: 'Xanh Mono', Consolas, monaco, monospace;
 }
 
 .ws-browse-item-meta {
@@ -989,7 +991,7 @@ label.inline {
   font-size: 10px;
   color: var(--muted);
   line-height: 1.8;
-  font-family: 'DepartureMono-Regular', Consolas, monaco, monospace;
+  font-family: 'Xanh Mono', Consolas, monaco, monospace;
 }
 
 .ws-info-label {
@@ -1217,8 +1219,25 @@ label.inline {
 .ws-mobile-top-bar,
 .ws-mobile-bottom-bar { display: none; }
 
+.ws-mobile-keyboard-input {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ── Mobile: canvas-primary layout (U4 — UQ-013 §1.9.3) ── */
 @media (max-width: 768px) {
+  .alpha-banner { display: none; }
+  #productToolbar button:disabled { display: none; }
+  #reportBugBtn { display: none; }
+  .registry-action-classifications { display: none; }
+
   /* Sidebar becomes transparent so fixed-position drawers can render (U5) */
   .ws-sidebar { display: contents; }
 
@@ -1288,7 +1307,7 @@ label.inline {
     z-index: 90;
     font-size: 12px;
     color: #aaa;
-    font-family: 'DepartureMono-Regular', Consolas, monaco, monospace;
+    font-family: 'Xanh Mono', Consolas, monaco, monospace;
   }
 
   .ws-mobile-bottom-bar > span {
@@ -1459,7 +1478,7 @@ label.inline {
   align-items: center;
   font-size: 11px;
   color: var(--muted, #6f6f6f);
-  font-family: 'DepartureMono-Regular', Consolas, monaco, monospace;
+  font-family: 'Xanh Mono', Consolas, monaco, monospace;
 }
 .ws-touch-inspect-label {
   font-size: 9px;
@@ -1469,4 +1488,458 @@ label.inline {
 }
 .ws-touch-inspect-value {
   color: var(--fg, #ffffff);
+}
+
+/* Refrog terminal presentation pin (canonical reference: §2.16.4). */
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Xanh Mono', Consolas, monaco, monospace;
+}
+
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+:focus-visible {
+  outline: 3px solid #000000;
+  outline-offset: 2px;
+}
+
+.panel,
+.overlay-card,
+.subpanel-shell,
+.legacy-grid-debug,
+.context-menu,
+.frame-grid,
+.ws-scroll-wrap,
+.ws-frame-nav,
+.ws-touch-toolbar,
+.ws-touch-inspect-popup,
+.ws-drawer {
+  border: 2px solid #000000;
+  background-color: var(--panel);
+  color: var(--fg);
+}
+
+.panel[data-panel-number]::before,
+.subpanel-shell[data-panel-number]::before,
+.ws-frame-nav[data-panel-number]::before,
+.frame-grid[data-panel-tag]::before {
+  border: 2px solid #000000;
+  background: var(--surface-secondary);
+  color: #000000;
+}
+
+.runtime-preflight-banner,
+.alpha-banner,
+.draft-restore-banner,
+.alpha-inline-banner {
+  border: 2px solid #000000;
+  background: var(--surface-secondary);
+  color: #000000;
+}
+
+.alpha-banner-title,
+.alpha-banner-copy,
+.draft-restore-title,
+.runtime-preflight-title,
+.alpha-inline-banner {
+  color: #000000;
+}
+
+.overlay {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.overlay-card {
+  background-color: var(--panel);
+}
+
+textarea,
+input,
+select {
+  border: 2px solid #000000 !important;
+  border-radius: 0 !important;
+  background: var(--surface-input);
+  color: #000000;
+}
+
+button {
+  font: inherit;
+  border: 2px solid #000000 !important;
+  border-radius: 0 !important;
+  background: #ffffff;
+  color: #000000;
+}
+
+button.primary,
+button.success,
+button.danger {
+  border-color: #000000;
+  background: #ffffff;
+  color: #000000;
+}
+
+button.tool-active,
+.ws-tool-btn.ws-tool-active,
+.ws-layer-row.ws-layer-active,
+.ws-info-apply-tag.ws-info-apply-on,
+.ws-toggle.ws-toggle-on {
+  border-color: #000000;
+  background: #000000;
+  color: #ffffff;
+}
+
+button:hover:not(:disabled),
+.ws-touch-toolbar button:hover:not(:disabled),
+.ws-browse-item:hover {
+  border-color: #000000;
+  background: var(--surface-secondary);
+  color: #000000;
+}
+
+button.tool-active:hover:not(:disabled),
+.ws-tool-btn.ws-tool-active:hover:not(:disabled),
+.ws-layer-row.ws-layer-active:hover,
+.ws-info-apply-tag.ws-info-apply-on:hover,
+.ws-toggle.ws-toggle-on:hover {
+  background: #000000;
+  color: #ffffff;
+}
+
+button:disabled,
+select:disabled,
+input:disabled {
+  border-color: #666666;
+  background: var(--surface-secondary);
+  color: #505050;
+  opacity: 1;
+  filter: none;
+}
+
+.small,
+label,
+.ws-info-bar,
+.ws-toolbar label,
+.ws-toolbar-label,
+.ws-sidebar-section h4,
+.ws-placeholder,
+.ws-browse-item-meta,
+.frame-row-label .row-index,
+.frame-label,
+.ws-touch-inspect-header,
+.ws-touch-inspect-label {
+  color: var(--muted);
+}
+
+.ok { color: var(--ok); }
+.warn { color: var(--warn); }
+.err { color: var(--err); }
+
+a {
+  color: #000000;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+pre,
+.frame-grid,
+.ws-tool-group,
+.ws-browse-item,
+.ws-sidebar,
+.ws-frame-nav,
+.ws-scroll-wrap,
+.ws-layer-row,
+.ws-touch-toolbar,
+.ws-touch-inspect-popup {
+  border-color: #000000;
+  background-color: var(--surface-secondary);
+  color: #000000;
+}
+
+.grid {
+  border: 2px solid #000000;
+  background: #d6d6d6;
+}
+
+.cell,
+.frame-row-header,
+.frame-cell,
+.ws-browse-item,
+.ws-scroll-wrap,
+.ws-tool-group {
+  border: 2px solid #000000;
+  background: #ffffff;
+  color: #000000;
+}
+
+.frame-row-header.selected,
+.frame-cell.selected,
+.frame-cell.row-selected,
+.frame-cell.group-selected,
+.frame-cell.drop-target,
+.frame-row-header.drag-target {
+  outline: 2px solid #000000;
+  outline-offset: -2px;
+}
+
+.frame-row-label .row-name,
+.ws-browse-item-title,
+.ws-toolbar-value,
+.ws-info-row,
+.ws-touch-inspect-body,
+.ws-touch-inspect-value,
+.ws-info-label,
+.ws-ta-label,
+.ws-frame-nav h4 {
+  color: #000000;
+}
+
+.ws-info-swatch-empty {
+  background: repeating-linear-gradient(
+    45deg,
+    #e5e5e5,
+    #e5e5e5 2px,
+    #ffffff 2px,
+    #ffffff 4px
+  );
+}
+
+.row-drag-handle {
+  border: 2px solid #000000;
+  background: var(--surface-secondary);
+}
+
+.ws-scroll-wrap.ws-browse-preview {
+  border-color: #000000;
+}
+
+.ws-layer-row.ws-layer-active.ws-layer-hidden {
+  opacity: 1;
+}
+
+#pwa-install-banner {
+  border: 2px solid #000000 !important;
+  background: var(--panel) !important;
+  color: #000000 !important;
+  font-family: 'Xanh Mono', Consolas, monaco, monospace !important;
+  box-shadow: none !important;
+}
+
+#pwa-install-banner button {
+  border: 2px solid #000000 !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-family: 'Xanh Mono', Consolas, monaco, monospace !important;
+}
+
+[style*="color:#5a6a7a"],
+[style*="color:#4a5a6a"] {
+  color: var(--muted) !important;
+}
+
+body > span[style*="line-height:11px"] {
+  border: 2px solid #000000 !important;
+  background: var(--surface-secondary) !important;
+  color: #000000 !important;
+  font-family: 'Xanh Mono', Consolas, monaco, monospace !important;
+}
+
+.frame-label {
+  background: rgba(255, 255, 255, 0.92);
+  color: #000000;
+}
+
+.grid-drop-choice-overlay {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.grid-drop-choice,
+.frame-cell.drop-mode-replace .grid-drop-choice.top,
+.frame-cell.drop-mode-replace .grid-drop-choice.bottom,
+.frame-cell.drop-mode-swap .grid-drop-choice.top,
+.frame-cell.drop-mode-swap .grid-drop-choice.bottom {
+  border-color: #000000;
+  background: #ebebeb;
+  color: #000000;
+  text-shadow: none;
+}
+
+.frame-cell.drop-mode-replace .grid-drop-choice.top,
+.frame-cell.drop-mode-swap .grid-drop-choice.bottom {
+  background: #000000;
+  color: #ffffff;
+}
+
+.canvas-wrap {
+  border: 2px solid #000000;
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, #e5e5e5 25%, transparent 25%),
+    linear-gradient(-45deg, #e5e5e5 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #e5e5e5 75%),
+    linear-gradient(-45deg, transparent 75%, #e5e5e5 75%);
+}
+
+#previewCanvas,
+#cellInspectorCanvas,
+#sourceCanvasViewport,
+#wholeSheetCanvas,
+.ws-palette-canvas,
+.ws-glyph-picker-canvas {
+  border-color: #000000;
+  background-color: #ffffff;
+}
+
+.ws-sidebar,
+.ws-sidebar-section,
+.ws-frame-nav,
+.ws-scroll-wrap,
+.ws-tool-group,
+.ws-browse-item,
+.ws-layer-row,
+.ws-info-group,
+.ws-mobile-top-bar,
+.ws-mobile-bottom-bar,
+.ws-drawer,
+.ws-touch-toolbar,
+.ws-touch-inspect-popup {
+  border-color: #000000;
+  background-color: var(--surface-secondary);
+  color: #000000;
+}
+
+.ws-browse-item-selected,
+.ws-browse-item-current,
+.ws-layer-row.ws-layer-active,
+.ws-info-apply-tag.ws-info-apply-on {
+  border-color: #000000;
+  background: #000000;
+  color: #ffffff;
+}
+
+.ws-info-apply-tag,
+.ws-info-swatch,
+.ws-layer-vis-btn,
+.ws-toolbar input[type="number"],
+.ws-toolbar input[type="text"],
+.ws-toggle,
+.ws-tool-btn {
+  border-color: #000000;
+  background: #ffffff;
+  color: #000000;
+}
+
+.ws-layer-vis-btn.ws-layer-visible {
+  border-color: #000000;
+  background: var(--surface-secondary);
+  color: var(--ok);
+}
+
+.ws-frame-nav[data-panel-number]::before,
+.frame-grid[data-panel-tag]::before {
+  border-color: #000000;
+  background: var(--surface-secondary);
+  color: #000000;
+}
+
+.ws-touch-toolbar,
+.ws-touch-inspect-popup {
+  border: 2px solid #000000;
+  background: var(--panel);
+}
+
+.ws-touch-toolbar button {
+  border: 2px solid #000000;
+  background: #ffffff;
+  color: #000000;
+}
+
+.ws-touch-toolbar button:active {
+  border-color: #000000;
+  background: #000000;
+  color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .ws-mobile-top-bar button {
+    border: 2px solid #000000;
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .ws-mobile-top-bar button:active {
+    background: #000000;
+    color: #ffffff;
+  }
+
+  .ws-mobile-bottom-bar {
+    color: #000000;
+  }
+}
+/* Registry-driven first-class action navigation. */
+.registry-action-catalog {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.registry-action-picker-label {
+  font-weight: 700;
+}
+
+.registry-action-picker {
+  flex: 1 1 260px;
+  min-width: 180px;
+  border: 2px solid #000;
+  background: #fff;
+  color: #000;
+  font: inherit;
+  padding: 4px;
+}
+
+.ws-more-draw-tools > summary {
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.ws-more-draw-tools[open] > .ws-tool-btn {
+  display: block;
+  width: 100%;
+}
+
+.registry-action-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 2px solid #000;
+  background: #fff;
+}
+
+.registry-action-group-label {
+  flex: 1 0 100%;
+  font-weight: 700;
+}
+
+.registry-action-button {
+  min-width: 0;
+}
+
+.registry-action-classifications {
+  flex: 1 0 100%;
+  color: #333;
+  border-top: 1px solid #000;
+  padding-top: 4px;
 }
