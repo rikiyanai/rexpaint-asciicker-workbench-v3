@@ -12813,3 +12813,178 @@ was repeated.
 This closes the source-level/UI implementation gap for this slice only. It does
 not close the separate later-source provenance search, repository-wide
 self-containment failures, deployment, or operator acceptance.
+
+## 2026-10-12 — Consolidated Pre-Existing Regression And Open-Item Register
+
+**Status:** OPEN / EXECUTION HANDOFF AUTHORITY
+
+This is the deduplicated current register requested by the operator. It records
+pre-existing product regressions and open obligations without treating old,
+subsequently closed failures as current. When an older entry and a current
+queue row describe the same failure, the row below names the current owner
+instead of counting the failure twice.
+
+### Parallel top-priority lanes
+
+These four lanes are co-equal top priority and should execute in parallel only
+where file/state ownership does not overlap:
+
+1. **Normalized-contract correctness inside Workbench and Test This Skin.**
+   Integrate the normalized XP/Y9 contract inspection boundary into the
+   user-reachable runtime handoff; make the current document/bundle the runtime
+   payload; eliminate ambient/default-bundle fallback; repair runtime readiness
+   and prove the CP437 runtime path.
+2. **Browse-first desktop and mobile authoring.** Browse must show XP documents
+   with the selected whole sheet, not layers. Deliver New/Open/PNG-or-XP import
+   -> convert/slice -> edit -> save/export -> test on desktop and mobile, with
+   one root document owner and a real-device keyboard acceptance item.
+3. **Slope/adaptive brush closure.** Preserve Auto-wall as the distinct CP437
+   connectivity tool; validate the locally implemented slope-to-glyph brush;
+   recover the operator-referenced later implementation/provenance; reconcile
+   vocabulary/behavior; obtain headed and operator acceptance.
+4. **Regression closure.** Close the active product, contract, verifier,
+   self-containment, documentation, and deployment regressions below without
+   hiding them behind a reskin or a structural-only test.
+
+This operator reprioritization activates product work previously described as
+`PARKED`, especially `UQ-013`, but does not waive technical preconditions inside
+the runtime/compiler chain. Lane 4 is the shared tracking/proof/hygiene lane for
+lanes 1-3 plus independent regressions; it is not permission for a fourth agent
+to edit files already owned by another lane.
+
+### User-facing product regressions and incomplete flows
+
+- Browse renders document-management rows but no selected-sheet preview.
+- Selecting a Browse row does not preview it; Open loads state and returns to a
+  Browse surface that still has no canvas.
+- Browse is not yet the first-class whole-sheet application promised by the
+  product boundary; layer controls belong to Edit, not the Browse result.
+- A direct raw-XP path remains unclear and must not require template/bundle
+  selection merely to inspect or edit an XP.
+- Document kind and metadata state (`raw_xp`, `template_owned`,
+  `pipeline_job`, layer-0 compatibility) are not clearly surfaced.
+- The complete mobile New/Open/Import -> Convert -> Edit -> Save/Export -> Test
+  loop does not exist. The input bridge is locally verified, but native
+  Android/iOS keyboard appearance remains unproven.
+- PNG upload/conversion (`wbFile`, `wbUpload`, `wbRun`) remains buried in the
+  legacy pipeline surface instead of the primary Browse/mobile flow.
+- Interactive source slicing remains incomplete and source layout is still
+  substantially JSON/session-state-first rather than sidecar-manifest-first.
+- PNG-to-CP437 conversion still lacks accepted glyph fidelity; historical
+  output used blobby full-block/solid-cell approximations. The planned
+  insertable glyph-assignment/review layer is not a completed product flow.
+- The XP animation/metadata preview is not proven to consume the currently
+  selected document.
+- `Test This Skin` points at generic `/termpp-web-flat`, requires a currently
+  missing map, is not the normalized-contract CP437 viewer requested by the
+  operator, and is not proven self-contained around the current workbench
+  payload rather than ambient/default Y9-2 state.
+- Neither sibling normalized viewer (`AsciickerY92-normalized-xp-sprite-inspector`
+  or `AsciickerY92-source-layer-contract-viewer`) is integrated as the
+  user-reachable Workbench/Test This Skin contract surface.
+- The Slope brush, Refrog skin, grouped registry navigation, reduced primary
+  tools, and mobile keyboard bridge are verified locally only: not deployed and
+  not operator-accepted. Exact later-brush provenance is still unrecovered.
+- Auto-wall and Slope brush remain deliberately distinct; acceptance of one
+  cannot be used to close the other.
+- Full registry/presentation coverage, including mounted behavior, is not
+  runtime-proven.
+- The public `rikiworld.com/xpedit` surface is not this V3 candidate and no
+  public replacement/cutover has occurred.
+
+### Active implementation, proof, and runtime-contract queue
+
+- `UQ-006` OPEN/BLOCKED: canonical sidecar-manifest source authoring and shared
+  UI/MCP/backend mark/materialize/validate/status ownership.
+- `UQ-008` PROOF BLOCKED: mounted `wolfie`/`wolack` end-to-end generated-row,
+  parser, runtime-selection, and no-legacy-fallback proof.
+- `UQ-009` PARTIAL/SUPPORT: keep action graph and structural/headed proof honest
+  as product slices land.
+- `UQ-010` PARKED/OPEN OBLIGATION: converge launcher, wizard, MCP, browser, and
+  CLI on one shared headless bundle-authoring contract after its technical
+  prerequisites pass or the operator separately reprioritizes that gateway.
+- `UQ-011` PARKED: frozen-SHA public cutover, rollback, credential, deploy-path,
+  and live headed proof. This lane does not start until the operator explicitly
+  starts public cutover.
+- `UQ-013` ACTIVE BY OPERATOR REPRIORITIZATION: complete small-screen/touch
+  layout and three-tier persistence.
+- `UQ-R15` / `FL-3861` OPEN: replace runtime visual-resolution logic with
+  compiler-emitted `render_plans.json` / `RenderPlanTable` and prove one mounted
+  crossbow key without deleted-path calls.
+- `FL-3862` OPEN: invoke the C++ runtime parser from `verify-current` and
+  `build-web.sh`.
+- `FL-3863` OPEN: complete `ActorVisualProfile` with variation and explicit
+  body/wearable/mount slot/layer assignments.
+- `FL-3864` OPEN: rewrite the Bundle System Guide around Content DB ->
+  RenderPlanTable rather than the retired selector architecture.
+- RenderPlan ordered-layer preview, structured export completeness, and
+  promote-to-current `render_plans.json` identity/hash checking remain open.
+- M2 PNG -> whole sheet -> export headed proof and Bundle Mods
+  Status -> Package -> Rollback automation remain partial.
+- Wearable/item authoring (`world_item`, `inventory_grid`) and `bigbee` remain
+  explicitly deferred; color variants remain proof-only by policy.
+- The whole-sheet browse-model split remains incomplete: Browse must open and
+  preview root XP documents while wrapper metadata compatibility remains a
+  later concern.
+
+### Architecture, queue, and cross-repository open items
+
+- `DR-S1`: extract the oversized Y9-2 walkthrough from canon to a reference.
+- `DR-S2`: extract the embedded REXPaint manual to a reference.
+- `DR-01`: reconcile the stale Y9-2 mounted-script inventory after deletions.
+- `DR-02`: define safe preparatory work for blocked serial queue rows.
+- `DR-03`: define intermediate/time-boxed public value delivery.
+- `DR-04`: add cutover rollback and credential validation.
+- `DR-05`: finish legacy `session_kind` / `metadata_status` migration rules.
+- `DR-06`: define sidecar version/etag/concurrent-writer conflict handling.
+- `DR-07`: assign validation ownership for selector input, attachment order,
+  and network appearance between pipeline-v3 and Y9-2.
+- `DR-08`: incrementally deliver the eight-command shared headless surface.
+- `DR-09`: implement sidecar creation, discovery, nil/error, and migration from
+  session-local source state.
+- `DR-10`: give the rollback snapshot contract an explicit queue owner.
+- `DR-11`: decouple standalone editor value from unnecessary engine gates.
+- `DR-12`: execute mobile as a northstar priority rather than terminal backlog.
+- `DR-13`: disambiguate modeled/current/deferred semantic rows.
+- `DR-14`: move duplicated wizard lifecycle/UX authority to Y9-2 canon.
+- `DR-15`: define the cross-repo deletion/convergence timeline.
+- `DR-16` is historical/superseded by closed `UQ-007`; it needs explicit
+  supersession cleanup but is not an active implementation gap.
+- Delete or dumpster the stale Y9-2 Workbench spec copy and replace it with a
+  pointer if needed.
+- `XR-01`: resolve the mismatched shared bundle-authoring gateway contract.
+- `XR-02`: reconcile deleted mounted tools and current replacement ownership.
+- `XR-03`: stop the Y9-2 wizard accumulating independent pipeline ownership.
+- `XR-04`: publish the five-contract validation ownership matrix in both repos.
+- `XR-05`: reconcile DESIGN OPEN B-12/B-13/B-14 status.
+- `XR-06`: document ID/lock synchronization; implementation portions already
+  superseded by `UQ-007` must be marked accordingly.
+- `XR-07`: summarize the Y9-2 Step 7.12 VERIFY gate locally.
+- `XR-08`: define migration from current routes to shared commands.
+- `XR-09`: add template-registry schema versioning/migration.
+- `XR-10`: consolidate dual MCP ownership under the shared contract.
+- `XR-11`: define cross-repo canonical read order.
+
+### Canon and repository-readiness regressions
+
+- Canon spec section 2.16.6 is stale against the later local implementation
+  checkpoint and must no longer say the entire slice is unimplemented.
+- The embedded REXPaint manual and large Y9-2 runtime walkthrough remain open
+  extraction/hygiene items.
+- Some older OPEN review statements are now stale after later closures (for
+  example, pre-UQ-007 claims that runtime IDs have zero implementation) and
+  still need explicit supersession rather than silent reliance on later text.
+- On 2026-10-12, `python3 scripts/self_containment_audit.py` at pre-commit HEAD
+  `5554f32` failed with 47 blocking absolute-path occurrences: 9 across five
+  live scripts and 38 across stored CE-review JSON. It also reported 354
+  warnings. This blocks a truthful self-contained or product-push-ready claim,
+  but it does not prohibit this documentation-only branch push.
+
+### Closure and acceptance rule
+
+No row above closes from a hidden API call, structural test, reskin, local-only
+implementation, or stale hosted page. Product rows require the shipped
+user-reachable desktop/mobile sequence. Runtime rows require the current
+document/bundle and normalized contract path. Deployment requires exact remote
+SHA readback and live headed proof. Operator acceptance is recorded separately
+from implementation and verification.
