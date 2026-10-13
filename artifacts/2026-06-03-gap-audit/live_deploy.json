@@ -1,0 +1,22 @@
+{
+  "rikiworld.com/xpedit/workbench": {
+    "status": 200,
+    "probe": {
+      "transparentRow": false,
+      "transparentLabels": [],
+      "pasteArmedCss": true,
+      "uploadBtn": true,
+      "idsBtn": true
+    }
+  },
+  "asciicker-xpedit-6abo3pnlfa-uc.a.run.app/xpedit/workbench": {
+    "status": 200,
+    "probe": {
+      "transparentRow": false,
+      "transparentLabels": [],
+      "pasteArmedCss": true,
+      "uploadBtn": true,
+      "idsBtn": true
+    }
+  }
+}

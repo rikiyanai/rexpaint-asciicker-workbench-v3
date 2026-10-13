@@ -1,0 +1,314 @@
+{
+  "overallPass": true,
+  "finalXpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-2cba4306-a516-4142-854b-9088c18dba1e.xp",
+  "results": [
+    {
+      "name": "fresh-mobile-first-screen",
+      "pass": true,
+      "error": "",
+      "data": {
+        "visible": true
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false
+      },
+      "post": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false
+      },
+      "screenshot": "artifacts/2026-06-16-tool-layer-parity/01-fresh-mobile-first-screen.png"
+    },
+    {
+      "name": "apply-template",
+      "pass": true,
+      "error": "",
+      "data": {
+        "template": "player_native_idle_only",
+        "sessionId": "2cba4306"
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false
+      },
+      "post": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-tool-layer-parity/02-apply-template.png"
+    },
+    {
+      "name": "open-tools-drawer",
+      "pass": true,
+      "error": "",
+      "data": {
+        "eraseVisible": true,
+        "lineVisible": true,
+        "cellVisible": true,
+        "selectVisible": true,
+        "initialTool": "cell"
+      },
+      "pre": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-tool-layer-parity/03-open-tools-drawer.png"
+    },
+    {
+      "name": "switch-erase-tool",
+      "pass": true,
+      "error": "",
+      "data": {
+        "activeTool": "erase"
+      },
+      "pre": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-tool-layer-parity/04-switch-erase-tool.png"
+    },
+    {
+      "name": "switch-line-tool",
+      "pass": true,
+      "error": "",
+      "data": {
+        "activeTool": "line"
+      },
+      "pre": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-tool-layer-parity/05-switch-line-tool.png"
+    },
+    {
+      "name": "switch-cell-tool",
+      "pass": true,
+      "error": "",
+      "data": {
+        "activeTool": "cell"
+      },
+      "pre": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-tool-layer-parity/06-switch-cell-tool.png"
+    },
+    {
+      "name": "open-layers-drawer",
+      "pass": true,
+      "error": "",
+      "data": {
+        "initialLayerCount": 4,
+        "addBtnVisible": true,
+        "delBtnVisible": true,
+        "layerInfo": [
+          {
+            "index": "0",
+            "name": "Metadata",
+            "visible": false
+          },
+          {
+            "index": "1",
+            "name": "Layer 1",
+            "visible": false
+          },
+          {
+            "index": "2",
+            "name": "Visual",
+            "visible": true
+          },
+          {
+            "index": "3",
+            "name": "Layer 3",
+            "visible": false
+          }
+        ]
+      },
+      "pre": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-tool-layer-parity/07-open-layers-drawer.png"
+    },
+    {
+      "name": "toggle-layer-visibility",
+      "pass": true,
+      "error": "",
+      "data": {
+        "wasBefore": false,
+        "isAfter": true
+      },
+      "pre": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-tool-layer-parity/08-toggle-layer-visibility.png"
+    },
+    {
+      "name": "restore-layer-visibility",
+      "pass": true,
+      "error": "",
+      "data": {
+        "wasBefore": true,
+        "isAfter": false,
+        "restored": false
+      },
+      "pre": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-tool-layer-parity/09-restore-layer-visibility.png"
+    },
+    {
+      "name": "add-layer",
+      "pass": true,
+      "error": "",
+      "data": {
+        "beforeCount": 4,
+        "countAfterAdd": 5,
+        "delta": 1
+      },
+      "pre": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-tool-layer-parity/10-add-layer.png"
+    },
+    {
+      "name": "delete-layer",
+      "pass": true,
+      "error": "",
+      "data": {
+        "beforeDel": 5,
+        "afterDel": 4
+      },
+      "pre": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-tool-layer-parity/11-delete-layer.png"
+    },
+    {
+      "name": "export-via-files-drawer",
+      "pass": true,
+      "error": "",
+      "data": {
+        "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-2cba4306-a516-4142-854b-9088c18dba1e.xp"
+      },
+      "pre": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-tool-layer-parity/12-export-via-files-drawer.png"
+    },
+    {
+      "name": "artifact-oracle",
+      "pass": true,
+      "error": "",
+      "data": {
+        "totalNonZero": 10087
+      },
+      "pre": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "2cba4306-a516-4142-854b-9088c18dba1e",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-tool-layer-parity/13-artifact-oracle.png"
+    }
+  ]
+}

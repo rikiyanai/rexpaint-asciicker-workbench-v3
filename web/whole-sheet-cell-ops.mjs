@@ -21,18 +21,21 @@ export function cloneEditorCell(cell) {
   };
 }
 
-export function buildClearedEditorCell(cell) {
-  const current = cloneEditorCell(cell);
+const MAGENTA = Object.freeze([255, 0, 255]);
+
+export function buildClearedEditorCell(_cell) {
   return {
     glyph: 0,
     fg: [...DEFAULT_CELL.fg],
-    bg: [...current.bg],
+    bg: [...MAGENTA],
   };
 }
 
 export function shouldCopyCellOnLayerMerge(cell) {
   const current = cloneEditorCell(cell);
   if (current.glyph !== 0) return true;
+  // glyph=0 with MAG bg is a transparent/cleared cell — no content to merge
+  if (current.bg[0] === 255 && current.bg[1] === 0 && current.bg[2] === 255) return false;
   if (current.fg.some((value, index) => value !== DEFAULT_CELL.fg[index])) return true;
   if (current.bg.some((value, index) => value !== DEFAULT_CELL.bg[index])) return true;
   return false;

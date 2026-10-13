@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-08-08T20:37:06.832281+00:00",
+  "session_jsonl": "/Users/r/.claude/projects/-Users-r-Downloads-asciicker-pipeline-v3/aa11f89f-6d79-4b4c-9dfa-9c01e91de39e.jsonl",
+  "assistant_messages_checked": 190,
+  "unsupported_claim_warnings": 28,
+  "triggered_phrases": {
+    "working": 7,
+    "resolved": 2,
+    "complete": 3,
+    "passed": 2,
+    "fixed": 10,
+    "green": 4,
+    "closed": 3,
+    "done": 4
+  }
+}

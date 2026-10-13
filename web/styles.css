@@ -568,6 +568,11 @@ a { color: #80bdff; }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: none;
+}
+
+.frame-grid.frame-labels-visible .frame-label {
+  display: block;
 }
 
 .frame-grid.frame-grid-compact .frame-label {
@@ -774,6 +779,165 @@ label.inline {
   color: #fff;
   border-color: var(--accent);
 }
+/* Paste mode armed — green-plus affordance so user can tell paste is "stamping" */
+.ws-tool-btn.ws-paste-armed {
+  background: #0d4a1a;
+  color: #6cff8a;
+  border-color: #2ecc71;
+  box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.25);
+}
+.ws-tool-btn.ws-paste-armed::after {
+  content: "+";
+  margin-left: 4px;
+  font-weight: bold;
+}
+/* Workbench status toast — surfaces silent failure modes (e.g., paste blocked
+   when all clipboard target layers are locked). Codex review 2026-06-03. */
+.ws-status-toast {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  background: rgba(20, 20, 30, 0.92);
+  color: #ffe066;
+  border: 1px solid #ffb84d;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 180ms ease;
+  z-index: 1000;
+}
+.ws-status-toast.ws-status-toast-show {
+  opacity: 1;
+}
+/* FBG-combo subpalette — canonical (fg, bg) pairs from Y9-2 player-0100
+   semantic_maps. LMB applies, RMB applies swapped. (B5, FL-2026-06-03) */
+.ws-fbg-combo-row {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 3px;
+  margin-top: 6px;
+}
+.ws-fbg-combo-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #2a2f3a;
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+}
+.ws-fbg-combo-btn:hover {
+  border-color: #4b91ff;
+}
+.ws-fbg-half {
+  display: block;
+  width: 100%;
+  flex: 1 1 50%;
+}
+/* Recents subpalette — auto-tracks last fg + bg selections.
+   (B4, FL-2026-06-03) */
+.ws-recents-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 6px;
+}
+.ws-recents-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 16px;
+}
+.ws-recents-label {
+  width: 14px;
+  font-size: 10px;
+  color: #9aa3b2;
+  text-transform: uppercase;
+}
+.ws-recent-swatch {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid #2a2f3a;
+  cursor: pointer;
+}
+.ws-recent-swatch:hover {
+  border-color: #4b91ff;
+}
+/* Right-click recents context menu — opens above the FG/BG swatches.
+   (B3, FL-2026-06-03) */
+.ws-recents-ctx {
+  position: fixed;
+  background: #14181f;
+  border: 1px solid #2a2f3a;
+  border-radius: 4px;
+  padding: 6px;
+  z-index: 1100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+.ws-recents-ctx-heading {
+  font-size: 10px;
+  color: #9aa3b2;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.ws-recents-ctx-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 22px);
+  gap: 4px;
+}
+.ws-recents-ctx-swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #2a2f3a;
+  cursor: pointer;
+}
+.ws-recents-ctx-swatch:hover {
+  border-color: #4b91ff;
+}
+/* Paste ghost preview — shows clipboard bbox under cursor while paste mode
+   is armed. Top-left anchored to cursor cell. (B6, FL-2026-06-03) */
+.ws-paste-ghost {
+  position: fixed;
+  display: none;
+  box-sizing: border-box;
+  border: 2px dashed #2ecc71;
+  background: rgba(46, 204, 113, 0.10);
+  pointer-events: none;
+  z-index: 999;
+}
+/* Dedicated transparent-key buttons (FL-2026-06-03): pin to canonical
+   (255,0,255) and (255,255,0) so users can pick the exact transparent
+   key. Right-click sets BG; left-click sets FG. */
+.ws-transparent-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+.ws-transparent-btn {
+  flex: 1;
+  padding: 3px 6px;
+  font-size: 10px;
+  font-weight: bold;
+  border: 1px solid #555;
+  border-radius: 3px;
+  cursor: pointer;
+  text-transform: none;
+  line-height: 1.2;
+  font-family: var(--mono, monospace);
+}
+.ws-transparent-btn:hover {
+  border-color: var(--accent, #4a9eff);
+  outline: 1px solid rgba(74, 158, 255, 0.4);
+}
 .ws-toolbar-sep {
   width: 1px;
   height: 18px;
@@ -818,6 +982,7 @@ label.inline {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  position: relative; /* anchor for .ws-status-toast */
 }
 
 .ws-layout .ws-scroll-wrap {
@@ -1251,12 +1416,11 @@ label.inline {
 }
 
 /* ── Mobile: canvas-primary layout (U4 — UQ-013 §1.9.3) ── */
-@media (max-width: 768px) {
+@media (pointer: coarse), (max-width: 1024px) {
   .alpha-banner { display: none; }
   #productToolbar button:disabled { display: none; }
   #reportBugBtn { display: none; }
   .registry-action-classifications { display: none; }
-
   /* Sidebar becomes transparent so fixed-position drawers can render (U5) */
   .ws-sidebar { display: contents; }
 
@@ -1275,29 +1439,43 @@ label.inline {
   /* ── U6: Mobile top chrome bar ── */
   .ws-mobile-top-bar {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     position: fixed;
     top: 0; left: 0; right: 0;
     height: 44px;
-    padding: 0 8px;
+    /* Landscape notch sits at a side edge — inset the bar ends too. */
+    padding: 0 calc(8px + env(safe-area-inset-right, 0px)) 0 calc(8px + env(safe-area-inset-left, 0px));
     padding-top: env(safe-area-inset-top, 0px);
     background: var(--panel, #161616);
     border-bottom: 1px solid var(--border, #393939);
-    z-index: 90;
-    gap: 4px;
+    /* Above the drawer (100) and backdrop (99) so the toggles stay tappable
+       while a drawer is open — lets you switch drawers without closing first. */
+    z-index: 101;
+    gap: 8px;
+    /* Many drawer toggles — scroll horizontally instead of squeezing them. */
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
+  .ws-mobile-top-bar::-webkit-scrollbar { display: none; }
 
   .ws-mobile-top-actions,
   .ws-mobile-top-drawers {
     display: flex;
     gap: 4px;
     align-items: center;
+    flex-shrink: 0;
   }
+  /* Push the drawer toggles (and Advanced) to the right edge on first paint. */
+  .ws-mobile-top-drawers { margin-left: auto; }
 
   .ws-mobile-top-bar button {
     font-size: 11px;
-    padding: 4px 8px;
+    padding: 6px 10px;
+    min-height: 32px;
     background: #0f1420;
     color: var(--fg, #ffffff);
     border: 1px solid #2a3345;
@@ -1319,7 +1497,7 @@ label.inline {
     position: fixed;
     bottom: 0; left: 0; right: 0;
     height: 36px;
-    padding: 0 8px;
+    padding: 0 calc(8px + env(safe-area-inset-right, 0px)) 0 calc(8px + env(safe-area-inset-left, 0px));
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background: var(--panel, #161616);
     border-top: 1px solid var(--border, #393939);
@@ -1337,9 +1515,18 @@ label.inline {
     text-align: center;
   }
 
-  /* Offset canvas area so bars don't occlude content */
-  .ws-canvas-area { padding-top: 48px; padding-bottom: 40px; }
-  .wrap { margin-top: 48px; margin-bottom: 40px; }
+  /* Offset canvas area so bars don't occlude content. The bars grow by the
+     safe-area insets (padding above/below their 44px/36px cores), so the
+     clearance must grow by the same insets or notched phones lose the top
+     ~47px of content behind the bar. */
+  .ws-canvas-area {
+    padding-top: calc(48px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+  }
+  .wrap {
+    margin-top: calc(48px + env(safe-area-inset-top, 0px));
+    margin-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+  }
 
   /* ── Drawer system (U5) ── */
   .ws-drawer {
@@ -1347,7 +1534,9 @@ label.inline {
     flex-direction: column;
     position: fixed;
     left: 0; right: 0; bottom: 0;
-    max-height: 60vh;
+    /* dvh, not vh: every sibling metric uses dvh, and vh makes the sheet
+       resize whenever the mobile URL bar collapses. */
+    max-height: 60dvh;
     transform: translateY(100%);
     transition: transform 0.3s ease;
     background: var(--panel, #161616);
@@ -1386,6 +1575,10 @@ label.inline {
     -webkit-overflow-scrolling: touch;
     /* override desktop grid-template-columns set inline by JS */
     grid-template-columns: none !important;
+    /* !important beats the inline touchAction='none' the drag-select wiring
+       sets on this panel — without pan-x the filmstrip cannot be swiped and
+       off-screen frames are unreachable by touch. */
+    touch-action: pan-x !important;
   }
   .frame-grid {
     --wb-grid-cell-size: 48px;
@@ -1560,6 +1753,315 @@ body.wb-viewport-mobile .ws-frame-nav {
   max-height: none;
   resize: none;
   overflow: visible;
+/* ── FL-MOB-02: Scroll chrome — translucent pan buttons adjacent to zoom bar ── */
+.ws-scroll-chrome { display: none; }
+
+@media (pointer: coarse), (max-width: 1024px) {
+  .ws-zoom-row { flex-wrap: nowrap; }
+
+  /* 390px phones: the nowrap row must actually fit. The label is decorative
+     here, and the range input's intrinsic min-width otherwise forces the
+     121px chrome past the shell's overflow:hidden edge (▲/▼ untappable). */
+  .ws-zoom-row label { display: none; }
+  .ws-zoom-row input[type="range"] { min-width: 0; }
+
+  .ws-scroll-chrome {
+    display: flex;
+    flex-direction: row;
+    gap: 3px;
+    align-items: center;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .ws-scroll-chrome-btn {
+    background: rgba(30, 50, 80, 0.55);
+    border: 1px solid rgba(80, 120, 180, 0.4);
+    color: rgba(255, 255, 255, 0.85);
+    border-radius: 3px;
+    font-size: 13px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    touch-action: manipulation;
+    user-select: none;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  .ws-scroll-chrome-btn:active {
+    background: rgba(40, 80, 140, 0.78);
+  }
+}
+
+/* ── UQ-013 / D4: Editor-first mobile shell ─────────────────────────────────
+   After a session loads on a mobile/tablet (coarse pointer or narrow width),
+   the dense dashboard panels collapse and the whole-sheet editor becomes the
+   primary surface. The legacy dashboard stays reachable via the Advanced
+   toggle (body.ws-advanced). Desktop (fine pointer, wide) is untouched.
+   Overlays (#bugReportModal) and the on-demand inspector are preserved. */
+@media (pointer: coarse), (max-width: 1024px) {
+  body.ws-session-loaded:not(.ws-advanced) .wrap > *:not(#wholeSheetPanel):not(#cellInspectorPanel):not(#bugReportModal):not(.ws-drawer):not(#sourceFramesRow):not(#runtimePreflightBanner):not(#draftRestoreBanner) {
+    display: none !important;
+  }
+
+  /* Frames + Source live in a two-col on desktop. In editor-first the row goes
+     transparent so its wrapped .ws-drawer children become bottom sheets rather
+     than a collapsed grid cell. */
+  body.ws-session-loaded:not(.ws-advanced) #sourceFramesRow { display: contents; }
+
+  /* Suppress the numbered-panel dev badges inside reparented drawers too. */
+  body.ws-session-loaded:not(.ws-advanced) .ws-drawer [data-panel-number]::before {
+    content: none !important;
+  }
+
+  body.ws-session-loaded:not(.ws-advanced) #wholeSheetPanel {
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+  }
+
+  /* Trim the editor panel's dashboard chrome — the mount fills the viewport */
+  body.ws-session-loaded:not(.ws-advanced) #wholeSheetPanel > h3,
+  body.ws-session-loaded:not(.ws-advanced) #wholeSheetPanel > .row,
+  body.ws-session-loaded:not(.ws-advanced) #wholeSheetPanel > .whole-sheet-guide {
+    display: none;
+  }
+
+  body.ws-session-loaded:not(.ws-advanced) #wholeSheetMount { width: 100%; }
+
+  /* D-polish: the editor fills the space between the chrome bars so the canvas
+     uses the screen instead of leaving a large empty band below it. The
+     viewport shell is the box that must flex: on desktop it is a fixed
+     520px/70vh overflow:hidden panel, so sizing only its children lays a
+     100dvh-tall scroll wrap out inside a 520px clipped parent and ~200px of
+     scroll surface becomes unreachable. */
+  body.ws-session-loaded:not(.ws-advanced) .ws-canvas-area {
+    display: flex;
+    flex-direction: column;
+    /* .wrap already has margin-top/bottom to clear the fixed bars — drop the
+       redundant 48px/40px padding here so the editor doesn't sit ~96px low. */
+    padding-top: 0;
+    padding-bottom: 0;
+    min-height: calc(100dvh - 88px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  }
+  body.ws-session-loaded:not(.ws-advanced) .ws-viewport-shell {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    /* vertical resize is a mouse affordance; on touch it only steals drags */
+    resize: none;
+    /* the 30px top reserve exists for the dev badge, suppressed on mobile */
+    padding-top: 8px;
+  }
+  body.ws-session-loaded:not(.ws-advanced) .ws-scroll-wrap {
+    flex: 1 1 auto;
+    max-height: none;
+    min-height: 0;
+  }
+
+  /* Suppress the numbered-panel dev badges inside the editor-first view */
+  body.ws-session-loaded:not(.ws-advanced) #wholeSheetPanel::before,
+  body.ws-session-loaded:not(.ws-advanced) #wholeSheetPanel [data-panel-number]::before {
+    content: none !important;
+  }
+}
+
+/* ── Advanced mode on mobile: the reparented drawers (Files/Import/Source/
+   Frames) drop back to display:contents so the dense dashboard renders inline
+   exactly as before — they are NOT bottom-sheets in Advanced. Scoped to the
+   reparented wrappers only; the in-editor drawers (Tools/Layers/Browse/Info)
+   are untouched. */
+@media (pointer: coarse), (max-width: 1024px) {
+  body.ws-advanced .wrap > .ws-drawer,
+  body.ws-advanced #sourceFramesRow > .ws-drawer,
+  body.ws-advanced .ws-drawer > .two-col {
+    display: contents;
+  }
+
+  /* Inside preview drawer on mobile, stack the two panels vertically */
+  .ws-drawer[data-drawer="preview"] .two-col {
+    display: block;
+  }
+  /* Preview canvas responsive */
+  .ws-drawer[data-drawer="preview"] #previewCanvas {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* ── UQ-013: Mobile first screen ─────────────────────────────────────────── */
+.ws-first-screen { display: none; }
+
+@media (pointer: coarse), (max-width: 1024px) {
+  .ws-first-screen:not(.hidden) {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: var(--bg, #0a0a0a);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    padding-top: calc(24px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .ws-first-screen-inner {
+    width: 100%;
+    max-width: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .ws-first-screen-title {
+    text-align: center;
+    margin: 0 0 4px;
+    font-size: 20px;
+    color: var(--fg, #fff);
+    font-weight: 600;
+  }
+
+  .ws-first-screen-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ws-first-screen-btn {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    text-align: left;
+    background: #0f1420;
+    color: var(--fg, #fff);
+    border: 1px solid #2a3345;
+    border-radius: 4px;
+    cursor: pointer;
+    box-sizing: border-box;
+  }
+
+  .ws-first-screen-btn.primary {
+    background: #173860;
+    border-color: #285d98;
+    font-weight: 600;
+  }
+
+  .ws-first-screen-btn:active { opacity: 0.72; }
+
+  .ws-first-screen-btn[disabled] { opacity: 0.45; cursor: default; }
+
+  .ws-first-screen-secondary {
+    background: transparent;
+    border-color: #383838;
+    color: #999;
+    font-size: 13px;
+    text-align: center;
+    padding: 9px 12px;
+  }
+
+  .ws-first-screen-draft-wrap { display: flex; flex-direction: column; gap: 3px; }
+
+  .ws-first-screen-draft-status {
+    font-size: 11px;
+    color: #888;
+    padding-left: 2px;
+    min-height: 14px;
+  }
+
+  .ws-first-screen-template-row {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+  }
+
+  .ws-first-screen-select {
+    flex: 1;
+    padding: 8px;
+    background: #0f1420;
+    color: var(--fg, #fff);
+    border: 1px solid #2a3345;
+    border-radius: 4px;
+    font-size: 13px;
+    min-width: 0;
+  }
+
+  .ws-first-screen-template-row .ws-first-screen-btn {
+    width: auto;
+    flex-shrink: 0;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .ws-first-screen-footer { margin-top: 4px; }
+}
+
+/* ── UQ-013 / D4: Portrait rotate hint — slim non-blocking banner ───────────
+   Editor-first portrait keeps the canvas usable; the hint is a dismissable
+   strip below the mobile top bar, not a full-screen blocker. Suppressed in
+   the Advanced dashboard fallback. */
+.ws-rotate-hint { display: none; }
+
+@media (pointer: coarse) and (orientation: portrait),
+       (max-width: 1024px) and (orientation: portrait) {
+  body.ws-session-loaded:not(.ws-advanced) .ws-rotate-hint:not(.hidden) {
+    display: flex;
+    /* "Non-blocking" for real: the band overlays the zoom/pan row, so taps
+       must pass through it — only the dismiss button stays interactive. */
+    pointer-events: none;
+    position: fixed;
+    top: calc(44px + env(safe-area-inset-top, 0px));
+    left: 0; right: 0;
+    z-index: 95;
+    background: rgba(16, 24, 40, 0.92);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    border-bottom: 1px solid #285d98;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #fff;
+    text-align: center;
+    padding: 7px 12px;
+  }
+  body.ws-session-loaded:not(.ws-advanced) .ws-rotate-hint:not(.hidden) .ws-rotate-hint-dismiss {
+    pointer-events: auto;
+  }
+}
+
+.ws-rotate-hint-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.ws-rotate-hint-text {
+  font-size: 12px;
+  color: #cdd8e8;
+  max-width: none;
+}
+
+.ws-rotate-hint-dismiss {
+  padding: 4px 14px;
+  background: #173860;
+  border: 1px solid #285d98;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 /* ── U3: Floating touch selection toolbar ──────────────────────────────────── */
@@ -2092,4 +2594,98 @@ body > span[style*="line-height:11px"] {
   color: #333;
   border-top: 1px solid #000;
   padding-top: 4px;
+/* ── UQ-013 / FL-MOB-03: Tools panel always visible in landscape mobile ──────
+   On landscape tablet (coarse pointer + landscape), restore the whole-sheet
+   editor sidebar as a permanent fixed left panel instead of collapsing it to
+   display:contents and requiring the Tools drawer toggle. The canvas area is
+   offset 200 px to the right so nothing overlaps. */
+@media (pointer: coarse) and (orientation: landscape) {
+  /* Restore sidebar as persistent left panel below the mobile top bar.
+     Gated on :not(.ws-force-desktop): the force-desktop counter-block only
+     resets display/padding, so without this gate the sidebar would float as
+     a fixed 200px overlay over the desktop dashboard on touch devices. */
+  html:not(.ws-force-desktop) body:not(.ws-advanced) .ws-sidebar {
+    display: flex !important;
+    flex-direction: column;
+    position: fixed;
+    left: env(safe-area-inset-left, 0px);
+    top: calc(44px + env(safe-area-inset-top, 0px));
+    bottom: 0;
+    width: 200px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--panel, #161616);
+    border-right: 1px solid var(--border, #393939);
+    z-index: 50;
+    padding: 4px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 8px);
+    gap: 0;
+  }
+
+  /* Sidebar drawers (Tools/Layers/Browse/Info): always visible inline, not
+     bottom sheets */
+  html:not(.ws-force-desktop) body:not(.ws-advanced) .ws-sidebar .ws-drawer {
+    display: flex !important;
+    position: static !important;
+    transform: none !important;
+    max-height: none !important;
+    height: auto;
+    border-radius: 0 !important;
+    border-top: none;
+    padding: 4px 6px !important;
+    background: transparent !important;
+    overflow-y: visible !important;
+    box-shadow: none !important;
+    flex-direction: column;
+  }
+
+  /* Offset canvas layout left edge to clear the sidebar */
+  html:not(.ws-force-desktop) body:not(.ws-advanced) .ws-layout {
+    padding-left: calc(200px + env(safe-area-inset-left, 0px));
+  }
+
+  /* Give the canvas full height minus the mobile top bar */
+  .ws-scroll-wrap {
+    max-height: calc(100dvh - 44px - env(safe-area-inset-top, 0px)) !important;
+  }
+
+  /* Hide the sidebar drawers' toggles in the mobile top bar — the sidebar
+     pins all four (Tools/Layers/Browse/Info) permanently visible, so their
+     toggles would only add a phantom .open plus a dead backdrop. */
+  .ws-mobile-top-bar [data-drawer-toggle="tools"],
+  .ws-mobile-top-bar [data-drawer-toggle="layers"],
+  .ws-mobile-top-bar [data-drawer-toggle="browse"],
+  .ws-mobile-top-bar [data-drawer-toggle="info"] {
+    display: none !important;
+  }
+}
+
+/* ── UQ-013 / FL-MOB-04: Safari "Request Desktop Site" — force desktop layout ──
+   When a touch device reports a desktop UA (Safari "Request Desktop Site"),
+   suppress every mobile-only rule so the full dense workbench is shown.
+   The class is set synchronously in the <head> before first paint. */
+html.ws-force-desktop .ws-first-screen { display: none !important; }
+html.ws-force-desktop .ws-mobile-top-bar,
+html.ws-force-desktop .ws-mobile-bottom-bar { display: none !important; }
+html.ws-force-desktop .ws-sidebar { display: flex !important; }
+html.ws-force-desktop .ws-drawer { display: contents !important; }
+html.ws-force-desktop .ws-canvas-area { flex: 1 !important; width: auto !important; }
+html.ws-force-desktop .ws-layout {
+  min-height: unset !important; max-height: unset !important; padding-left: 0 !important;
+}
+html.ws-force-desktop .ws-scroll-wrap { max-height: unset !important; }
+html.ws-force-desktop .wrap { max-width: unset !important; padding: unset !important; }
+/* Restore all desktop panels that the mobile session-loaded rule hides.
+   The extra html.ws-force-desktop prefix gives higher specificity than the
+   original body.ws-session-loaded rule which uses display:none !important. */
+html.ws-force-desktop body.ws-session-loaded:not(.ws-advanced) .wrap > *:not(#wholeSheetPanel):not(#cellInspectorPanel):not(#bugReportModal):not(.ws-drawer):not(#sourceFramesRow):not(#runtimePreflightBanner):not(#draftRestoreBanner) {
+  display: block !important;
+}
+html.ws-force-desktop body.ws-session-loaded:not(.ws-advanced) #sourceFramesRow {
+  display: grid !important;
+}
+html.ws-force-desktop body.ws-session-loaded:not(.ws-advanced) .wrap > .ws-drawer,
+html.ws-force-desktop body.ws-session-loaded:not(.ws-advanced) #sourceFramesRow > .ws-drawer,
+html.ws-force-desktop body.ws-session-loaded:not(.ws-advanced) .ws-drawer > .two-col {
+  display: contents !important;
 }

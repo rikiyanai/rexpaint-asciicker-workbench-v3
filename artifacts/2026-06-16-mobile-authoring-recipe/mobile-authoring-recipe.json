@@ -1,0 +1,95 @@
+{
+  "mode": "mobile_authoring",
+  "seed": 42,
+  "generated_at": "2026-06-16T10:48:57.070Z",
+  "template": "player_native_idle_only",
+  "glyph": 67,
+  "fg": "#ffec27",
+  "bg": "#1d2b53",
+  "include_frame_add": true,
+  "steps": [
+    {
+      "action": "apply_mobile_first_screen_template",
+      "template": "player_native_idle_only"
+    },
+    {
+      "action": "open_drawer",
+      "drawer": "tools"
+    },
+    {
+      "action": "set_draw_state",
+      "glyph": 67,
+      "fg": "#ffec27",
+      "bg": "#1d2b53"
+    },
+    {
+      "action": "paint_cell",
+      "x": 7,
+      "y": 3,
+      "glyph": 67
+    },
+    {
+      "action": "paint_cell",
+      "x": 15,
+      "y": 5,
+      "glyph": 67
+    },
+    {
+      "action": "paint_cell",
+      "x": 10,
+      "y": 2,
+      "glyph": 67
+    },
+    {
+      "action": "paint_cell",
+      "x": 12,
+      "y": 4,
+      "glyph": 67
+    },
+    {
+      "action": "paint_cell",
+      "x": 22,
+      "y": 18,
+      "glyph": 67
+    },
+    {
+      "action": "paint_cell",
+      "x": 21,
+      "y": 10,
+      "glyph": 67
+    },
+    {
+      "action": "paint_cell",
+      "x": 16,
+      "y": 16,
+      "glyph": 67
+    },
+    {
+      "action": "paint_cell",
+      "x": 15,
+      "y": 3,
+      "glyph": 67
+    },
+    {
+      "action": "rect_drag",
+      "x1": 29,
+      "y1": 10,
+      "x2": 50,
+      "y2": 22,
+      "glyph": 67
+    },
+    {
+      "action": "frames_add_frame"
+    },
+    {
+      "action": "save_via_mobile_topbar"
+    },
+    {
+      "action": "export_via_files_drawer"
+    },
+    {
+      "action": "verify_export_contains_glyph",
+      "glyph": 67
+    }
+  ]
+}

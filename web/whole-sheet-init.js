@@ -184,7 +184,12 @@ class EraseTool {
   _erase(x, y) {
     if (!this.canvas) return;
     if (x < 0 || y < 0 || x >= this.canvas.width || y >= this.canvas.height) return;
-    this.canvas.setCell(x, y, 0, [255, 255, 255], [0, 0, 0]);
+    const activeLayer = this.canvas.layerStack && this.canvas.layerStack.getActiveLayer();
+    if (activeLayer) {
+      const cell = activeLayer.getCell(x, y);
+      if (cell && cell.bg && cell.bg[0] === 255 && cell.bg[1] === 0 && cell.bg[2] === 255) return;
+    }
+    this.canvas.setCell(x, y, 0, [255, 255, 255], [255, 0, 255]);
   }
   _line(x0, y0, x1, y1) {
     const cells = [];
@@ -336,6 +341,9 @@ let editorState = {
   drawGlyph: 64,
   drawFg: [255, 255, 255],
   drawBg: [0, 0, 0],
+  // B3/B4 recents — last-used colors per channel (LRU, max 8 each).
+  recentFg: [],
+  recentBg: [],
   applyGlyph: true,
   applyFg: true,
   applyBg: true,
@@ -366,6 +374,7 @@ let editorState = {
   _lastTouchPointerType: '',
   _strokeDirty: false,
   _pendingHistorySnapshot: null,
+  _gestureStartZoom: null,
   history: [],
   future: [],
   // Clipboard state (W19-W22 parity)
@@ -793,6 +802,31 @@ async function mount({
   zoomValue.textContent = 'Fit';
   zoomRow.appendChild(zoomValue);
 
+  // FL-MOB-02: translucent pan chrome adjacent to zoom bar (mobile only via CSS)
+  const scrollChrome = document.createElement('div');
+  scrollChrome.className = 'ws-scroll-chrome';
+  [
+    { label: '◄', title: 'Pan left',  dx: -96, dy:   0 },
+    { label: '►', title: 'Pan right', dx:  96, dy:   0 },
+    { label: '▲', title: 'Pan up',    dx:   0, dy: -96 },
+    { label: '▼', title: 'Pan down',  dx:   0, dy:  96 },
+  ].forEach(({ label, title, dx, dy }) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ws-scroll-chrome-btn';
+    btn.title = title;
+    btn.setAttribute('aria-label', title);
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      const sw = document.getElementById('wholeSheetScroll');
+      if (!sw) return;
+      if (dx !== 0) sw.scrollLeft = Math.max(0, sw.scrollLeft + dx);
+      if (dy !== 0) sw.scrollTop  = Math.max(0, sw.scrollTop  + dy);
+    });
+    scrollChrome.appendChild(btn);
+  });
+  zoomRow.appendChild(scrollChrome);
+
   viewportShell.appendChild(zoomRow);
 
   const scrollWrap = document.createElement('div');
@@ -991,8 +1025,11 @@ async function mount({
   // Two-pointer pinch-zoom / pan gesture tracking
   attachGestures(canvasEl, {
     onGestureStart() {
-      // Flush any in-progress stroke to prevent orphaned stroke state
-      _onStrokeEnd();
+      // The first finger already painted before the second arrived. The
+      // user's intent is pan/zoom, not an edit — revert the stray cell
+      // instead of committing it.
+      _revertActiveStroke();
+      editorState._gestureStartZoom = editorState.appliedCanvasZoom || 1;
       editorState._gestureActive = true;
       if (editorState.canvas) editorState.canvas._gestureActive = true;
     },
@@ -1018,7 +1055,15 @@ async function mount({
       const snapped = snapFn(current);
       editorState.canvasZoom = snapped;
       _applyCanvasZoom({ preserveCenter: true });
-      _emitDocumentStateChange('zoom');
+      // Emit only when the gesture actually changed the zoom. A pure pan
+      // (zoom unchanged) must not mark the session dirty or trigger a save —
+      // that silently persisted pending work and cleared dirty ownership at
+      // the end of every two-finger gesture.
+      const startZoom = editorState._gestureStartZoom;
+      editorState._gestureStartZoom = null;
+      if (snapped !== (startZoom == null ? snapped : startZoom)) {
+        _emitDocumentStateChange('zoom');
+      }
     },
   });
 
@@ -1032,6 +1077,7 @@ async function mount({
   _updateToolUI();
   _renderGlyphPicker();
   _renderPaletteGrid();
+  _renderRecentsRow();
   _updateInfoDrawState();
   _updateInfoApplyModes();
   _applyModeUI();
@@ -1098,6 +1144,30 @@ function _cancelDocumentTransaction() {
   editorState._strokeDirty = false;
   editorState._pendingHistorySnapshot = null;
   _updateHistoryButtons();
+}
+
+/**
+ * Revert an in-progress stroke to its pre-stroke document snapshot without
+ * pushing a history entry. Canvas paints on pointerdown, so by the time a
+ * tap-hold inspect or a two-finger gesture reveals the touch was not meant
+ * as an edit, a stray cell is already painted — this undoes it exactly.
+ * @returns {boolean} true if a dirty stroke was reverted
+ */
+function _revertActiveStroke() {
+  if (!editorState._strokeDirty) return false;
+  const snap = editorState._pendingHistorySnapshot;
+  editorState._strokeDirty = false;
+  editorState._pendingHistorySnapshot = null;
+  if (snap) {
+    _applyDocumentSnapshot(snap);
+    // The stray cells already reached the workbench mirror through
+    // onCellEdited during the stroke — resync it through the same
+    // authoritative channel undo/redo use, or state.layers keeps the
+    // paint the canvas no longer shows and save/export leak it.
+    _emitDocumentStateChange('stroke-revert');
+  }
+  _updateHistoryButtons();
+  return true;
 }
 
 function _copySelection() {
@@ -1174,11 +1244,206 @@ function _cutSelection() {
  * Escape or tool switch cancels.
  * @returns {boolean} true if paste mode entered
  */
+const _PASTE_CURSOR_SVG = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'><path d='M10 3v14M3 10h14' stroke='%232ecc71' stroke-width='3' stroke-linecap='round'/></svg>\") 10 10, copy";
+
+const _RECENTS_MAX = 8;
+
+function _hideRecentsContextMenu() {
+  const el = document.getElementById('wsRecentsContextMenu');
+  if (el) el.remove();
+  document.removeEventListener('mousedown', _onRecentsContextMenuDocClick, true);
+  document.removeEventListener('keydown', _onRecentsContextMenuKey, true);
+}
+
+function _onRecentsContextMenuDocClick(e) {
+  const el = document.getElementById('wsRecentsContextMenu');
+  if (!el) return;
+  if (el.contains(e.target)) return;
+  _hideRecentsContextMenu();
+}
+
+function _onRecentsContextMenuKey(e) {
+  if (e.key === 'Escape') _hideRecentsContextMenu();
+}
+
+function _showRecentsContextMenu(channel, anchorEl, clientX, clientY) {
+  _hideRecentsContextMenu();
+  const list = channel === 'bg' ? editorState.recentBg : editorState.recentFg;
+  if (!list || list.length === 0) return;
+  const menu = document.createElement('div');
+  menu.id = 'wsRecentsContextMenu';
+  menu.className = 'ws-recents-ctx';
+  const heading = document.createElement('div');
+  heading.className = 'ws-recents-ctx-heading';
+  heading.textContent = `Recent ${channel === 'bg' ? 'bg' : 'fg'} colors`;
+  menu.appendChild(heading);
+  const grid = document.createElement('div');
+  grid.className = 'ws-recents-ctx-grid';
+  for (const rgb of list) {
+    const sw = document.createElement('button');
+    sw.type = 'button';
+    sw.className = 'ws-recents-ctx-swatch';
+    sw.style.background = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+    sw.title = `rgb(${rgb.join(',')})`;
+    sw.addEventListener('click', () => {
+      if (channel === 'fg') editorState.drawFg = [...rgb];
+      else editorState.drawBg = [...rgb];
+      _pushRecentColor(channel, rgb);
+      const fgEl = document.getElementById('wsFgColor');
+      const bgEl = document.getElementById('wsBgColor');
+      if (fgEl) fgEl.value = _rgbToHex(editorState.drawFg);
+      if (bgEl) bgEl.value = _rgbToHex(editorState.drawBg);
+      _forEachTool((t) => _setToolColors(t, editorState.drawFg, editorState.drawBg));
+      _renderGlyphPicker(); _renderPaletteGrid(); _updateInfoDrawState();
+      _hideRecentsContextMenu();
+    });
+    grid.appendChild(sw);
+  }
+  menu.appendChild(grid);
+  document.body.appendChild(menu);
+  // Position near pointer, clamped to viewport.
+  const rect = menu.getBoundingClientRect();
+  let left = clientX || (anchorEl?.getBoundingClientRect().right ?? 0);
+  let top = clientY || (anchorEl?.getBoundingClientRect().bottom ?? 0);
+  if (left + rect.width > window.innerWidth) left = window.innerWidth - rect.width - 4;
+  if (top + rect.height > window.innerHeight) top = window.innerHeight - rect.height - 4;
+  menu.style.left = Math.max(4, left) + 'px';
+  menu.style.top = Math.max(4, top) + 'px';
+  // Defer attaching outside-close listeners so the originating contextmenu
+  // event doesn't trip them.
+  setTimeout(() => {
+    document.addEventListener('mousedown', _onRecentsContextMenuDocClick, true);
+    document.addEventListener('keydown', _onRecentsContextMenuKey, true);
+  }, 0);
+}
+
+function _pushRecentColor(channel, rgb) {
+  if (!Array.isArray(rgb) || rgb.length !== 3) return;
+  const key = `${rgb[0]},${rgb[1]},${rgb[2]}`;
+  const list = channel === 'bg' ? editorState.recentBg : editorState.recentFg;
+  const idx = list.findIndex((c) => `${c[0]},${c[1]},${c[2]}` === key);
+  if (idx >= 0) list.splice(idx, 1);
+  list.unshift([rgb[0], rgb[1], rgb[2]]);
+  if (list.length > _RECENTS_MAX) list.length = _RECENTS_MAX;
+  _renderRecentsRow();
+}
+
+function _renderRecentsRow() {
+  const host = document.getElementById('wsRecentsRow');
+  if (!host) return;
+  host.innerHTML = '';
+  const _mkSwatch = (rgb, channel) => {
+    const s = document.createElement('button');
+    s.type = 'button';
+    s.className = 'ws-recent-swatch';
+    s.style.background = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+    s.title = `recent ${channel}: rgb(${rgb.join(',')}). LMB = apply to ${channel}; RMB = apply to ${channel === 'fg' ? 'bg' : 'fg'}.`;
+    s.addEventListener('click', () => {
+      if (channel === 'fg') editorState.drawFg = [...rgb];
+      else editorState.drawBg = [...rgb];
+      const fgEl = document.getElementById('wsFgColor');
+      const bgEl = document.getElementById('wsBgColor');
+      if (fgEl) fgEl.value = _rgbToHex(editorState.drawFg);
+      if (bgEl) bgEl.value = _rgbToHex(editorState.drawBg);
+      _forEachTool((t) => _setToolColors(t, editorState.drawFg, editorState.drawBg));
+      _renderGlyphPicker(); _renderPaletteGrid(); _updateInfoDrawState();
+    });
+    s.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const swapTo = channel === 'fg' ? 'bg' : 'fg';
+      if (swapTo === 'fg') editorState.drawFg = [...rgb];
+      else editorState.drawBg = [...rgb];
+      const fgEl = document.getElementById('wsFgColor');
+      const bgEl = document.getElementById('wsBgColor');
+      if (fgEl) fgEl.value = _rgbToHex(editorState.drawFg);
+      if (bgEl) bgEl.value = _rgbToHex(editorState.drawBg);
+      _forEachTool((t) => _setToolColors(t, editorState.drawFg, editorState.drawBg));
+      _renderGlyphPicker(); _renderPaletteGrid(); _updateInfoDrawState();
+    });
+    return s;
+  };
+  const fgGroup = document.createElement('div');
+  fgGroup.className = 'ws-recents-group';
+  const fgLbl = document.createElement('span');
+  fgLbl.className = 'ws-recents-label';
+  fgLbl.textContent = 'fg';
+  fgGroup.appendChild(fgLbl);
+  for (const c of editorState.recentFg) fgGroup.appendChild(_mkSwatch(c, 'fg'));
+  host.appendChild(fgGroup);
+  const bgGroup = document.createElement('div');
+  bgGroup.className = 'ws-recents-group';
+  const bgLbl = document.createElement('span');
+  bgLbl.className = 'ws-recents-label';
+  bgLbl.textContent = 'bg';
+  bgGroup.appendChild(bgLbl);
+  for (const c of editorState.recentBg) bgGroup.appendChild(_mkSwatch(c, 'bg'));
+  host.appendChild(bgGroup);
+}
+
+function _ensurePasteGhost() {
+  let el = document.getElementById('wsPasteGhost');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'wsPasteGhost';
+    el.className = 'ws-paste-ghost';
+    document.body.appendChild(el);
+  }
+  return el;
+}
+
+function _hidePasteGhost() {
+  const el = document.getElementById('wsPasteGhost');
+  if (el) el.style.display = 'none';
+}
+
+function _updatePasteGhost(cx, cy) {
+  if (!editorState.pasteMode) { _hidePasteGhost(); return; }
+  const clip = editorState.clipboard;
+  if (!clip) { _hidePasteGhost(); return; }
+  const clipW = Math.max(0, Number(clip.bounds?.w) || 0);
+  const clipH = Math.max(0, Number(clip.bounds?.h) || 0);
+  if (!clipW || !clipH) { _hidePasteGhost(); return; }
+  const canvas = editorState.canvas;
+  const canvasEl = canvas && canvas.canvasElement;
+  if (!canvasEl) { _hidePasteGhost(); return; }
+  const rect = canvasEl.getBoundingClientRect();
+  if (rect.width <= 0 || canvasEl.width <= 0) { _hidePasteGhost(); return; }
+  const pixelsPerCell = (rect.width / canvasEl.width) * CELL_SIZE;
+  const el = _ensurePasteGhost();
+  el.style.display = 'block';
+  el.style.left = (rect.left + cx * pixelsPerCell) + 'px';
+  el.style.top = (rect.top + cy * pixelsPerCell) + 'px';
+  el.style.width = (clipW * pixelsPerCell) + 'px';
+  el.style.height = (clipH * pixelsPerCell) + 'px';
+}
+
+let _wsStatusTimer = null;
+function _showWorkbenchStatus(message, ms = 2500) {
+  let el = document.getElementById('wsStatusToast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'wsStatusToast';
+    el.className = 'ws-status-toast';
+    const host = document.querySelector('.ws-canvas-area') || document.body;
+    host.appendChild(el);
+  }
+  el.textContent = String(message || '');
+  el.classList.add('ws-status-toast-show');
+  if (_wsStatusTimer) clearTimeout(_wsStatusTimer);
+  _wsStatusTimer = setTimeout(() => {
+    el.classList.remove('ws-status-toast-show');
+    _wsStatusTimer = null;
+  }, ms);
+}
+
 function _enterPasteMode() {
+  if (editorState.pasteMode) { _cancelPasteMode(); return false; }
   if (!editorState.clipboard || countClipboardCells(editorState.clipboard) === 0) return false;
   editorState.pasteMode = true;
   const canvasEl = editorState.canvas && editorState.canvas.canvasElement;
-  if (canvasEl) canvasEl.style.cursor = 'copy';
+  if (canvasEl) canvasEl.style.cursor = _PASTE_CURSOR_SVG;
+  const btn = document.getElementById('wsPasteSelection');
+  if (btn) { btn.classList.add('ws-tool-active'); btn.classList.add('ws-paste-armed'); }
   return true;
 }
 
@@ -1187,6 +1452,9 @@ function _cancelPasteMode() {
   editorState.pasteMode = false;
   const canvasEl = editorState.canvas && editorState.canvas.canvasElement;
   if (canvasEl) canvasEl.style.cursor = 'crosshair';
+  const btn = document.getElementById('wsPasteSelection');
+  if (btn) { btn.classList.remove('ws-tool-active'); btn.classList.remove('ws-paste-armed'); }
+  _hidePasteGhost();
 }
 
 /**
@@ -1200,7 +1468,22 @@ function _pasteAt(cx, cy) {
   if (!canvas) return;
 
   const layerEntries = resolveWritableClipboardLayers(editorState.layerStack, clip);
-  if (!layerEntries || layerEntries.length === 0) return;
+  if (!layerEntries || layerEntries.length === 0) {
+    // All referenced layers are locked or out-of-range — silent no-op was the
+    // pre-codex-review failure mode. Surface it (codex 2026-06-03 MEDIUM).
+    const allLocked = Array.isArray(clip.layers) && clip.layers.length > 0
+      && clip.layers.every((e) => {
+        const i = Number(e?.layerIndex);
+        if (!Number.isInteger(i)) return true;
+        const L = editorState.layerStack?.layers?.[i];
+        return !L || L.locked;
+      });
+    if (allLocked) {
+      console.warn('[workbench] Paste skipped: all target layers are locked.');
+      _showWorkbenchStatus('Paste blocked: target layers locked');
+    }
+    return;
+  }
   const clipW = Math.max(0, Number(clip.bounds?.w) || 0);
   const clipH = Math.max(0, Number(clip.bounds?.h) || 0);
   if (!clipW || !clipH) return;
@@ -1216,7 +1499,7 @@ function _pasteAt(cx, cy) {
   }
 
   _commitLayerMutation();
-  _cancelPasteMode();
+  // Paste mode stays armed — user can keep stamping until Escape or tool switch
 }
 
 // ── Selection transforms (W24-W27) ──
@@ -1313,7 +1596,7 @@ function _transformSelection(kind) {
   // Clear source region first
   for (let y = bounds.y; y < bounds.y + bounds.height; y++) {
     for (let x = bounds.x; x < bounds.x + bounds.width; x++) {
-      canvas.setCell(x, y, 0, [255, 255, 255], [0, 0, 0]);
+      canvas.setCell(x, y, 0, [255, 255, 255], [255, 0, 255]);
     }
   }
 
@@ -1875,10 +2158,26 @@ function _handleTextKey(e) {
   return false;
 }
 
+function _swapFgBg() {
+  const tmp = editorState.drawFg;
+  editorState.drawFg = editorState.drawBg;
+  editorState.drawBg = tmp;
+  _forEachTool((t) => _setToolColors(t, editorState.drawFg, editorState.drawBg));
+  const fgEl = document.getElementById('wsFgColor');
+  if (fgEl) fgEl.value = _rgbToHex(editorState.drawFg);
+  const bgEl = document.getElementById('wsBgColor');
+  if (bgEl) bgEl.value = _rgbToHex(editorState.drawBg);
+  _renderGlyphPicker();
+  _renderPaletteGrid();
+  _updateInfoDrawState();
+}
+
 function _applyEyedropperSample(glyph, fg, bg) {
   editorState.drawGlyph = glyph & 0xFF;
   editorState.drawFg = [...fg];
   editorState.drawBg = [...bg];
+  _pushRecentColor('fg', editorState.drawFg);
+  _pushRecentColor('bg', editorState.drawBg);
   // W29/W30 match-source contract: eyedropper is the explicit sample action.
   editorState.lastSampledCell = { glyph: glyph & 0xFF, fg: [...fg], bg: [...bg] };
 
@@ -2251,6 +2550,10 @@ function _onKeyDown(e) {
       _switchTool('select');
       e.preventDefault();
       break;
+    case 'x':
+      _swapFgBg();
+      e.preventDefault();
+      break;
   }
 }
 
@@ -2576,12 +2879,20 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
   fgInput.id = 'wsFgColor';
   fgInput.value = _rgbToHex(editorState.drawFg);
   fgInput.title = 'Foreground color';
-  fgInput.addEventListener('input', () => {
+  // Use 'change' not 'input' so only the final committed picker value pushes to recents
+  // (codex review 2026-06-03: input fires on every intermediate drag value, polluting LRU).
+  fgInput.addEventListener('change', () => {
     editorState.drawFg = _hexToRgb(fgInput.value);
+    _pushRecentColor('fg', editorState.drawFg);
     _forEachTool((t) => _setToolColors(t, editorState.drawFg, editorState.drawBg));
     _renderGlyphPicker();
     _renderPaletteGrid();
     _updateInfoDrawState();
+  });
+  // B3: right-click the fg swatch opens recents context menu.
+  fgInput.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    _showRecentsContextMenu('fg', fgInput, e.clientX, e.clientY);
   });
 
   const bgLabel = document.createElement('span');
@@ -2592,19 +2903,130 @@ function _buildSidebar(layerCount, activeLayer, layerNames, visibleLayers, gridC
   bgInput.id = 'wsBgColor';
   bgInput.value = _rgbToHex(editorState.drawBg);
   bgInput.title = 'Background color';
-  bgInput.addEventListener('input', () => {
+  // Use 'change' not 'input' so only the final committed picker value pushes to recents
+  // (codex review 2026-06-03: input fires on every intermediate drag value, polluting LRU).
+  bgInput.addEventListener('change', () => {
     editorState.drawBg = _hexToRgb(bgInput.value);
+    _pushRecentColor('bg', editorState.drawBg);
     _forEachTool((t) => _setToolColors(t, editorState.drawFg, editorState.drawBg));
     _renderGlyphPicker();
     _renderPaletteGrid();
     _updateInfoDrawState();
   });
+  // B3: right-click the bg swatch opens recents context menu.
+  bgInput.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    _showRecentsContextMenu('bg', bgInput, e.clientX, e.clientY);
+  });
+
+  const swapBtn = document.createElement('button');
+  swapBtn.id = 'wsSwapFgBg';
+  swapBtn.textContent = '⇄';
+  swapBtn.className = 'ws-tool-btn';
+  swapBtn.title = 'Swap foreground / background (X)';
+  swapBtn.addEventListener('click', _swapFgBg);
 
   swatchRow.appendChild(fgLabel);
   swatchRow.appendChild(fgInput);
+  swatchRow.appendChild(swapBtn);
   swatchRow.appendChild(bgLabel);
   swatchRow.appendChild(bgInput);
   paletteSection.appendChild(swatchRow);
+
+  // Dedicated transparent-key row — MAG (255,0,255) primary, YEL (255,255,0) secondary (Y9-2).
+  // FL-2026-06-03: user reported picking "magenta-ish" from palette and it not being the canonical
+  // transparent key — these pin to the exact values used by the runtime renderer.
+  const transparentRow = document.createElement('div');
+  transparentRow.className = 'ws-transparent-row';
+  transparentRow.title = 'Transparent keys: MAG (255,0,255) makes a cell see-through in the runtime; YEL (255,255,0) is the Y9-2 secondary transparent key. LMB = set foreground, RMB = set background.';
+  const _mkTransparentBtn = (rgb, label, title) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ws-transparent-btn';
+    b.textContent = label;
+    b.title = title;
+    b.style.background = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+    b.style.color = rgb[0] + rgb[1] + rgb[2] > 384 ? '#000' : '#fff';
+    b.addEventListener('click', () => {
+      editorState.drawFg = [...rgb];
+      _pushRecentColor('fg', editorState.drawFg);
+      const fgEl = document.getElementById('wsFgColor');
+      if (fgEl) fgEl.value = _rgbToHex(editorState.drawFg);
+      _forEachTool((t) => _setToolColors(t, editorState.drawFg, editorState.drawBg));
+      _renderGlyphPicker(); _renderPaletteGrid(); _updateInfoDrawState();
+    });
+    b.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      editorState.drawBg = [...rgb];
+      _pushRecentColor('bg', editorState.drawBg);
+      const bgEl = document.getElementById('wsBgColor');
+      if (bgEl) bgEl.value = _rgbToHex(editorState.drawBg);
+      _forEachTool((t) => _setToolColors(t, editorState.drawFg, editorState.drawBg));
+      _renderGlyphPicker(); _renderPaletteGrid(); _updateInfoDrawState();
+    });
+    return b;
+  };
+  transparentRow.appendChild(_mkTransparentBtn([255,0,255], 'MAG transparent', 'Primary transparent key (255,0,255) — runtime renders as see-through. LMB = FG, RMB = BG.'));
+  transparentRow.appendChild(_mkTransparentBtn([255,255,0], 'YEL transparent-2', 'Secondary transparent key (255,255,0) — Y9-2 engine. LMB = FG, RMB = BG.'));
+  paletteSection.appendChild(transparentRow);
+
+  // B5: prefilled FBG-combo subpalette derived from Y9-2 semantic_maps/player-0100.json
+  // canonical palette_roles. Each button selects FG+BG together (LMB) or swaps (RMB).
+  const fbgRow = document.createElement('div');
+  fbgRow.className = 'ws-fbg-combo-row';
+  fbgRow.title = 'Canonical FG/BG combos from Y9-2 player-0100. LMB = apply (fg,bg). RMB = apply swapped (bg,fg).';
+  const _mkFbgBtn = (fg, bg, label, hint) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ws-fbg-combo-btn';
+    b.title = `${label} — fg=rgb(${fg.join(',')}) bg=rgb(${bg.join(',')}). ${hint}`;
+    const fgHalf = document.createElement('span');
+    fgHalf.className = 'ws-fbg-half ws-fbg-half-top';
+    fgHalf.style.background = `rgb(${fg[0]},${fg[1]},${fg[2]})`;
+    const bgHalf = document.createElement('span');
+    bgHalf.className = 'ws-fbg-half ws-fbg-half-bot';
+    bgHalf.style.background = `rgb(${bg[0]},${bg[1]},${bg[2]})`;
+    b.appendChild(fgHalf);
+    b.appendChild(bgHalf);
+    const _apply = (f, g) => {
+      editorState.drawFg = [...f];
+      editorState.drawBg = [...g];
+      _pushRecentColor('fg', editorState.drawFg);
+      _pushRecentColor('bg', editorState.drawBg);
+      const fgEl = document.getElementById('wsFgColor');
+      const bgEl = document.getElementById('wsBgColor');
+      if (fgEl) fgEl.value = _rgbToHex(editorState.drawFg);
+      if (bgEl) bgEl.value = _rgbToHex(editorState.drawBg);
+      _forEachTool((t) => _setToolColors(t, editorState.drawFg, editorState.drawBg));
+      _renderGlyphPicker(); _renderPaletteGrid(); _updateInfoDrawState();
+    };
+    b.addEventListener('click', () => _apply(fg, bg));
+    b.addEventListener('contextmenu', (e) => { e.preventDefault(); _apply(bg, fg); });
+    return b;
+  };
+  // Source: docs/research/ascii/semantic_maps/player-0100.json → palette_roles
+  // (vendor symlink to asciicker-Y9-2). If the Y9-2 source updates, revise this
+  // list to match. Last synced: 2026-06-03 (codex review 2026-06-03: provenance).
+  const FBG_COMBOS = [
+    { fg: [0,0,0],       bg: [255,255,85],  label: 'hair on subcell',  hint: 'black hair fg over yellow subcell-fill bg' },
+    { fg: [170,0,0],     bg: [255,85,85],   label: 'mouth on skin',    hint: 'dark-red detail on light-red skin' },
+    { fg: [255,255,255], bg: [255,85,85],   label: 'shine on skin',    hint: 'white highlight on skin' },
+    { fg: [0,0,0],       bg: [255,85,85],   label: 'eye on skin',      hint: 'black eye on skin' },
+    { fg: [170,0,170],   bg: [255,255,85],  label: 'shirt edge',       hint: 'purple shirt fg on yellow subcell-fill bg' },
+    { fg: [0,0,170],     bg: [85,85,255],   label: 'pants seam',       hint: 'dark-blue fg on bright-blue pants bg' },
+    { fg: [170,85,0],    bg: [255,255,85],  label: 'boot edge',        hint: 'brown boot fg on yellow subcell-fill bg' },
+    { fg: [255,255,255], bg: [0,0,170],     label: 'pants highlight',  hint: 'white highlight on dark-blue pants' },
+  ];
+  for (const c of FBG_COMBOS) fbgRow.appendChild(_mkFbgBtn(c.fg, c.bg, c.label, c.hint));
+  paletteSection.appendChild(fbgRow);
+
+  // B4: recents subpalette — auto-tracks last 8 fg + 8 bg selections.
+  const recentsRow = document.createElement('div');
+  recentsRow.id = 'wsRecentsRow';
+  recentsRow.className = 'ws-recents-row';
+  recentsRow.title = 'Recently-used colors (FG row top, BG row bottom). LMB applies to the same channel; RMB applies to the opposite channel.';
+  paletteSection.appendChild(recentsRow);
+
   toolsDrawer.appendChild(paletteSection);
 
   // 3.4 Tools / Apply (spec §3.4: two-column layout)
@@ -4081,6 +4503,7 @@ function _onCanvasPointerLeave() {
   _cancelTapHold();
   _dismissTapHoldInspect();
   if (editorState.activeTool !== 'text') _onStrokeEnd();
+  _hidePasteGhost();
   const posEl = document.getElementById('wsPos');
   if (posEl) posEl.textContent = '-,-';
   // U6: reset mobile cursor position
@@ -4179,6 +4602,9 @@ function _onTapHoldStart(e) {
   editorState._tapHoldTimer = setTimeout(() => {
     editorState._tapHoldTimer = null;
     editorState._tapHoldFired = true;
+    // pointerdown already painted the held cell; revert it before reading so
+    // the inspector shows the original content, not the fresh paint.
+    _revertActiveStroke();
     _showTapHoldInspect(canvasEl, e.clientX, e.clientY);
   }, TAP_HOLD_DELAY_MS);
 }
@@ -4303,6 +4729,8 @@ function _onCanvasPointerMove(e) {
   // U6: update mobile cursor position
   const mobilePosEl = document.getElementById('mobileCursorPos');
   if (mobilePosEl) mobilePosEl.textContent = cx + ',' + cy;
+  // B6: paste ghost preview tracks cursor while paste mode is armed.
+  if (editorState.pasteMode) _updatePasteGhost(cx, cy);
 
   const { canvas, layerStack, gridCols, gridRows } = editorState;
   if (canvas && cx >= 0 && cx < gridCols && cy >= 0 && cy < gridRows) {

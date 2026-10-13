@@ -84,15 +84,15 @@ export function resolveWritableClipboardLayers(layerStack, clipboard) {
   if (!layerStack || !clipboard || !Array.isArray(clipboard.layers) || clipboard.layers.length === 0) {
     return null;
   }
+  // Silently skip locked or out-of-range layers. Locked layers shouldn't block paste
+  // on unlocked layers — that turned into a silent no-op for users in FL-2026-06-03.
   const out = [];
   for (const entry of clipboard.layers) {
     const layerIndex = Number(entry?.layerIndex);
-    if (!Number.isInteger(layerIndex) || layerIndex < 0 || layerIndex >= layerStack.layers.length) {
-      return null;
-    }
+    if (!Number.isInteger(layerIndex) || layerIndex < 0 || layerIndex >= layerStack.layers.length) continue;
     const layer = layerStack.layers[layerIndex];
-    if (!layer || layer.locked) return null;
+    if (!layer || layer.locked) continue;
     out.push({ layerIndex, layer, cells: Array.isArray(entry.cells) ? entry.cells : [] });
   }
-  return out;
+  return out.length > 0 ? out : null;
 }

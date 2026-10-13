@@ -1,0 +1,65 @@
+{
+  "sessions_ok": {
+    "3c023c25cbffc3472a35597e801f14ae7cfbb71c": {
+      "checked_at": "2026-08-08T16:05:28.573664+00:00",
+      "results": [
+        {
+          "name": "hooks-integrity",
+          "status": "warn",
+          "summary": "hook registrations missing or malformed \u2014 run `python3 scripts/maintainer/install_hooks.py --apply` to repair"
+        },
+        {
+          "name": "multiplayer-canon-guard",
+          "status": "ok",
+          "summary": "  pipeline failure log present: /Users/r/Downloads/asciicker-pipeline-v3/docs/PLAYWRIGHT_FAILURE_LOG.md"
+        },
+        {
+          "name": "maintainer-smoke",
+          "status": "ok",
+          "summary": "no output"
+        }
+      ]
+    },
+    "81c86b68734e26cd5f93a134b2950da2248fc44b": {
+      "checked_at": "2026-08-12T16:20:59.789459+00:00",
+      "results": [
+        {
+          "name": "hooks-integrity",
+          "status": "warn",
+          "summary": "hook registrations missing or malformed \u2014 run `python3 scripts/maintainer/install_hooks.py --apply` to repair"
+        },
+        {
+          "name": "multiplayer-canon-guard",
+          "status": "ok",
+          "summary": "  pipeline failure log present: /Users/r/Downloads/asciicker-pipeline-v3/docs/PLAYWRIGHT_FAILURE_LOG.md"
+        },
+        {
+          "name": "maintainer-smoke",
+          "status": "ok",
+          "summary": "no output"
+        }
+      ]
+    },
+    "d3041c7a1214d2301b72cef3ae7263509bcf3e3d": {
+      "checked_at": "2026-08-14T02:43:23.848856+00:00",
+      "results": [
+        {
+          "name": "hooks-integrity",
+          "status": "warn",
+          "summary": "hook registrations missing or malformed \u2014 run `python3 scripts/maintainer/install_hooks.py --apply` to repair"
+        },
+        {
+          "name": "multiplayer-canon-guard",
+          "status": "ok",
+          "summary": "  pipeline failure log present: /Users/r/Downloads/asciicker-pipeline-v3/docs/PLAYWRIGHT_FAILURE_LOG.md"
+        },
+        {
+          "name": "maintainer-smoke",
+          "status": "ok",
+          "summary": "no output"
+        }
+      ]
+    }
+  },
+  "state_valid": true
+}

@@ -1,0 +1,123 @@
+{
+  "trace": {
+    "copyResult": null,
+    "enterResult": null,
+    "callsBefore": [
+      {
+        "phase": "beforeHandlers",
+        "pasteMode": false,
+        "hasClipboard": false,
+        "cellCount": 0,
+        "clientX": 485.5,
+        "clientY": 1169.09375
+      }
+    ],
+    "callsAfter": [
+      {
+        "phase": "afterHandlers",
+        "pasteMode": false,
+        "hasClipboard": false,
+        "cellCount": 0
+      }
+    ],
+    "clipboardSnapshotAfterCopy": null
+  },
+  "after_20_20": [
+    {
+      "layerIndex": 0,
+      "glyph": 32,
+      "fg": [
+        0,
+        0,
+        0
+      ],
+      "bg": [
+        255,
+        255,
+        85
+      ]
+    },
+    {
+      "layerIndex": 1,
+      "glyph": 54,
+      "fg": [
+        0,
+        0,
+        0
+      ],
+      "bg": [
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "layerIndex": 2,
+      "glyph": 65,
+      "fg": [
+        0,
+        255,
+        255
+      ],
+      "bg": [
+        34,
+        34,
+        0
+      ]
+    }
+  ],
+  "after_21_20": [
+    {
+      "layerIndex": 0,
+      "glyph": 32,
+      "fg": [
+        0,
+        0,
+        0
+      ],
+      "bg": [
+        255,
+        255,
+        85
+      ]
+    },
+    {
+      "layerIndex": 1,
+      "glyph": 54,
+      "fg": [
+        0,
+        0,
+        0
+      ],
+      "bg": [
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "layerIndex": 2,
+      "glyph": 65,
+      "fg": [
+        0,
+        255,
+        255
+      ],
+      "bg": [
+        34,
+        34,
+        0
+      ]
+    }
+  ],
+  "consoleLog": [
+    {
+      "type": "log",
+      "text": "[trace] pointerdown {\"phase\":\"beforeHandlers\",\"pasteMode\":false,\"hasClipboard\":false,\"cellCount\":0,\"clientX\":485.5,\"clientY\":1169.09375}"
+    },
+    {
+      "type": "log",
+      "text": "[trace] post-pointerdown {\"phase\":\"afterHandlers\",\"pasteMode\":false,\"hasClipboard\":false,\"cellCount\":0}"
+    }
+  ]
+}

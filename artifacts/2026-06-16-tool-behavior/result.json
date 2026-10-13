@@ -1,0 +1,293 @@
+{
+  "overallPass": true,
+  "finalXpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-e25e4406-fa64-4a91-acc8-04c9681c1fea.xp",
+  "results": [
+    {
+      "name": "fresh-mobile-first-screen",
+      "pass": true,
+      "error": "",
+      "data": {
+        "visible": true
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false
+      },
+      "post": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false
+      },
+      "screenshot": "/Users/r/Downloads/asciicker-pipeline-v3/artifacts/2026-06-16-tool-behavior/01-fresh-mobile-first-screen.png"
+    },
+    {
+      "name": "apply-template",
+      "pass": true,
+      "error": "",
+      "data": {
+        "template": "player_native_idle_only",
+        "sessionId": "e25e4406"
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false
+      },
+      "post": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "/Users/r/Downloads/asciicker-pipeline-v3/artifacts/2026-06-16-tool-behavior/02-apply-template.png"
+    },
+    {
+      "name": "cell-tool-and-set-draw-state",
+      "pass": true,
+      "error": "",
+      "data": {
+        "activeTool": "cell",
+        "drawGlyph": 64,
+        "drawFg": [
+          255,
+          255,
+          255
+        ],
+        "drawBg": [
+          0,
+          0,
+          0
+        ]
+      },
+      "pre": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "/Users/r/Downloads/asciicker-pipeline-v3/artifacts/2026-06-16-tool-behavior/03-cell-tool-and-set-draw-state.png"
+    },
+    {
+      "name": "cell-draw-canvas-mutation",
+      "pass": true,
+      "error": "",
+      "data": {
+        "cellBefore": 508,
+        "cellAfter": 508,
+        "activeTool": "cell",
+        "drawGlyph": 64
+      },
+      "pre": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "/Users/r/Downloads/asciicker-pipeline-v3/artifacts/2026-06-16-tool-behavior/04-cell-draw-canvas-mutation.png"
+    },
+    {
+      "name": "eyedropper-sample",
+      "pass": true,
+      "error": "",
+      "data": {
+        "activeTool": "eyedropper",
+        "drawGlyphBefore": 64,
+        "drawGlyphAfter": 64,
+        "drawFgAfter": [
+          255,
+          255,
+          255
+        ],
+        "drawBgAfter": [
+          0,
+          0,
+          0
+        ],
+        "glyphChanged": false
+      },
+      "pre": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "/Users/r/Downloads/asciicker-pipeline-v3/artifacts/2026-06-16-tool-behavior/05-eyedropper-sample.png"
+    },
+    {
+      "name": "erase-canvas-mutation",
+      "pass": true,
+      "error": "",
+      "data": {
+        "cellBefore": 508,
+        "cellAfter": 508,
+        "erased": true
+      },
+      "pre": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "/Users/r/Downloads/asciicker-pipeline-v3/artifacts/2026-06-16-tool-behavior/06-erase-canvas-mutation.png"
+    },
+    {
+      "name": "draw-glyph-b-at-2-2",
+      "pass": true,
+      "error": "",
+      "data": {
+        "cellAt2_2": 254
+      },
+      "pre": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "/Users/r/Downloads/asciicker-pipeline-v3/artifacts/2026-06-16-tool-behavior/07-draw-glyph-b-at-2-2.png"
+    },
+    {
+      "name": "line-draw-canvas-mutation",
+      "pass": true,
+      "error": "",
+      "data": {
+        "startCell": 254,
+        "midCell": 257,
+        "endCell": 260,
+        "lineDrawn": true
+      },
+      "pre": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "/Users/r/Downloads/asciicker-pipeline-v3/artifacts/2026-06-16-tool-behavior/08-line-draw-canvas-mutation.png"
+    },
+    {
+      "name": "fill-tool-switch",
+      "pass": true,
+      "error": "",
+      "data": {
+        "reachable": true,
+        "activeTool": "fill"
+      },
+      "pre": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "/Users/r/Downloads/asciicker-pipeline-v3/artifacts/2026-06-16-tool-behavior/09-fill-tool-switch.png"
+    },
+    {
+      "name": "text-tool-switch",
+      "pass": true,
+      "error": "",
+      "data": {
+        "reachable": true,
+        "activeTool": "text"
+      },
+      "pre": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "/Users/r/Downloads/asciicker-pipeline-v3/artifacts/2026-06-16-tool-behavior/10-text-tool-switch.png"
+    },
+    {
+      "name": "export-via-files-drawer",
+      "pass": true,
+      "error": "",
+      "data": {
+        "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-e25e4406-fa64-4a91-acc8-04c9681c1fea.xp"
+      },
+      "pre": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "/Users/r/Downloads/asciicker-pipeline-v3/artifacts/2026-06-16-tool-behavior/11-export-via-files-drawer.png"
+    },
+    {
+      "name": "artifact-oracle",
+      "pass": true,
+      "error": "",
+      "data": {
+        "totalNonZero": 10094
+      },
+      "pre": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "e25e4406-fa64-4a91-acc8-04c9681c1fea",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "/Users/r/Downloads/asciicker-pipeline-v3/artifacts/2026-06-16-tool-behavior/12-artifact-oracle.png"
+    }
+  ]
+}

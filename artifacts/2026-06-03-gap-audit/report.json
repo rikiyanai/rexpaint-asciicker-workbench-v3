@@ -1,0 +1,182 @@
+{
+  "slice": "audit_2026_06_03_gaps",
+  "hosting_mode": "root",
+  "workbench_url": "http://127.0.0.1:5071/workbench",
+  "started_at": "2026-06-03T08:40:40.154Z",
+  "overall_pass": true,
+  "failures": [],
+  "hostingMode": "root",
+  "workbenchUrl": "http://127.0.0.1:5071/workbench",
+  "findings": {
+    "a1_sticky_paste": {
+      "name": "A1 90e374b sticky paste",
+      "pass": true,
+      "observations": [
+        {
+          "afterEnterPaste": {
+            "armed": true,
+            "pasteMode": true
+          }
+        },
+        {
+          "afterFirstPaste": {
+            "armed": true,
+            "pasteMode": true
+          }
+        },
+        {
+          "pastedAt20_20": {
+            "glyph": 65,
+            "fg": [
+              0,
+              255,
+              255
+            ],
+            "bg": [
+              34,
+              34,
+              0
+            ]
+          },
+          "pastedAt30_25": {
+            "glyph": 65,
+            "fg": [
+              0,
+              255,
+              255
+            ],
+            "bg": [
+              34,
+              34,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    "a2_erase_mag_data": {
+      "name": "A2 af1e799 erase to MAG (data)",
+      "pass": true,
+      "observations": [
+        {
+          "painted": {
+            "glyph": 219,
+            "fg": [
+              255,
+              255,
+              0
+            ],
+            "bg": [
+              34,
+              34,
+              34
+            ]
+          }
+        },
+        {
+          "afterErase": {
+            "glyph": 0,
+            "fg": [
+              255,
+              255,
+              255
+            ],
+            "bg": [
+              255,
+              0,
+              255
+            ]
+          }
+        },
+        {
+          "afterEraseTwice": {
+            "glyph": 0,
+            "fg": [
+              255,
+              255,
+              255
+            ],
+            "bg": [
+              255,
+              0,
+              255
+            ]
+          }
+        }
+      ]
+    },
+    "a2_erase_mag_pixel": {
+      "name": "A2 erase to MAG (rendered pixel)",
+      "pass": true,
+      "observations": [
+        {
+          "pixel": [
+            255,
+            0,
+            255,
+            255
+          ]
+        }
+      ]
+    },
+    "a3_swap_fb": {
+      "name": "A3 2501a47 swap F/B + X",
+      "pass": true,
+      "observations": [
+        {
+          "swapBtnPresent": true
+        },
+        {
+          "before": {
+            "drawFg": [
+              255,
+              0,
+              0
+            ],
+            "drawBg": [
+              0,
+              0,
+              255
+            ]
+          },
+          "afterClick": {
+            "drawFg": [
+              0,
+              0,
+              255
+            ],
+            "drawBg": [
+              255,
+              0,
+              0
+            ]
+          },
+          "afterKey": {
+            "drawFg": [
+              255,
+              0,
+              0
+            ],
+            "drawBg": [
+              0,
+              0,
+              255
+            ]
+          }
+        }
+      ]
+    },
+    "a4_hide_ids": {
+      "name": "A4 1db7052 hide frame IDs by default",
+      "pass": true,
+      "observations": [
+        {
+          "idsBtnPresent": true,
+          "idsBtnText": "IDs",
+          "labelDisplay": "none"
+        }
+      ]
+    }
+  },
+  "finished_at": "2026-06-03T08:40:51.189Z"
+}

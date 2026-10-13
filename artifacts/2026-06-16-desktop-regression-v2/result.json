@@ -1,0 +1,131 @@
+{
+  "overall": "PASS",
+  "steps": [
+    {
+      "step": 1,
+      "name": "desktop-fresh-load",
+      "status": "PASS",
+      "error": null,
+      "templateSelect": true,
+      "btnSave": true,
+      "btnExport": true,
+      "mobileTopBarHidden": false
+    },
+    {
+      "step": 2,
+      "name": "apply-template-desktop",
+      "status": "PASS",
+      "error": null,
+      "gridCols": 126,
+      "gridRows": 80,
+      "sessionId": "e6ac5916"
+    },
+    {
+      "step": 3,
+      "name": "desktop-controls-visible",
+      "status": "PASS",
+      "error": null,
+      "templateSelect": true,
+      "btnExport": true,
+      "btnSave": true,
+      "canvas": true
+    },
+    {
+      "step": 4,
+      "name": "draw-cells-desktop",
+      "status": "PASS",
+      "error": null,
+      "sessionDirty": true
+    },
+    {
+      "step": 5,
+      "name": "frames-col-right-desktop",
+      "status": "PASS",
+      "error": null,
+      "colRightEnabled": true,
+      "selectedFrames": {
+        "row": 0,
+        "col": 1
+      }
+    },
+    {
+      "step": 6,
+      "name": "frames-add-frame-desktop",
+      "status": "PASS",
+      "error": null,
+      "countBefore": 72,
+      "countAfter": 80,
+      "added": true
+    },
+    {
+      "step": 7,
+      "name": "layers-vis-toggle-desktop",
+      "status": "PASS",
+      "error": null,
+      "visBefore": "-",
+      "visAfter": "V",
+      "toggled": true
+    },
+    {
+      "step": 8,
+      "name": "layers-add-layer-desktop",
+      "status": "PASS",
+      "error": null,
+      "countBefore": 4,
+      "countAfter": 5,
+      "added": true
+    },
+    {
+      "step": 9,
+      "name": "source-import-reachable",
+      "status": "PASS",
+      "error": null,
+      "reachable": false,
+      "note": "Pipeline run is time-intensive; reachability only"
+    },
+    {
+      "step": 10,
+      "name": "save-desktop",
+      "status": "PASS",
+      "error": null,
+      "saved": true,
+      "sessionDirty": false,
+      "sessionId": "e6ac5916-4277-464b-b57d-c010cab30287"
+    },
+    {
+      "step": 11,
+      "name": "export-desktop",
+      "status": "PASS",
+      "error": null,
+      "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-e6ac5916-4277-464b-b57d-c010cab30287.xp"
+    },
+    {
+      "step": 12,
+      "name": "skin-dock-ready-state",
+      "status": "PASS",
+      "error": null,
+      "skinDock": {
+        "exists": false
+      }
+    },
+    {
+      "step": 13,
+      "name": "desktop-layout-intact",
+      "status": "PASS",
+      "error": null,
+      "mobileTopBarVisible": false,
+      "mobileFirstScreenVisible": false,
+      "wsAdvanced": false,
+      "templateSelect": true,
+      "wholeSheetCanvas": true
+    },
+    {
+      "step": 14,
+      "name": "artifact-oracle",
+      "status": "PASS",
+      "error": null,
+      "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-e6ac5916-4277-464b-b57d-c010cab30287.xp",
+      "glyphHCount": 9
+    }
+  ]
+}

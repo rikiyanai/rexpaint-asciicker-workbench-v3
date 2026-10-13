@@ -639,3 +639,101 @@ def test_compact_file_smaller_than_full_when_majority_high_confidence(tmp_path):
     write_suggestions_compact(compact_path, groups)
 
     assert compact_path.stat().st_size < full_path.stat().st_size
+
+
+# ---------------------------------------------------------------------------
+# _default bias key tests
+# ---------------------------------------------------------------------------
+
+def test_built_in_role_tables_contain_default_key_for_all_roles():
+    """Every role table must carry a '_default' entry for unregioned cells."""
+    for role, table in BUILT_IN_ROLE_TABLES.items():
+        assert "_default" in table, f"role '{role}' missing '_default' bias key"
+        assert len(table["_default"]) > 0, f"role '{role}' '_default' bias is empty"
+
+
+def test_default_bias_includes_half_blocks():
+    """_default must include all four half-block glyphs (220-223) for every role."""
+    for role, table in BUILT_IN_ROLE_TABLES.items():
+        for glyph in (220, 221, 222, 223):
+            assert glyph in table["_default"], (
+                f"role '{role}' _default missing half-block {glyph}"
+            )
+
+
+def test_apply_semantic_bias_uses_default_when_region_is_none():
+    """apply_semantic_bias falls back to '_default' when region is None."""
+    from scripts.glyph_assignment.candidate import GlyphCandidate
+    from scripts.glyph_assignment.semantic_bias import apply_semantic_bias
+
+    bias = {"_default": {220: 0.6}}
+    # Two candidates: 220 (top by tiny margin) vs 95 — a classic near-tie
+    c220 = GlyphCandidate(220, (100, 100, 100), (0, 0, 0), 0.42, {}, [])
+    c95  = GlyphCandidate(95,  (100, 100, 100), (0, 0, 0), 0.42, {}, [])
+
+    result = apply_semantic_bias([c220, c95], region=None, semantic_bias=bias, score_delta_threshold=0.25)
+
+    # 220 should be boosted; 95 has no weight and stays at 0.42
+    chosen = result[0]
+    second = result[1]
+    assert chosen.glyph == 220
+    assert chosen.score > second.score
+    # Gap should be close to threshold so the cell would not need review
+    # (float arithmetic: 0.42 + 0.25 = 0.6699…, so use approx tolerance)
+    import math
+    assert math.isclose(chosen.score - second.score, 0.25, rel_tol=1e-6, abs_tol=1e-9)
+
+
+def test_apply_semantic_bias_region_takes_priority_over_default():
+    """A named region in the bias dict is used instead of '_default'."""
+    from scripts.glyph_assignment.candidate import GlyphCandidate
+    from scripts.glyph_assignment.semantic_bias import apply_semantic_bias
+
+    # _default prefers 220; 'face' prefers glyph 34 ("quotation mark / face detail")
+    bias = {"_default": {220: 0.6}, "face": {34: 0.9}}
+    c34  = GlyphCandidate(34,  (100, 100, 100), (0, 0, 0), 0.42, {}, [])
+    c220 = GlyphCandidate(220, (100, 100, 100), (0, 0, 0), 0.42, {}, [])
+
+    result = apply_semantic_bias([c34, c220], region="face", semantic_bias=bias, score_delta_threshold=0.25)
+
+    # 'face' bias should boost 34, not _default's 220
+    assert result[0].glyph == 34
+
+
+def test_apply_semantic_bias_unknown_region_falls_back_to_default():
+    """An unknown region name falls back to '_default' rather than returning unchanged."""
+    from scripts.glyph_assignment.candidate import GlyphCandidate
+    from scripts.glyph_assignment.semantic_bias import apply_semantic_bias
+
+    bias = {"_default": {220: 0.6}}
+    c220 = GlyphCandidate(220, (0, 0, 0), (0, 0, 0), 0.42, {}, [])
+    c95  = GlyphCandidate(95,  (0, 0, 0), (0, 0, 0), 0.42, {}, [])
+
+    result = apply_semantic_bias([c220, c95], region="nonexistent_region",
+                                  semantic_bias=bias, score_delta_threshold=0.25)
+
+    assert result[0].glyph == 220
+    assert result[0].score > result[1].score
+
+
+def test_apply_semantic_bias_no_default_key_returns_unchanged_for_none_region():
+    """When semantic_bias has no '_default' key, region=None returns candidates unchanged."""
+    from scripts.glyph_assignment.candidate import GlyphCandidate
+    from scripts.glyph_assignment.semantic_bias import apply_semantic_bias
+
+    bias = {"face": {34: 0.9}}  # no _default key
+    c34  = GlyphCandidate(34,  (0, 0, 0), (0, 0, 0), 0.42, {}, [])
+    c220 = GlyphCandidate(220, (0, 0, 0), (0, 0, 0), 0.41, {}, [])
+
+    result = apply_semantic_bias([c34, c220], region=None, semantic_bias=bias, score_delta_threshold=0.25)
+
+    # No default key → returns unchanged (34 stays first at 0.42)
+    assert result[0].glyph == 34
+    assert result[0].score == pytest.approx(0.42)
+
+
+def test_load_optional_semantic_bias_includes_default_key(tmp_path):
+    """load_optional_semantic_bias returns a dict that includes '_default' for known roles."""
+    bias = load_optional_semantic_bias(tmp_path, role="attack")
+    assert "_default" in bias
+    assert 220 in bias["_default"]

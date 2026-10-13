@@ -1,0 +1,88 @@
+STONE STORY ASCII-ART TUTORIAL — USER-PROVIDED INTAKE NOTES
+Logged: 2026-08-31
+Source identity: Part 1 and Part 2 descriptions and transcripts supplied by the user in this session.
+Official companion page, verified from the user-local saved HTML: https://stonestoryrpg.com/ascii_tutorial.html
+Observed page title: ASCII-art Tutorial
+Observed Open Graph title: Stone Story RPG - ASCII-art Tutorial
+Observed Open Graph description: “In this tutorial I show some of the techniques developed during Stone Story RPG.”
+Local-capture record: ASCII-art Tutorial.html; SHA-256 055c147c8a93c3d1e898c8b901328927a797b5c83b6f9fdab6df64fb41c33c23; 53,883 bytes; modified 2026-08-31T19:52:59-0400.
+The page preserves the Part 1 visual examples and named sections, including Sacrificial Pit, styles, fonts, alphabet, anti-aliasing, dithering, animation process, and subtractive animation. It is not a video file and does not establish a video ID, channel URL, publication date, caption language, or Part 2 source identity.
+Status: reference study only. This file does not assert ownership of the source, recreate external media, or define product behavior.
+
+PART 1 — ART LANGUAGE, COMPOSITION, AND PROCESS
+
+0:00 Nagaraja dissected
+- A scene is composed from separate text layers drawn back to front: static background, cultist frames, victim and chains, candle, boss, motion lines, and emitted particles.
+- Mirroring can be a deliberate authored operation. The cited right-side cultist was manually mirrored rather than software-flipped.
+- A very small animated change, such as the candle or chain movement, can carry substantial life when the surrounding composition is stable.
+
+5:00 Walk cycle
+- A four-frame leg loop can be made less mechanical by running another component, such as a staff, on a different cadence.
+- Do not require all visual parts to arrive on the same tempo.
+
+5:59 Styles of text art
+- Block or ANSI-like art can borrow pixel-art methods.
+- Filled-character value art is a different style from line art.
+- The cited line-art style uses a small, deliberately chosen vocabulary of glyph relationships rather than every available character.
+- Extended Unicode-like marks may be acceptable when they visually belong to the chosen language; strict historical ASCII purity is not the goal.
+
+11:10 Perspective
+- A difficult perspective background was first blocked out as a small 3D reference scene, then redrawn as text art.
+- Most other backgrounds used hand-built isometric or near-isometric patterns.
+- Reference geometry is a drawing aid. It is not a replacement for authored text geometry.
+
+13:50 Fonts and 17:50 alphabet
+- A monospace grid is fundamental. The cited project used a custom 16-by-29 glyph cell after beginning from an approximately 1-by-2 text-art ratio.
+- Glyphs have internal vertical placement. An overscore can preserve visual continuity while leaving a cell above available for background content.
+- A curated line-art alphabet includes strokes, diagonals, dots, quote-like marks, accents, box-drawing marks, and a limited set of alphanumerics.
+- Alphanumerics attract language recognition. They should be used deliberately, for example at an eye, rather than scattered as texture.
+
+25:40 Lines and materials
+- The same apparent slope can be built with different glyph sequences for different materials, such as rock or a web.
+- A larger work benefits from a consistent material language: repeated glyph combinations communicate metal, stone, cloth, and similar visual roles.
+- Practice consists of small line, curve, mirror, and material studies rather than only complete images.
+
+31:52 Anti-aliasing; 36:37 depth and negative space
+- The grid has asymmetric resolution: the cell grid and glyph interiors offer different horizontal and vertical affordances.
+- Carefully placed empty cells and partial glyph marks can make near-vertical lines and curves read more smoothly.
+- Negative space separates foreground from background, prevents accidental glyph connections, and can imply a shadow or overlap.
+- The desired result is legible abstract shape, not literal realism.
+
+47:21 Dithering and 49:22 shadows
+- Repeated dense and sparse glyph patterns create value gradients and material continuity.
+- Dots and partial marks can bridge regions so a carved or continuous form does not read as separate objects.
+- The cited engine's transparent-key behavior accidentally revealed a useful shadow technique: leaving a lower area transparent exposes the expected repeating background as a perceived shadow.
+
+52:36 Animation process; 1:01:12 subtractive animation
+- Find references, sketch concepts, select a primary keyframe, test size and composition in the destination scene, list required animations, draw endpoint keyframes, then add in-betweens by recursively splitting intervals.
+- Test and polish before all frames are complete. Frame count and pacing are planned rather than accidental.
+- A build animation can be made backwards: author the completed keyframe, then remove one structural unit per earlier frame and reorder for playback.
+- Iteration is a core activity. Several viable compositions can be explored before choosing one.
+
+PART 2 — WORKED CHARACTER-ANIMATION PROCESS
+
+- Reference existing in-project skeleton assets before drawing a related character. Establish a primary pose that communicates the character's intended role.
+- Test character size and composition beside the player before committing to a large animation set.
+- Name the required poses before drawing: for example, tilt forward/back, talking variations, and only then a possible walk cycle.
+- Draw endpoints and middle poses rather than serially drawing every frame. Preserve recognizable patterns where useful, then vary head and arm timing for follow-through and elasticity.
+- Use foreground/background separation while moving limbs; omit obscured information instead of forcing every line through the same space.
+- Pad frames to a common bounding size before playback. Preview at several speeds and add holds only when the observed motion calls for them.
+- The cited engine was used as a preview environment after text frames were authored. The editor process itself remained text-first.
+
+IMPLICATIONS FOR ASCIICKER XPEdit
+
+1. Treat the CP437 picker as a low-level glyph selector, not the complete authoring language. Add a user-authored, non-destructive glyph-set layer for line, curve, anti-alias, texture, and material studies without changing the stored numeric glyph identity.
+2. Keep font metrics explicit. A different font changes the meaning of a visual glyph choice even where the XP numeric cell data is unchanged.
+3. Promote animation from row categories and frame groups to an explicit authoring contract: ordered frames, integer holds or timing, loop behavior, anchor/padding policy, and a preview tied to the same document state.
+4. Keep reference imagery separate from conversion inputs. A reference board may guide composition or perspective, but it must never silently rewrite the XP document.
+5. Add optional non-destructive review overlays, such as onion skin and material/glyph-set visibility, rather than automated art scoring or hidden pixel mutation.
+6. Preserve the existing whole-sheet editor as the single mutable owner. Runtime and preview surfaces consume the authored document and its explicit metadata.
+
+UNRESOLVED BEFORE IMPLEMENTATION
+
+- Whether timing/loop data belongs in a versioned XP sidecar, a bundle manifest, or a future runtime-owned artifact.
+- Whether the first scope is character action rows only, all sprite sheets, or static/world text art too.
+- Which fonts and glyph ranges are supported, how font provenance is stored, and what happens when a requested glyph is unavailable.
+- Whether reference images are session-local, persisted, exportable, or deliberately excluded; their provenance, licensing, and deletion behavior remain unspecified.
+- The exact UX for glyph-set creation, material labels, onion-skin controls, and temporal preview.
+- The runtime consumer and acceptance proof for any new timing data.

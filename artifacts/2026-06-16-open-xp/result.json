@@ -1,0 +1,125 @@
+{
+  "overallPass": true,
+  "finalXpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-1f392e3e-69f8-425c-884d-f37fb44ea557.xp",
+  "results": [
+    {
+      "name": "fresh-mobile-first-screen",
+      "pass": true,
+      "error": "",
+      "data": {
+        "visible": true,
+        "sessionLoaded": false
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false,
+        "firstScreenHidden": false
+      },
+      "post": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false,
+        "firstScreenHidden": false
+      },
+      "screenshot": "artifacts/2026-06-16-open-xp/01-fresh-mobile-first-screen.png"
+    },
+    {
+      "name": "open-xp-file",
+      "pass": true,
+      "error": "",
+      "data": {
+        "sessionId": "1f392e3e",
+        "advanced": false
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false,
+        "firstScreenHidden": false
+      },
+      "post": {
+        "sessionId": "1f392e3e-69f8-425c-884d-f37fb44ea557",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true,
+        "firstScreenHidden": true
+      },
+      "screenshot": "artifacts/2026-06-16-open-xp/02-open-xp-file.png"
+    },
+    {
+      "name": "cells-loaded",
+      "pass": true,
+      "error": "",
+      "data": {
+        "editorCount": 9,
+        "canvasVisible": true
+      },
+      "pre": {
+        "sessionId": "1f392e3e-69f8-425c-884d-f37fb44ea557",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true,
+        "firstScreenHidden": true
+      },
+      "post": {
+        "sessionId": "1f392e3e-69f8-425c-884d-f37fb44ea557",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true,
+        "firstScreenHidden": true
+      },
+      "screenshot": "artifacts/2026-06-16-open-xp/03-cells-loaded.png"
+    },
+    {
+      "name": "export-via-files-drawer",
+      "pass": true,
+      "error": "",
+      "data": {
+        "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-1f392e3e-69f8-425c-884d-f37fb44ea557.xp"
+      },
+      "pre": {
+        "sessionId": "1f392e3e-69f8-425c-884d-f37fb44ea557",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true,
+        "firstScreenHidden": true
+      },
+      "post": {
+        "sessionId": "1f392e3e-69f8-425c-884d-f37fb44ea557",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true,
+        "firstScreenHidden": true
+      },
+      "screenshot": "artifacts/2026-06-16-open-xp/04-export-via-files-drawer.png"
+    },
+    {
+      "name": "artifact-oracle",
+      "pass": true,
+      "error": "",
+      "data": {
+        "totalNonZero": 10096,
+        "editorCount": 9
+      },
+      "pre": {
+        "sessionId": "1f392e3e-69f8-425c-884d-f37fb44ea557",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true,
+        "firstScreenHidden": true
+      },
+      "post": {
+        "sessionId": "1f392e3e-69f8-425c-884d-f37fb44ea557",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true,
+        "firstScreenHidden": true
+      },
+      "screenshot": "artifacts/2026-06-16-open-xp/05-artifact-oracle.png"
+    }
+  ]
+}

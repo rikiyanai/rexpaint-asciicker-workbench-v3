@@ -21,17 +21,77 @@
   #uploadConvertPanel button { min-height: 44px; }
 }
 </style>
+  <script>
+  // Detect Safari "Request Desktop Site": touch device + desktop UA → force desktop layout.
+  // Runs synchronously before first paint to avoid mobile-first-screen flash.
+  (function(){
+    var ua = navigator.userAgent || '';
+    var touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    var desktopUA = !/iPad|iPhone|Android|Mobile/i.test(ua);
+    // iPadOS 13+ stock Safari reports a Macintosh UA with multi-touch by
+    // default; no shipping Mac reports touch points. That combination is a
+    // stock iPad, not a desktop-site request — it must keep the mobile shell.
+    var ipadDefaultUA = /Macintosh/i.test(ua) && (navigator.maxTouchPoints || 0) > 1;
+    if (touch && desktopUA && !ipadDefaultUA) document.documentElement.classList.add('ws-force-desktop');
+  })();
+  </script>
 </head>
 <body>
-<!-- U6: Mobile top chrome bar — editor drawers (document actions stay in the product toolbar) -->
+<!-- UQ-013: Mobile first screen — task-rooted entry (hidden on desktop, shown on mobile before session loads) -->
+<div id="mobileFirstScreen" class="ws-first-screen" role="dialog" aria-modal="true" aria-label="Open or continue an XP session">
+  <div class="ws-first-screen-inner">
+    <h2 class="ws-first-screen-title">XPEdit</h2>
+    <div class="ws-first-screen-actions">
+      <button id="fsOpenXpBtn" class="ws-first-screen-btn primary">Open XP</button>
+      <div class="ws-first-screen-draft-wrap">
+        <button id="fsContinueDraftBtn" class="ws-first-screen-btn">Continue Draft</button>
+        <div id="fsDraftStatus" class="ws-first-screen-draft-status" aria-live="polite"></div>
+      </div>
+      <div class="ws-first-screen-template-row">
+        <select id="fsTemplateSelect" class="ws-first-screen-select" aria-label="Template">
+          <option value="">— New From Template —</option>
+          <option value="player_native_idle_only">Player Skin (Idle Only)</option>
+          <option value="player_native_full">Player Skin (Full Bundle)</option>
+        </select>
+        <button id="fsTemplateApplyBtn" class="ws-first-screen-btn" disabled>Apply</button>
+      </div>
+    </div>
+    <div class="ws-first-screen-footer">
+      <button id="fsAdvancedBtn" class="ws-first-screen-btn ws-first-screen-secondary">Open Workbench (Advanced)</button>
+    </div>
+  </div>
+</div>
+
+<!-- UQ-013: Portrait rotate hint — shown on mobile after session loads in portrait orientation -->
+<div id="mobileRotateHint" class="ws-rotate-hint hidden" role="status" aria-label="Rotate device hint">
+  <div class="ws-rotate-hint-icon" aria-hidden="true">&#8635;</div>
+  <div class="ws-rotate-hint-text">Rotate to landscape for the editor</div>
+  <button id="mobileRotateHintDismiss" class="ws-rotate-hint-dismiss">Got it</button>
+</div>
+
+<!-- U6: Mobile top chrome bar — file ops + drawer toggles (hidden on desktop) -->
 <div class="ws-mobile-top-bar">
+  <div class="ws-mobile-top-actions">
+    <button data-action="share-file" title="Share/Export File">Share</button>
+  </div>
   <div class="ws-mobile-top-drawers">
-    <button data-drawer-toggle="tools" title="Brushes and draw tools">Tools</button>
-    <button data-drawer-toggle="layers" title="Layers">Layers</button>
-    <button data-drawer-toggle="info" title="Canvas info and status">Info</button>
+    <button data-drawer-toggle="tools" title="Tools" aria-expanded="false">Tools</button>
+    <button data-drawer-toggle="frames" title="Frames" aria-expanded="false">Frames</button>
+    <button data-drawer-toggle="layers" title="Layers" aria-expanded="false">Layers</button>
+    <button data-drawer-toggle="files" title="Files / Session" aria-expanded="false">Files</button>
+    <button data-drawer-toggle="source" title="Source / Slice" aria-expanded="false">Source</button>
+    <button data-drawer-toggle="import" title="Import PNG" aria-expanded="false">Import</button>
+    <button data-drawer-toggle="template" title="Template / Bundle" aria-expanded="false">Template</button>
+    <button data-drawer-toggle="anim" title="Animation + Metadata" aria-expanded="false">Anim</button>
+    <button data-drawer-toggle="preview" title="XP Preview + Session" aria-expanded="false">Preview</button>
+    <button data-drawer-toggle="test" title="Test Skin" aria-expanded="false">Test</button>
+    <button data-drawer-toggle="export" title="Export" aria-expanded="false">Export</button>
+    <button data-drawer-toggle="browse" title="Browse" aria-expanded="false">Browse</button>
+    <button data-drawer-toggle="info" title="Info" aria-expanded="false">Info</button>
     <button id="productMobileBrowseBtn" data-product-mode="browse" title="Browse documents">Browse</button>
     <button data-action="import-png" title="Import a PNG for conversion">Import</button>
     <button id="mobileKeyboardBtn" type="button" title="Use the on-screen keyboard">Keyboard</button>
+    <button data-action="toggle-advanced" title="Open Workbench (Advanced)">Advanced</button>
   </div>
 </div>
 <textarea id="mobileKeyboardInput" class="ws-mobile-keyboard-input" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="REXPaint Web mobile text input"></textarea>
@@ -75,7 +135,7 @@
     </div>
   </section>
   <div class="panel" id="uploadConvertPanel" data-panel-number="7 upload-convert">
-    <h3>Upload + Convert (<span id="uploadPanelLabel">Workbench Direct</span>)</h3>
+    <h3>Upload + Convert (<span id="uploadPanelLabel">REXPaint Web Clone</span>)</h3>
     <div class="small">Import a PNG sprite sheet, <strong>Upload PNG</strong>, then <strong>Convert to XP</strong> — then Edit, Save / Export, and Test This Skin below.</div>
     <div class="row">
       <input id="wbFile" type="file" accept=".png">
@@ -166,6 +226,20 @@
     <div id="runtimePreflightBannerText" class="small warn">Checking runtime bundle...</div>
   </div>
 
+  <div id="draftRestoreBanner" class="panel draft-restore-banner hidden" data-panel-number="3b draft-restore">
+    <div class="draft-restore-row">
+      <div>
+        <div class="draft-restore-title">Unsaved draft found</div>
+        <div id="draftRestoreInfo" class="small">A browser draft from a previous session is available.</div>
+      </div>
+      <div class="draft-restore-actions">
+        <button id="draftRestoreBtn" class="primary">Restore draft</button>
+        <button id="draftDismissBtn">Start fresh</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ws-drawer" data-drawer="template">
   <div class="panel" id="templatePanel" data-panel-number="4 template">
     <h3>Template</h3>
     <div class="row">
@@ -231,7 +305,9 @@
     </div>
     <div id="profileCreationStatus" class="small hidden" style="margin-top:6px;"></div>
   </div>
+  </div><!-- /ws-drawer template -->
 
+  <div class="ws-drawer" data-drawer="files">
   <div class="panel" data-panel-number="5 session-ops">
     <h3>Session Ops</h3>
     <div class="row">
@@ -274,6 +350,7 @@
     </div>
     <div id="wbStatus" class="small warn">No active session</div>
   </div>
+  </div><!-- /ws-drawer files -->
 
   <details class="panel" data-panel-number="6 recorder">
     <summary>Recorder</summary>
@@ -287,8 +364,38 @@
     <div id="uiRecorderSummary" class="small">0 events</div>
   </details>
 
+  <div class="ws-drawer" data-drawer="import">
+  <div class="panel" data-panel-number="7 upload-convert">
+    <h3>Upload + Convert (<span id="uploadPanelLabel">REXPaint Web Clone</span>)</h3>
+    <div class="row">
+      <input id="wbFile" type="file" accept=".png">
+      <button id="wbUpload" class="primary">Upload PNG</button>
+      <button id="wbRun" class="success" disabled>Convert to XP</button>
+    </div>
+    <div class="row">
+      <div><label>Name</label><input id="wbName" value="wb_sprite"></div>
+      <div>
+        <label>Glyph Mode</label>
+        <select id="wbAssignmentMode">
+          <option value="geometric">Geometric (fast, half-blocks)</option>
+          <option value="rich">Rich (CP437 font-mask matching)</option>
+        </select>
+      </div>
+      <div style="min-width:280px;">
+        <label>Auto Plan</label>
+        <div id="wbAutoPlan" class="small muted">Derived automatically from the uploaded PNG at convert time.</div>
+      </div>
+    </div>
+    <div id="wbRunOutShell" class="subpanel-shell output-shell" data-panel-number="7A" data-panel-tag="convert-json">
+      <div id="wbRunOutViewport" class="output-viewport">
+        <pre id="wbRunOut"></pre>
+      </div>
+    </div>
+  </div>
+  </div><!-- /ws-drawer import -->
 
-  <div class="two-col">
+  <div class="two-col" id="sourceFramesRow">
+    <div class="ws-drawer" data-drawer="source">
     <div class="panel" data-panel-number="8 source">
       <h3>Source Panel</h3>
       <div class="row">
@@ -323,7 +430,9 @@
         <button id="srcCtxDelete">Delete</button>
       </div>
     </div>
+    </div><!-- /ws-drawer source -->
 
+    <div class="ws-drawer" data-drawer="frames">
     <div class="panel" data-panel-number="9 grid">
       <h3>Grid Panel</h3>
       <div class="row">
@@ -345,6 +454,7 @@
         <label for="gridZoomInput">9A Frame Nav Zoom</label>
         <input id="gridZoomInput" type="range" min="0" max="2.5" step="0.25" value="0">
         <span id="gridZoomValue" class="small">Fit</span>
+        <button id="gridToggleLabels" title="Show/hide frame IDs" style="margin-left:8px;font-size:11px;padding:1px 6px;">IDs</button>
       </div>
       <div id="layerVisibility" class="row small"></div>
       <div id="wsFrameNav" class="ws-frame-nav" data-panel-number="9A" data-panel-tag="frame-nav">
@@ -358,6 +468,7 @@
         <button id="ctxDelete">Delete</button>
       </div>
     </div>
+    </div><!-- /ws-drawer frames -->
   </div>
 
   <details id="legacyGridDetails" class="legacy-grid-debug" hidden>
@@ -365,6 +476,7 @@
     <div id="grid" class="grid"></div>
   </details>
 
+  <div class="ws-drawer" data-drawer="anim">
   <div class="panel" data-panel-number="11 animation-metadata">
     <h3>Animation + Metadata</h3>
     <div class="row">
@@ -424,7 +536,9 @@
     <pre id="mountedReviewOut" class="small"></pre>
     <pre id="metaOut"></pre>
   </div>
+  </div><!-- /ws-drawer anim -->
 
+  <div class="ws-drawer" data-drawer="preview">
   <div class="two-col">
     <div class="panel" data-panel-number="12 xp-preview">
       <h3>XP Preview</h3>
@@ -443,7 +557,35 @@
       <pre id="sessionOut"></pre>
     </div>
   </div>
+  </div><!-- /ws-drawer preview -->
 
+  <div class="ws-drawer" data-drawer="test">
+  <div class="panel" id="webbuildDockPanel" data-panel-number="14 skin-test-dock">
+    <h3>Skin Test Dock (Term++ Skin Equiv on asciid)</h3>
+    <div class="row">
+      <button id="webbuildQuickTestBtn" class="success" disabled>Test This Skin</button>
+      <button id="webbuildApplyInPlaceBtn" class="hidden" disabled title="Requires an active session and a ready webbuild runtime">Apply In Place</button>
+      <button id="webbuildApplyRestartBtn" class="hidden" disabled title="Requires an active session">Apply + Restart</button>
+      <button id="webbuildUploadTestBtn" title="Requires a valid flat runtime bundle">Upload Skin</button>
+      <input id="webbuildUploadTestInput" type="file" accept=".xp,application/octet-stream" class="hidden">
+      <span id="webbuildState" class="small">Webbuild not loaded</span>
+    </div>
+    <div id="webbuildHint" class="small">`Test This Skin` exports the current Workbench XP and loads it into the flat test arena. `Upload Skin` loads an external `.xp` into the same flat test arena. Both use the deterministic test path.</div>
+    <iframe id="webbuildFrame" title="Asciicker Webbuild" class="hidden" style="width:100%; height:360px; border:1px solid #334; background:#000;"></iframe>
+    <details class="hidden">
+      <summary class="small">Advanced Skin Dock Controls</summary>
+      <div class="row" style="margin-top:8px;">
+        <button id="webbuildOpenBtn">Open Preview</button>
+        <button id="webbuildReloadBtn">Reload Preview</button>
+        <button id="webbuildApplySkinBtn" disabled>Apply Current XP (Advanced)</button>
+      </div>
+    </details>
+    <details class="hidden">
+      <summary class="small">Advanced debug output</summary>
+      <pre id="webbuildOut"></pre>
+    </details>
+  </div>
+  </div><!-- /ws-drawer test -->
   <div class="panel hidden" id="termppNativePanel" data-panel-number="15 native-termpp">
     <h3>TERM++ Skin (Real Game Instance)</h3>
     <div class="row">
@@ -476,6 +618,7 @@
     <pre id="termppSkinOut"></pre>
   </div>
 
+  <div class="ws-drawer" data-drawer="export">
   <div class="panel" id="verificationPanel" data-panel-number="16 verification">
     <h3>Verification (Term++ / QA)</h3>
     <div class="row">
@@ -512,6 +655,7 @@
     </div>
     <pre id="exportOut"></pre>
   </div>
+  </div><!-- /ws-drawer export -->
 
   <div id="cellInspectorPanel" class="panel hidden" data-panel-number="18 inspector">
     <h3>Frame Inspector <span id="inspectorDirtyBadge" class="small" style="font-weight:normal;">saved</span></h3>
@@ -706,7 +850,7 @@
 <script type="module" src="/whole-sheet-init.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(function() {});
+    navigator.serviceWorker.register((window.__WB_BASE_PATH || '') + '/sw.js').catch(function() {});
   }
 </script>
 </body>

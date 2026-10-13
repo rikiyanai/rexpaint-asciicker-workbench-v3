@@ -12,6 +12,7 @@ import base64
 import json
 import os
 import re
+import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -859,6 +860,92 @@ def source_manifest_materialize(source_path: str) -> dict:
         "source_path": source_path,
         "materialize": "true",
     })
+
+
+# ===================================================================
+# Rig contract tools (U1 — rig_definition_id dimension, U6 — authoring)
+# ===================================================================
+
+@mcp.tool()
+def create_actor_visual_profile(
+    session_id: str,
+    domain: str,
+    presentation_kind: str,
+    variation: str = "default",
+    rig_definition_id: str | None = None,
+) -> dict:
+    """Create an ActorVisualProfile from the current session geometry.
+
+    Extracts layer assignments from the session XP data and writes a profile
+    JSON to config/actor_visual_profiles/. If rig_definition_id is provided,
+    the profile records which rig contract governs its layer attachment offsets.
+
+    Args:
+        session_id: Session to create the profile from.
+        domain: Visual domain — one of: skin, wearable, weapon, shield, mount.
+        presentation_kind: Presentation kind — one of: idle_walk, attack, plydie.
+        variation: Variation tag (default "default").
+        rig_definition_id: Optional rig contract ID (e.g. "wolfie_crossbow_v1").
+                           Null means no rig contract is required for this profile.
+
+    Returns:
+        profile_id, profile_path, domain, presentation_kind, variation,
+        skin_definition_id, rig_definition_id, layers_count, session_id.
+    """
+    payload: dict = {
+        "session_id": session_id,
+        "domain": domain,
+        "presentation_kind": presentation_kind,
+        "variation": variation,
+    }
+    if rig_definition_id is not None:
+        payload["rig_definition_id"] = rig_definition_id
+    return _post_json("/api/workbench/actor-visual-profile/create", payload)
+
+
+# ===================================================================
+# U6b: Blender environment check
+# ===================================================================
+
+@mcp.tool()
+def blender_env_check() -> dict:
+    """Detect Blender availability and version for rig authoring tools (U6b).
+    
+    Runs blender_env_check.py as a subprocess. Returns available, version, version_ok.
+    
+    Returns:
+        Dict with keys: available, version_ok, and optionally blender_path, version, error
+    """
+    script_path = Path(__file__).parent / "blender_env_check.py"
+    
+    try:
+        result = subprocess.run(
+            ["python3", str(script_path)],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        
+        try:
+            return json.loads(result.stdout)
+        except json.JSONDecodeError as e:
+            return {
+                "available": False,
+                "error": f"bad output: {result.stdout[:200]}",
+                "version_ok": False,
+            }
+    except subprocess.TimeoutExpired:
+        return {
+            "available": False,
+            "error": "blender_env_check.py timed out after 15 seconds",
+            "version_ok": False,
+        }
+    except OSError as e:
+        return {
+            "available": False,
+            "error": str(e),
+            "version_ok": False,
+        }
 
 
 # ===================================================================

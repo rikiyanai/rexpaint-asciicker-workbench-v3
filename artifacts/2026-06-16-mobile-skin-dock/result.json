@@ -1,0 +1,286 @@
+{
+  "overallPass": true,
+  "results": [
+    {
+      "name": "fresh-mobile-first-screen",
+      "pass": true,
+      "error": "",
+      "data": {
+        "visible": true
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": false,
+        "webbuildLoaded": false,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild not loaded"
+      },
+      "post": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": false,
+        "webbuildLoaded": false,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild not loaded"
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-skin-dock/01-fresh-mobile-first-screen.png"
+    },
+    {
+      "name": "apply-template",
+      "pass": true,
+      "error": "",
+      "data": {
+        "sessionId": "dc46d32b"
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": false,
+        "webbuildLoaded": false,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild not loaded"
+      },
+      "post": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": false,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild not loaded"
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-skin-dock/02-apply-template.png"
+    },
+    {
+      "name": "author-cells",
+      "pass": true,
+      "error": "",
+      "data": {
+        "cells": 9,
+        "sessionDirty": true
+      },
+      "pre": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": false,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild not loaded"
+      },
+      "post": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": false,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild not loaded"
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-skin-dock/03-author-cells.png"
+    },
+    {
+      "name": "save-session",
+      "pass": true,
+      "error": "",
+      "data": {
+        "sessionDirty": false,
+        "sessionId": "dc46d32b"
+      },
+      "pre": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": false,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild not loaded"
+      },
+      "post": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": false,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild not loaded"
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-skin-dock/04-save-session.png"
+    },
+    {
+      "name": "export-xp",
+      "pass": true,
+      "error": "",
+      "data": {
+        "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-dc46d32b-fb8d-49c5-b15a-4686acc323cc.xp"
+      },
+      "pre": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": false,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild not loaded"
+      },
+      "post": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": false,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild not loaded"
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-skin-dock/05-export-xp.png"
+    },
+    {
+      "name": "open-test-drawer",
+      "pass": true,
+      "error": "",
+      "data": {
+        "preflightOk": true,
+        "stateText": "Webbuild not loaded"
+      },
+      "pre": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": false,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild not loaded"
+      },
+      "post": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": false,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild not loaded"
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-skin-dock/06-open-test-drawer.png"
+    },
+    {
+      "name": "click-test-this-skin",
+      "pass": true,
+      "error": "",
+      "data": {
+        "wbStateBefore": "Webbuild not loaded",
+        "wbStateAfter": "Webbuild frame loaded, waiting for runtime..."
+      },
+      "pre": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": false,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild not loaded"
+      },
+      "post": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": true,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild loading... Preparing... 0% (0s)"
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-skin-dock/07-click-test-this-skin.png"
+    },
+    {
+      "name": "webbuild-loading",
+      "pass": true,
+      "error": "",
+      "data": {
+        "frameSrc": "/termpp-web-flat/index.html?solo=1&player=player&_srv=1781605604144&flatmap=mini",
+        "webbuildLoaded": true,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild loading... Downloading data... (0s)"
+      },
+      "pre": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": true,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild loading... Downloading data... (0s)"
+      },
+      "post": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": true,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild loading... Downloading data... 17% (1s)"
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-skin-dock/08-webbuild-loading.png"
+    },
+    {
+      "name": "webbuild-ready",
+      "pass": true,
+      "error": "",
+      "data": {
+        "loaded": true,
+        "ready": true,
+        "webbuildState": "Webbuild ready"
+      },
+      "pre": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": true,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild loading... Downloading data... 17% (1s)"
+      },
+      "post": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": true,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild frame loaded, waiting for runtime..."
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-skin-dock/09-webbuild-ready.png"
+    },
+    {
+      "name": "preview-screenshot",
+      "pass": true,
+      "error": "",
+      "data": {
+        "ready": true,
+        "webbuildState": "Webbuild ready",
+        "note": "local flat test arena only — skin rendered in termpp-web-flat, not Y9-2"
+      },
+      "pre": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": true,
+        "webbuildReady": false,
+        "webbuildState": "Webbuild frame loaded, waiting for runtime..."
+      },
+      "post": {
+        "sessionId": "dc46d32b-fb8d-49c5-b15a-4686acc323cc",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true,
+        "webbuildLoaded": true,
+        "webbuildReady": true,
+        "webbuildState": "Webbuild ready"
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-skin-dock/10-preview-screenshot.png"
+    }
+  ]
+}

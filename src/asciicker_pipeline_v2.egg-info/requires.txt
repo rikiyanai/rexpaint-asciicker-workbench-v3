@@ -1,0 +1,6 @@
+Flask>=3.0
+Pillow>=10.0
+numpy>=1.26
+
+[deploy]
+gunicorn>=21.2

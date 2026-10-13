@@ -7,18 +7,15 @@ from pathlib import Path
 
 import pytest
 
-# Add pipeline-v3 and Y9-2 to path for imports
-PIPELINE_V3_ROOT = Path(__file__).resolve().parents[2] / "asciicker-pipeline-v3"
-Y9_2_ROOT = Path(__file__).resolve().parents[2] / "asciicker-Y9-2"
-Y9_2_SCRIPTS = Y9_2_ROOT / "scripts"
-Y9_2_PIPELINE = Y9_2_SCRIPTS / "pipeline"
+# Add Y9-2 root to path so scripts.pipeline resolves to the vendored copy.
+# Y9-2 is a subdirectory of the pipeline-v3 repo root (parents[1]).
+Y9_2_ROOT = Path(__file__).resolve().parents[1] / "asciicker-Y9-2"
+Y9_2_PIPELINE = Y9_2_ROOT / "scripts" / "pipeline"
 
-if str(PIPELINE_V3_ROOT) not in sys.path:
-    sys.path.insert(0, str(PIPELINE_V3_ROOT))
-if str(Y9_2_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(Y9_2_SCRIPTS))
+if str(Y9_2_ROOT) not in sys.path:
+    sys.path.append(str(Y9_2_ROOT))
 if str(Y9_2_PIPELINE) not in sys.path:
-    sys.path.insert(0, str(Y9_2_PIPELINE))
+    sys.path.append(str(Y9_2_PIPELINE))
 
 # Import render_plan_table from Y9-2 scripts.pipeline
 from render_plan_table import (
@@ -236,6 +233,54 @@ class TestServerVisualKey:
         assert key.slot_state["body"] == 701
         assert key.slot_state["weapon"] == 2001
         assert key.mount_state["is_mounted"] is False
+
+    def test_rig_definition_id_null_in_dict(self):
+        key = ServerVisualKey(100, 601, "default", {}, {"is_mounted": False}, None)
+        assert key.to_dict()["rig_definition_id"] is None
+
+    def test_rig_definition_id_non_null_in_dict(self):
+        key = ServerVisualKey(100, 601, "default", {}, {"is_mounted": False}, "wolfie_crossbow_v1")
+        assert key.to_dict()["rig_definition_id"] == "wolfie_crossbow_v1"
+
+    def test_rig_definition_id_null_hashes_same_as_null(self):
+        k1 = ServerVisualKey(100, 601, "default", {}, {"is_mounted": False}, None)
+        k2 = ServerVisualKey(100, 601, "default", {}, {"is_mounted": False}, None)
+        assert k1.canonical_key() == k2.canonical_key()
+
+    def test_rig_definition_id_non_null_differs_from_null(self):
+        k_null = ServerVisualKey(100, 601, "default", {}, {"is_mounted": False}, None)
+        k_rig = ServerVisualKey(100, 601, "default", {}, {"is_mounted": False}, "wolfie_crossbow_v1")
+        assert k_null.canonical_key() != k_rig.canonical_key()
+
+    def test_rig_definition_id_different_ids_differ(self):
+        k1 = ServerVisualKey(100, 601, "default", {}, {"is_mounted": False}, "wolfie_crossbow_v1")
+        k2 = ServerVisualKey(100, 601, "default", {}, {"is_mounted": False}, "bigbee_v1")
+        assert k1.canonical_key() != k2.canonical_key()
+
+    def test_from_profile_carries_rig_definition_id(self, sample_bundle):
+        profile = ActorVisualProfile(
+            profile_id="rig_test",
+            skin_definition_id=100,
+            presentation_kind="idle_walk",
+            domain="mount",
+            layers=[LayerAssignment(slot="mount_rear", layer_definition_id=760, xp_ref="m.xp")],
+            rig_definition_id="wolfie_crossbow_v1",
+        )
+        id_maps = load_id_maps(sample_bundle)
+        key = ServerVisualKey.from_profile(profile, id_maps)
+        assert key.rig_definition_id == "wolfie_crossbow_v1"
+
+    def test_from_profile_null_rig_definition_id(self, sample_bundle):
+        profile = ActorVisualProfile(
+            profile_id="no_rig_test",
+            skin_definition_id=100,
+            presentation_kind="idle_walk",
+            domain="skin",
+            layers=[LayerAssignment(slot="body", layer_definition_id=700, xp_ref="p.xp")],
+        )
+        id_maps = load_id_maps(sample_bundle)
+        key = ServerVisualKey.from_profile(profile, id_maps)
+        assert key.rig_definition_id is None
 
     def test_from_profile_mounted(self, sample_bundle):
         profile = ActorVisualProfile(

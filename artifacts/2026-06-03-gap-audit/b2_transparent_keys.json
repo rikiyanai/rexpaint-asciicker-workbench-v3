@@ -1,0 +1,39 @@
+{
+  "btns": [
+    {
+      "text": "MAG transparent",
+      "title": "Primary transparent key (255,0,255) — runtime renders as see-through. LMB = FG, RMB = BG.",
+      "bg": "rgb(255, 0, 255)"
+    },
+    {
+      "text": "YEL transparent-2",
+      "title": "Secondary transparent key (255,255,0) — Y9-2 engine. LMB = FG, RMB = BG.",
+      "bg": "rgb(255, 255, 0)"
+    }
+  ],
+  "afterMagClick": {
+    "drawFg": [
+      255,
+      0,
+      255
+    ],
+    "drawBg": [
+      0,
+      0,
+      0
+    ]
+  },
+  "afterYelRight": {
+    "drawFg": [
+      255,
+      0,
+      255
+    ],
+    "drawBg": [
+      255,
+      255,
+      0
+    ]
+  },
+  "pass": true
+}
