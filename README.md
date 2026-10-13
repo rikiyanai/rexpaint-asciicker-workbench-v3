@@ -72,5 +72,5 @@ PYTHONPATH=src python3 -m pytest
 
 ## Docs
 
-- Canonical spec: `docs/plans/2026-03-23-workbench-canonical-spec.md`
+- Reference spec (pipeline-v3 subproject scope only): `docs/plans/2026-03-23-workbench-canonical-spec.md`
 - Failure log: `PLAYWRIGHT_FAILURE_LOG.md`

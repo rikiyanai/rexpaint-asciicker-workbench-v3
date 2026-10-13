@@ -11,6 +11,7 @@
   const DEFAULT_LAYER_NAMES = ["Metadata", "Layer 1", "Visual", "Layer 3"];
   const VERIFY_CMD_TEMPLATE_STORAGE_KEY = "wb_verify_command_template_v1";
   const TERM_STREAM_REGION_STORAGE_KEY = "wb_termpp_stream_region_v1";
+  const VIEWPORT_MODE_STORAGE_KEY = "wb_viewport_mode_v1";
   const INSPECTOR_SWATCHES = [
     [0, 0, 0],
     [255, 255, 255],
@@ -25,6 +26,45 @@
     [128, 0, 255],
     [128, 64, 0],
   ];
+  const OVERRIDE_MODE = String(params.get("overridemode") || "mounted").trim().toLowerCase();
+  // Override-name generation: derives per-prefix W range from registry prefix_catalog.ahsw_range.
+  // ahsw_range "all_16" → W∈{0,1,2}, "weapon_gte_1" → W∈{1,2}.
+  function _ahswNamesFromRegistry(prefixCatalog, prefixes) {
+    const out = [];
+    for (const prefix of prefixes) {
+      const spec = prefixCatalog[prefix];
+      const range = spec && spec.ahsw_range;
+      const wRange = range === "weapon_gte_1" ? [1, 2] : [0, 1, 2];
+      if (range === "all_16" && prefix === "player") out.push("player-nude.xp");
+      for (let a = 0; a < 2; a++)
+        for (let h = 0; h < 2; h++)
+          for (let s = 0; s < 2; s++)
+            for (const w of wRange)
+              out.push(`${prefix}-${a}${h}${s}${w}.xp`);
+    }
+    return out;
+  }
+  async function getWebbuildDefaultOverrideNames() {
+    const reg = await fetchTemplateRegistry();
+    if (!reg || !reg.prefix_catalog) {
+      status("Override names unavailable: template registry not loaded", "warn");
+      return [];
+    }
+    const pc = reg.prefix_catalog;
+    // Collect prefixes with ahsw_range, filtered by override mode.
+    const prefixes = [];
+    for (const [key, spec] of Object.entries(pc)) {
+      if (!spec.ahsw_range) continue;
+      if (OVERRIDE_MODE === "full_parity") {
+        prefixes.push(key);
+      } else {
+        // Default "mounted": player + mounted prefixes only.
+        // Excludes attack/plydie to avoid destabilizing NPCs that share those.
+        if (key === "player" || spec.mounted) prefixes.push(key);
+      }
+    }
+    return _ahswNamesFromRegistry(pc, prefixes);
+  }
   const WEBBUILD_READY_TIMEOUT_MS = 180000;
   const WHOLE_SHEET_AUTOSAVE_DEBOUNCE_MS = 1500;
   const WHOLE_SHEET_AUTOSAVE_IDLE_TIMEOUT_MS = 3000;
@@ -79,7 +119,6 @@
     cellHChars: 1,
     frameWChars: 1,
     frameHChars: 1,
-    assignmentMode: "geometric",
     selectedFrames: new Set(),
     selectionAnchor: null,
     selectionFocus: null,
@@ -104,6 +143,7 @@
     wholeSheetGridCustomH: 1,
     sessionKind: "",
     metadataStatus: "",
+    family: "",
     inspectorOpen: false,
     inspectorRow: 0,
     inspectorCol: 0,
@@ -153,8 +193,16 @@
       loadRequestedAt: 0,
       expectedSrc: "",
       lastLoadedSrc: "",
+      pendingAutoStartToken: "",
       uploadedXpBytes: null,
       uploadedXpName: "",
+      // Normalized-contract binding: which doc the dock runtime currently shows.
+      // Empty injectedSessionId => dock shows ambient/default Y9-2 sprites, NOT the doc.
+      injectedSessionId: "",
+      injectedChecksum: "",
+      injectedAt: "",
+      injectedDocKind: "",
+      flatmapName: "",
       runtimePreflight: {
         checked: false,
         ok: false,
@@ -190,6 +238,10 @@
       recentErrors: [],
     },
   };
+
+  // Product chrome mirrors the root editor's Browse/Paint mode. The editor
+  // remains the single owner of document and mode state.
+  let productMode = "browse";
 
   function status(text, cls) {
     const el = $("wbStatus");
@@ -751,6 +803,7 @@
         checked_at: String(j?.checked_at || ""),
         error: "",
       };
+      syncWebbuildFlatmapFromPreflight();
     } catch (e) {
       state.webbuild.runtimePreflight = {
         checked: true,
@@ -763,7 +816,131 @@
     }
     updateRuntimePreflightBanner(state.webbuild.runtimePreflight);
     updateWebbuildUI();
+    renderDocContractPanel(null, null);
     return currentRuntimePreflight();
+  }
+  // Skin Dock self-containment: point the iframe flatmap at a map the
+  // runtime preflight proves exists, instead of a hard-coded name that may
+  // be missing where the server actually serves the runtime bundle.
+  // Precedence: ?flatmap page param (if preflight found it) > first
+  // maps_found entry > built-in default.
+  function syncWebbuildFlatmapFromPreflight() {
+    const pre = currentRuntimePreflight();
+    const found = Array.isArray(pre?.maps_found) ? pre.maps_found : [];
+    const baseOf = (rel) => String(rel || "").split("/").pop();
+    const pageParam = (() => {
+      try { return String(new URLSearchParams(window.location.search).get("flatmap") || "").trim(); }
+      catch (_e) { return ""; }
+    })();
+    let want = "";
+    if (pageParam && found.some((rel) => baseOf(rel) === pageParam || String(rel) === pageParam)) {
+      want = pageParam;
+    } else if (found.length) {
+      want = baseOf(found[0]);
+    }
+    if (!want) return;
+    state.webbuild.flatmapName = want;
+    try {
+      const u = new URL(String(state.webbuild.src || ""), window.location.origin);
+      if (u.searchParams.get("flatmap") !== want) {
+        u.searchParams.set("flatmap", want);
+        state.webbuild.src = `${u.pathname}${u.search}`;
+      }
+    } catch (_e) { /* keep base src on unparsable URL */ }
+  }
+  // Sibling normalized-viewer bridge (read-only terminal viewers over the
+  // reviewed upstream contract — NOT embeddable, NOT doc editors).
+  // Maps the current doc family to the exact viewer invocation for the
+  // reviewed upstream stem of that family. Only player→player-1100 is
+  // verified; other families open the viewer for manual navigation.
+  // Paths are sibling-repo-relative on purpose (no absolute paths).
+  function viewerBridgeForFamily(family) {
+    const fam = String(family || "").trim() || "player";
+    const stem = fam === "player" ? "player-1100" : "";
+    return {
+      normalized_xp_sprite_inspector: {
+        repo: "AsciickerY92-normalized-xp-sprite-inspector",
+        run: "./run-viewer.sh --once",
+        note: "read-only upstream layer notes + body-region UV map",
+      },
+      source_layer_contract_viewer: {
+        repo: "AsciickerY92-source-layer-contract-viewer",
+        run: stem ? `./run-viewer.sh --once ${stem}` : "./run-viewer.sh --once",
+        stem: stem || `(navigate to a ${fam} stem inside the viewer)`,
+        note: "read-only raw layers incl. engine-metadata L0/L1 + composed preview",
+      },
+    };
+  }
+  // ── Normalized-contract viewer (Test This Skin doc binding) ─────────────
+  // Primary Test surface reads the current workbench document through this
+  // contract: doc kind, metadata status, geometry, layer-0 compat actuals,
+  // and — after a Test run — the server payload verdict plus which doc the
+  // dock runtime actually shows. An empty dockSessionId means the iframe (if
+  // visible) shows ambient/default Y9-2 sprites, not the current document.
+  function docL0Row0Glyphs(limit = 8) {
+    const out = [];
+    try {
+      const l0 = Array.isArray(state.layers) && state.layers.length ? state.layers[0] : null;
+      const cols = Math.max(1, Number(state.gridCols || 0));
+      if (!Array.isArray(l0) || !cols) return out;
+      for (let cx = 0; cx < Math.min(limit, cols); cx++) {
+        const cell = l0[cx] || {};
+        const g = Number(cell.glyph || 0);
+        out.push(g >= 32 && g < 127 ? String.fromCharCode(g) : `g${g}`);
+      }
+    } catch (_e) { /* contract best-effort */ }
+    return out;
+  }
+
+  function currentDocContract() {
+    const sid = state.sessionId ? String(state.sessionId) : "";
+    return {
+      session_id: sid,
+      session_short: sid ? `${sid.slice(0, 8)}...` : "(no document)",
+      session_kind: String(state.sessionKind || "(unknown)"),
+      metadata_status: String(state.metadataStatus || "(unknown)"),
+      family: String(state.family || ""),
+      bundle_mode: isBundleMode(),
+      bundle_id: state.bundleId ? String(state.bundleId) : "",
+      template_set_key: String(state.templateSetKey || ""),
+      action_key: String(state.activeActionKey || ""),
+      grid_cols: Number(state.gridCols || 0),
+      grid_rows: Number(state.gridRows || 0),
+      angles: Number(state.angles || 0),
+      anims: Array.isArray(state.anims) ? [...state.anims] : [],
+      layer_count: Array.isArray(state.layers) ? state.layers.length : 0,
+      layer_names: Array.isArray(state.layerNames) ? [...state.layerNames] : [],
+      layer0_actual: docL0Row0Glyphs(),
+      flatmap: String(state.webbuild.flatmapName || "(preflight pending)"),
+    };
+  }
+
+  function renderDocContractPanel(serverContract, inject) {
+    const doc = currentDocContract();
+    const setText = (id, v) => { const el = $(id); if (el) el.textContent = String(v); };
+    setText("docContractKind", `doc: ${doc.session_short} kind=${doc.session_kind} meta=${doc.metadata_status} family=${doc.family || "(unknown)"}`);
+    setText("docContractGeom",
+      `geom: ${doc.grid_cols}x${doc.grid_rows} angles=${doc.angles} anims=[${doc.anims.join(",")}] layers=${doc.layer_count} flatmap=${doc.flatmap}`);
+    const l0srv = serverContract && typeof serverContract === "object" ? serverContract : null;
+    const l0verdict = l0srv
+      ? `l0: actual=[${(l0srv.layer0_actual || []).join(",")}] expected=[${(l0srv.layer0_expected || []).join(",")}] compat=${l0srv.layer0_compat ? "PASS" : "FAIL"}`
+      : `l0: actual=[${doc.layer0_actual.join(",")}] (run Test This Skin for server compat verdict)`;
+    setText("docContractL0", l0verdict);
+    const dockSid = String(state.webbuild.injectedSessionId || "");
+    const dockKind = String(state.webbuild.injectedDocKind || "");
+    const dockLine = dockKind === "external_upload"
+      ? `dock skin: external upload (${String((inject && inject.external_upload) || "") || "file"} — not the current document)`
+      : (!dockSid
+        ? "dock skin: none (ambient/default Y9-2 sprites — not the document)"
+        : (dockSid === doc.session_id && doc.session_id
+          ? `dock skin: ${dockSid.slice(0, 8)}... CHECKSUM=${String(state.webbuild.injectedChecksum || "").slice(0, 12)} (tracks current document)`
+          : `dock skin: ${dockSid.slice(0, 8)}... STALE (document is ${doc.session_short})`));
+    setText("docContractDock", dockLine);
+    const out = $("docContractOut");
+    if (out) {
+      out.textContent = JSON.stringify(
+        { document: doc, payload_contract: l0srv, inject: inject || null, viewer_bridge: viewerBridgeForFamily((l0srv && l0srv.family) || doc.family || "") }, null, 2);
+    }
   }
 
   async function ensureRuntimePreflight(opts = {}) {
@@ -825,26 +1002,22 @@
     }
   }
 
-  function webbuildFrameSrc(forceFresh = false, previewToken = "") {
+  function webbuildFrameSrc(forceFresh = false) {
     const raw = String(state.webbuild.src || bp("/termpp-web-flat/index.html?solo=1&player=player"));
+    if (!forceFresh) return raw;
     try {
       const u = new URL(raw, window.location.origin);
-      // Preview tokens already make authored test documents unique. Runtime
-      // assets carry their own content version, so a timestamp here only
-      // defeats caching and lets repeated actions race full downloads.
-      u.searchParams.delete("_wb");
-      if (previewToken) u.searchParams.set("skin_preview_token", String(previewToken));
-      else u.searchParams.delete("skin_preview_token");
+      u.searchParams.set("_wb", String(Date.now()));
       return `${u.pathname}${u.search}`;
     } catch (_e) {
-      if (!previewToken) return raw;
       const sep = raw.includes("?") ? "&" : "?";
-      return `${raw}${sep}skin_preview_token=${encodeURIComponent(previewToken)}`;
+      return `${raw}${sep}_wb=${Date.now()}`;
     }
   }
 
   function updateWebbuildUI() {
     const sessionReady = !!state.sessionId;
+    const runtimeReady = !!state.webbuild.ready;
     const actionBusy = !!state.webbuild.actionInFlight;
     const actionBusyTitle = state.webbuild.actionLabel
       ? `Skin dock busy: ${state.webbuild.actionLabel} is still running`
@@ -853,24 +1026,24 @@
     const preflightTitle = runtimePreflightTooltip(currentRuntimePreflight());
     const applyBtn = $("webbuildApplySkinBtn");
     if (applyBtn) {
-      applyBtn.disabled = actionBusy || !preflightOk || !sessionReady;
+      applyBtn.disabled = actionBusy || !preflightOk || !(sessionReady && runtimeReady);
       if (!preflightOk) {
         applyBtn.title = preflightTitle;
       } else if (actionBusy) {
         applyBtn.title = actionBusyTitle;
       } else {
-        applyBtn.title = sessionReady ? "Restart the preview with the current XP installed before runtime initialization" : "Requires an active session";
+        applyBtn.title = sessionReady && runtimeReady ? "Apply current XP skin to the running webbuild" : "Requires an active session and a ready webbuild runtime";
       }
     }
     const applyInPlaceBtn = $("webbuildApplyInPlaceBtn");
     if (applyInPlaceBtn) {
-      applyInPlaceBtn.disabled = actionBusy || !preflightOk || !sessionReady;
+      applyInPlaceBtn.disabled = actionBusy || !preflightOk || !(sessionReady && runtimeReady);
       if (!preflightOk) {
         applyInPlaceBtn.title = preflightTitle;
       } else if (actionBusy) {
         applyInPlaceBtn.title = actionBusyTitle;
       } else {
-        applyInPlaceBtn.title = sessionReady ? "Restart the preview through the pre-main XP owner" : "Requires an active session";
+        applyInPlaceBtn.title = sessionReady && runtimeReady ? "Apply to the current runtime without a forced restart (faster)" : "Disabled: wait for the webbuild runtime to finish loading";
       }
     }
     const applyRestartBtn = $("webbuildApplyRestartBtn");
@@ -886,13 +1059,16 @@
     }
     const quickBtn = $("webbuildQuickTestBtn");
     if (quickBtn) {
-      quickBtn.disabled = actionBusy || !preflightOk || !sessionReady;
+      const bundleNotReady = isBundleMode() && !areAllEnabledBundleActionsReady();
+      quickBtn.disabled = actionBusy || !preflightOk || !sessionReady || bundleNotReady;
       if (!preflightOk) {
         quickBtn.title = preflightTitle;
       } else if (actionBusy) {
         quickBtn.title = actionBusyTitle;
+      } else if (bundleNotReady) {
+        quickBtn.title = "Disabled: not all required bundle actions are ready";
       } else {
-        quickBtn.title = sessionReady ? "Restart the preview with this XP installed before sprite construction" : "Disabled: load or create a session first";
+        quickBtn.title = sessionReady ? "Deterministic test path (opens/reloads preview as needed, then applies current XP skin)" : "Disabled: load or create a session first";
       }
     }
     const uploadBtn = $("webbuildUploadTestBtn");
@@ -990,9 +1166,12 @@
     updateWebbuildUI();
     setWebbuildState("Opening flat arena preview... (first load downloads ~24MB)", "warn");
     stopWebbuildReadyPoll();
-    const nextSrc = webbuildFrameSrc(opts.force_fresh !== false, opts.preview_token || "");
+    const nextSrc = webbuildFrameSrc(opts.force_fresh !== false);
     state.webbuild.expectedSrc = nextSrc;
-    try { frame.src = nextSrc; } catch (_e) {}
+    try { frame.src = "about:blank"; } catch (_e) {}
+    setTimeout(() => {
+      try { frame.src = nextSrc; } catch (_e) {}
+    }, 10);
     state.webbuild.readyPoll = setInterval(detectWebbuildReady, 500);
   }
 
@@ -1006,41 +1185,57 @@
     updateWebbuildUI();
     setWebbuildState("Reloading webbuild...", "warn");
     stopWebbuildReadyPoll();
-    const nextSrc = webbuildFrameSrc(opts.force_fresh !== false, opts.preview_token || "");
+    const nextSrc = webbuildFrameSrc(opts.force_fresh !== false);
     state.webbuild.expectedSrc = nextSrc;
-    try { frame.src = nextSrc; } catch (_e) {}
+    try { frame.src = "about:blank"; } catch (_e) {}
+    setTimeout(() => {
+      try { frame.src = nextSrc; } catch (_e) {}
+    }, 10);
     state.webbuild.readyPoll = setInterval(detectWebbuildReady, 500);
   }
 
-  function uint8ArrayToBase64(bytes) {
-    let binary = "";
-    const chunkSize = 0x8000;
-    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
-      binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+  function b64ToUint8Array(b64) {
+    const bin = atob(String(b64 || ""));
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function emfsReplaceFile(M, absPath, bytes) {
+    const path = String(absPath || "");
+    if (!path.startsWith("/")) throw new Error(`invalid emfs path: ${path}`);
+    const slash = path.lastIndexOf("/");
+    const dir = slash > 0 ? path.slice(0, slash) : "/";
+    const name = path.slice(slash + 1);
+    if (!name) throw new Error(`invalid emfs filename: ${path}`);
+    const FS = M && M.FS;
+    if (FS && typeof FS.writeFile === "function") {
+      try {
+        FS.writeFile(path, bytes, { canOwn: true });
+        return { mode: "writeFile" };
+      } catch (_e) {
+        // Fall back to unlink/create for runtimes that don't expose writable nodes yet.
+      }
     }
-    return btoa(binary);
+    try { M.FS_unlink(path); } catch (_e) {}
+    M.FS_createDataFile(dir, name, bytes, true, true, true);
+    return { mode: "createDataFile" };
   }
 
-  async function mintLegacyPreviewToken(opts = {}) {
-    const body = opts.xp_bytes instanceof Uint8Array
-      ? {
-          xp_b64: uint8ArrayToBase64(opts.xp_bytes),
-          source_name: String(opts.source_name || "preview.xp"),
-        }
-      : { session_id: String(state.sessionId || "") };
-    const response = await fetch(bp("/api/workbench/legacy-preview-token"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload?.error || `preview token request failed (${response.status})`);
-    return payload;
-  }
-
-  function currentLegacyPreviewReceipt() {
-    try { return webbuildFrameWindow()?.__legacySkinPreview || null; }
-    catch (_e) { return null; }
+  // ── Pre-boot XP injection helpers ──
+  // Resets iframe and waits for fresh WASM load (calledRun=true) before returning.
+  // Caller then injects XP files via injectXpBytesIntoWebbuild — BEFORE Load() is
+  // called, eliminating the race window that mounted mode has.
+  async function resetWebbuildForPreboot() {
+    stopWebbuildReadyPoll();
+    const frame = $("webbuildFrame");
+    if (frame) {
+      try { frame.src = "about:blank"; } catch (_e) {}
+      state.webbuild.loaded = false;
+      state.webbuild.ready = false;
+      state.webbuild.expectedSrc = "";
+    }
+    return await waitForWebbuildReady();
   }
 
   async function waitForWebbuildReady(timeoutMs = WEBBUILD_READY_TIMEOUT_MS) {
@@ -1059,13 +1254,6 @@
     const t0 = Date.now();
     let nextPulse = t0 + 5000;
     while (Date.now() - t0 < timeoutMs) {
-      const receipt = currentLegacyPreviewReceipt();
-      if (receipt && receipt.status === "failed") {
-        const message = String(receipt.error || receipt.packet_contract_error || "pre-main XP installation failed");
-        setWebbuildState(`Skin preview blocked: ${message}`, "err");
-        try { $("webbuildOut").textContent = JSON.stringify({ stage: "legacy_preview_bootstrap_failed", receipt }, null, 2); } catch (_e) {}
-        return false;
-      }
       if (detectWebbuildReady()) return true;
       const now = Date.now();
       if (now >= nextPulse) {
@@ -1197,101 +1385,290 @@
     return true;
   }
 
-  async function waitForLegacyPreviewRuntimeActivation(family, timeoutMs = 30000) {
-    if (String(family || "") !== "player") return currentLegacyPreviewReceipt();
-    const started = Date.now();
-    while (Date.now() - started < timeoutMs) {
-      const receipt = currentLegacyPreviewReceipt();
-      if (receipt?.status === "failed" || receipt?.runtime_activation_status === "failed") {
-        throw new Error(String(
-          receipt.runtime_activation_error || receipt.error || "legacy player preview activation failed",
-        ));
+  async function normalizeWebbuildOverrideNames(names) {
+    const out = [];
+    const seen = new Set();
+    const isSafePlayerOverride = (name) => {
+      const s = String(name || "").trim().toLowerCase();
+      if (s === "player-nude.xp") return true;
+      // AHSW naming: A,H,S ∈ {0,1}, W ∈ {0,1,2}
+      if (isBundleMode() || OVERRIDE_MODE === "full_parity") {
+        if (/^(player|attack|plydie|wolfie|wolack)-[01]{3}[012]\.xp$/.test(s)) return true;
+      } else {
+        // mounted default: player + wolfie + wolack
+        if (/^(player|wolfie|wolack)-[01]{3}[012]\.xp$/.test(s)) return true;
       }
-      if (receipt?.runtime_activation_status === "activated") return receipt;
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      return false;
+    };
+    const add = (name) => {
+      const s = String(name || "").trim();
+      if (!s || seen.has(s) || !isSafePlayerOverride(s)) return;
+      seen.add(s);
+      out.push(s);
+    };
+    if (Array.isArray(names)) {
+      for (const name of names) add(name);
     }
-    throw new Error("legacy player preview did not reach unmounted runtime state");
+    const defaultNames = await getWebbuildDefaultOverrideNames();
+    for (const name of defaultNames) add(name);
+    return out;
   }
 
-  async function launchLegacyPreviewToken(tokenPayload) {
-    reloadWebbuild({ force_fresh: true, preview_token: tokenPayload.token });
-    if (!(await waitForWebbuildReady())) throw new Error("legacy preview runtime did not become ready");
-    const receipt = currentLegacyPreviewReceipt();
-    if (!receipt || receipt.status !== "installed") throw new Error("legacy preview install receipt is missing");
-    const expectedTargets = Array.isArray(tokenPayload.target_paths) ? tokenPayload.target_paths : [];
-    const installedTargets = Array.isArray(receipt.target_paths) ? receipt.target_paths : [];
-    const targetsMatch = (
-      expectedTargets.length === 24 &&
-      installedTargets.length === expectedTargets.length &&
-      installedTargets.every((target, index) => target === expectedTargets[index])
-    );
-    const hashesMatch = expectedTargets.every(
-      (target) => receipt.actual_sha256_by_path?.[target] === tokenPayload.sha256,
-    );
-    if (
-      receipt.target_path !== tokenPayload.target_path ||
-      receipt.actual_sha256 !== tokenPayload.sha256 ||
-      receipt.installed_target_count !== expectedTargets.length ||
-      !targetsMatch ||
-      !hashesMatch
-    ) {
-      throw new Error("legacy preview install receipt does not match the minted payload");
+  async function prepareWebbuildForSkinApply(opts = {}) {
+    const forceRestart = !!opts.force_restart;
+    const restartIfOverlayHidden = !!opts.restart_if_overlay_hidden;
+    if (!(await waitForWebbuildReady())) return { ready: false, restarted: false, overlay_visible: 0 };
+    const initialWin = webbuildFrameWindow();
+    const overlayVisible = webbuildLoginOverlayVisible(initialWin);
+    if (forceRestart || (restartIfOverlayHidden && !overlayVisible)) {
+      reloadWebbuild({ force_fresh: true });
+      if (!(await waitForWebbuildReady())) return { ready: false, restarted: true, overlay_visible: 0 };
+      const restartedWin = webbuildFrameWindow();
+      return {
+        ready: true,
+        restarted: true,
+        restart_reason: forceRestart ? "forced" : "overlay_hidden",
+        overlay_visible: webbuildLoginOverlayVisible(restartedWin) ? 1 : 0,
+      };
     }
-    return waitForLegacyPreviewRuntimeActivation(tokenPayload.family);
+    return { ready: true, restarted: false, overlay_visible: overlayVisible ? 1 : 0 };
   }
 
-  async function applyCurrentXpAsWebSkin(_opts = {}) {
+  async function injectXpBytesIntoWebbuild(win, xpBytes, opts = {}) {
+    if (!win || !win.Module) throw new Error("webbuild iframe is not ready");
+    if (!(xpBytes instanceof Uint8Array) || !xpBytes.length) throw new Error("empty xp payload");
+    const M = win.Module;
+    if (win.__termppFlatMap && typeof win.__termppFlatMap.apply === "function") {
+      try {
+        await win.__termppFlatMap.apply(true);
+      } catch (_e) {
+        // Fall through: skin injection can still proceed on non-flat bundles.
+      }
+    }
+    if (typeof M.FS_createPath === "function") {
+      try { M.FS_createPath("/", "sprites", true, true); } catch (_e) {}
+    }
+    const names = await normalizeWebbuildOverrideNames(opts.override_names);
+    const playerName = String(opts.reload_player_name || "player");
+    // Solo-only load contract: StartGame is never used in skin test automation.
+    // The iframe uses Load() + Resize() and auto-newgame pulses from the bootstrap.
+    let fsWriteMode = "";
+    for (const name of names) {
+      const res = emfsReplaceFile(M, `/sprites/${name}`, xpBytes);
+      if (!fsWriteMode && res && res.mode) fsWriteMode = String(res.mode);
+    }
+    // Solo-only load contract: always use Load() + Resize().
+    // Auto-newgame pulses from the bootstrap handle menu advance.
+    if (typeof win.Load === "function") win.Load(playerName);
+    if (typeof win.Resize === "function") {
+      try { win.Resize(null); } catch (_e) {}
+    }
+    if (typeof win.ak_canvas !== "undefined" && win.ak_canvas && typeof win.ak_canvas.focus === "function") {
+      try { win.ak_canvas.focus(); } catch (_e) {}
+    }
+    return {
+      bytes: xpBytes.length,
+      files_written: names.length,
+      override_names: [...names],
+      fs_write_mode: fsWriteMode || "unknown",
+      player_name: playerName,
+      started_via: "load",
+    };
+  }
+
+  async function injectXpIntoWebbuild(win, payload) {
+    const xpBytes = b64ToUint8Array(payload.xp_b64 || "");
+    return await injectXpBytesIntoWebbuild(win, xpBytes, {
+      override_names: Array.isArray(payload.override_names) ? payload.override_names : [],
+      reload_player_name: String(payload.reload_player_name || "player"),
+    });
+  }
+
+  async function injectBundleIntoWebbuild(win, bundlePayload) {
+    if (!win || !win.Module) throw new Error("webbuild iframe is not ready");
+    const M = win.Module;
+    if (typeof M.FS_createPath === "function") {
+      try { M.FS_createPath("/", "sprites", true, true); } catch (_e) {}
+    }
+    const results = {};
+    for (const [actionKey, actionData] of Object.entries(bundlePayload.actions || {})) {
+      const xpBytes = b64ToUint8Array(actionData.xp_b64 || "");
+      const names = await normalizeWebbuildOverrideNames(actionData.override_names);
+      for (const name of names) {
+        emfsReplaceFile(M, `/sprites/${name}`, xpBytes);
+      }
+      results[actionKey] = { bytes: xpBytes.length, files: names.length };
+    }
+    // Unmapped families: no writes — WASM keeps native defaults
+    const playerName = String(bundlePayload.reload_player_name || "player");
+    if (typeof win.Load === "function") win.Load(playerName);
+    if (typeof win.Resize === "function") {
+      try { win.Resize(null); } catch (_e) {}
+    }
+    if (typeof win.ak_canvas !== "undefined" && win.ak_canvas && typeof win.ak_canvas.focus === "function") {
+      try { win.ak_canvas.focus(); } catch (_e) {}
+    }
+    return {
+      actions: results,
+      unmapped_families: bundlePayload.unmapped_families || [],
+      player_name: playerName,
+      started_via: "load",
+    };
+  }
+
+  async function applyCurrentXpAsWebSkin(opts = {}) {
     await runWebbuildSkinAction("apply skin", async () => {
       if (!(await ensureRuntimePreflight({ refresh: true }))) return;
-      if (!state.sessionId) {
+      // Guard: need a session (classic) or a bundle with required enabled actions (bundle mode)
+      if (isBundleMode()) {
+        const ts = getActiveTemplateSet();
+        if (ts) {
+          for (const [key, spec] of Object.entries(getEnabledActions(ts))) {
+            if (spec.required && (!state.actionStates[key] || !isBundleActionReadyStatus(state.actionStates[key].status))) {
+              status(`Required action "${key}" not ready yet`, "warn");
+              return;
+            }
+          }
+        }
+      } else if (!state.sessionId) {
         status("Load a workbench session first", "warn");
         return;
       }
       const t0 = Date.now();
       const timings = {};
+      // ── Preboot vs mounted: prep diverges here ──
+      let prep = null;
+      if (OVERRIDE_MODE !== "preboot") {
+        // Mounted: load/reload iframe first, wait for WASM ready, then inject.
+        status("Preparing flat arena runtime for skin test...", "warn");
+        prep = await prepareWebbuildForSkinApply({
+          force_restart: !!opts.force_restart,
+          restart_if_overlay_hidden: opts.restart_if_overlay_hidden !== false,
+        });
+        timings.prepare_ms = Date.now() - t0;
+        if (!prep.ready) {
+          status("Webbuild not ready yet; wait for load to finish", "warn");
+          try {
+            $("webbuildOut").textContent = JSON.stringify({
+              stage: "prepare_webbuild_not_ready",
+              prep,
+              timings,
+              webbuild_state: String($("webbuildState")?.textContent || ""),
+            }, null, 2);
+          } catch (_e) {}
+          return;
+        }
+      }
       try {
         const tSave = Date.now();
         status("Saving current session before skin test...", "warn");
         const saveRes = await saveSessionState("pre-web-skin-apply", { wait_for_idle: true, timeout_ms: 15000 });
         if (!saveRes || !saveRes.ok) {
-          timings.save_session_failed = saveRes || { ok: false };
-          $("webbuildOut").textContent = JSON.stringify({
-            stage: "save_session_before_web_skin_apply_failed",
-            save: saveRes,
-            timings,
-          }, null, 2);
-          status("Skin test blocked: session save failed/timed out", "err");
-          return;
+          // In bundle mode, save may fail if active tab has no session — that's OK
+          if (isBundleMode() && saveRes && saveRes.skipped === "no_session") {
+            timings.save_session_skipped = "bundle_no_active_session";
+          } else {
+            timings.save_session_failed = saveRes || { ok: false };
+            $("webbuildOut").textContent = JSON.stringify({
+              stage: "save_session_before_web_skin_apply_failed",
+              save: saveRes,
+              timings,
+            }, null, 2);
+            status("Skin test blocked: session save failed/timed out", "err");
+            return;
+          }
         }
         timings.save_session_ms = Date.now() - tSave;
-        status("Validating XP and minting one-shot preview...", "warn");
-        const tMint = Date.now();
-        const token = await mintLegacyPreviewToken();
-        timings.mint_ms = Date.now() - tMint;
-        status(`Installing ${token.family} preview bundle before sprite construction...`, "warn");
-        const tLaunch = Date.now();
-        const receipt = await launchLegacyPreviewToken(token);
-        timings.launch_ms = Date.now() - tLaunch;
+        status(prep && prep.restarted ? "Reloaded preview; exporting XP skin payload..." : "Exporting XP skin payload...", "warn");
+        const tPayload = Date.now();
+        const useBundlePayload = isBundleMode();
+        const payloadUrl = useBundlePayload
+          ? bp("/api/workbench/web-skin-bundle-payload")
+          : bp("/api/workbench/web-skin-payload");
+        const payloadBody = useBundlePayload
+          ? { bundle_id: state.bundleId }
+          : { session_id: state.sessionId };
+        const r = await fetch(payloadUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadBody),
+        });
+        timings.fetch_payload_ms = Date.now() - tPayload;
+        const j = await r.json();
+        if (!r.ok) {
+          $("webbuildOut").textContent = JSON.stringify(j, null, 2);
+          status("Web skin payload failed", "err");
+          return;
+        }
+        status("Injecting XP into flat arena runtime...", "warn");
+        const tInject = Date.now();
+        let inject;
+        if (useBundlePayload) {
+          // Bundle injection: per-action XP bytes
+          if (OVERRIDE_MODE === "preboot") {
+            if (!(await resetWebbuildForPreboot())) {
+              status("Webbuild not ready after preboot reload", "err");
+              return;
+            }
+          }
+          const win = webbuildFrameWindow();
+          inject = await injectBundleIntoWebbuild(win, j);
+          if (OVERRIDE_MODE === "preboot") inject.preboot = true;
+        } else {
+          // Classic single-XP injection
+          const xpBytes = b64ToUint8Array(j.xp_b64 || "");
+          if (OVERRIDE_MODE === "preboot") {
+            if (!(await resetWebbuildForPreboot())) {
+              status("Webbuild not ready after preboot reload", "err");
+              return;
+            }
+            const win = webbuildFrameWindow();
+            inject = await injectXpBytesIntoWebbuild(win, xpBytes, {
+              override_names: j.override_names,
+              reload_player_name: String(j.reload_player_name || "player"),
+            });
+            inject.preboot = true;
+          } else {
+            const win = webbuildFrameWindow();
+            inject = await injectXpBytesIntoWebbuild(win, xpBytes, {
+              override_names: j.override_names,
+              reload_player_name: String(j.reload_player_name || "player"),
+            });
+          }
+        }
+        timings.inject_ms = Date.now() - tInject;
         timings.total_ms = Date.now() - t0;
+        const payloadSummary = useBundlePayload
+          ? { actions: Object.fromEntries(Object.entries(j.actions || {}).map(([k, v]) => [k, { files: (v.override_names || []).length, bytes: v.xp_size_bytes }])), unmapped: j.unmapped_families }
+          : { override_names: await normalizeWebbuildOverrideNames(j.override_names), xp_b64: `(<${(j.xp_b64 || "").length} base64 chars>)` };
+        // Normalized-contract binding: the dock now shows THIS document, not
+        // ambient/default sprites. Record identity where Test consumes it.
+        const docContract = (!useBundlePayload && j.doc_contract && typeof j.doc_contract === "object")
+          ? j.doc_contract
+          : null;
+        if (!useBundlePayload && inject && !inject.error) {
+          state.webbuild.injectedSessionId = state.sessionId ? String(state.sessionId) : "";
+          state.webbuild.injectedChecksum = String((docContract && docContract.checksum) || j.checksum || "");
+          state.webbuild.injectedAt = new Date().toISOString();
+          state.webbuild.injectedDocKind = String((docContract && docContract.session_kind) || state.sessionKind || "");
+        }
+        renderDocContractPanel(docContract, { inject, bundle_mode: useBundlePayload });
         $("webbuildOut").textContent = JSON.stringify({
-          mode: "legacy_pre_main_preview",
           timings,
-          token: {
-            target_path: token.target_path,
-            target_paths: token.target_paths,
-            runtime_state: token.runtime_state,
-            sha256: token.sha256,
-            size_bytes: token.size_bytes,
-            width: token.width,
-            height: token.height,
-            layers: token.layers,
-          },
-          receipt,
+          prep,
+          payload: payloadSummary,
+          doc_contract: docContract,
+          dock_session_id: String(state.webbuild.injectedSessionId || ""),
+          dock_checksum: String(state.webbuild.injectedChecksum || ""),
+          viewer_bridge: viewerBridgeForFamily((docContract && docContract.family) || state.family || ""),
+          inject,
         }, null, 2);
         state.webbuild.ready = true;
         updateWebbuildUI();
-        status(`Preview installed before runtime (${Math.round(timings.total_ms || 0)}ms)`, "ok");
-        setWebbuildState(`Webbuild ready (${token.runtime_state})`, "ok");
+        const modeLabel = useBundlePayload ? "bundle skin" : "web skin";
+        const kindLabel = docContract && docContract.session_kind ? ` [${docContract.session_kind}]` : "";
+        status(`Applied ${modeLabel}${kindLabel} (${Math.round(timings.total_ms || 0)}ms)`, "ok");
+        setWebbuildState(`Webbuild ready (${modeLabel} applied)`, "ok");
       } catch (e) {
         try {
           timings.total_ms = Date.now() - t0;
@@ -1311,12 +1688,26 @@
 
   async function testCurrentSkinInDock() {
     if (!(await ensureRuntimePreflight({ refresh: true }))) return;
-    if (!state.sessionId) {
+    if (isBundleMode()) {
+      // Bundle mode: need at least the required enabled actions ready
+      const ts = getActiveTemplateSet();
+      if (ts) {
+        for (const [key, spec] of Object.entries(getEnabledActions(ts))) {
+          if (spec.required && (!state.actionStates[key] || !isBundleActionReadyStatus(state.actionStates[key].status))) {
+            status(`Required action "${key}" not ready yet`, "warn");
+            return;
+          }
+        }
+      }
+    } else if (!state.sessionId) {
       status("Load a workbench session first", "warn");
       return;
     }
     status("Restarting flat test arena and testing current skin...", "warn");
-    await applyCurrentXpAsWebSkin();
+    await applyCurrentXpAsWebSkin({
+      force_restart: true,
+      restart_if_overlay_hidden: true,
+    });
   }
 
   async function onWebbuildUploadTestClick() {
@@ -1335,24 +1726,49 @@
   async function applyUploadedXpBytesToWebbuild(fileName, xpBytes) {
     await runWebbuildSkinAction("upload skin", async () => {
       if (!(await ensureRuntimePreflight({ refresh: true }))) return;
-      try {
-        const token = await mintLegacyPreviewToken({
-          xp_bytes: xpBytes,
-          source_name: fileName || "upload.xp",
+      const override_names = await getWebbuildDefaultOverrideNames();
+      let inject, prep = null;
+      if (OVERRIDE_MODE === "preboot") {
+        // Preboot: reset iframe, wait for fresh WASM (calledRun=true), then inject
+        // XP files BEFORE Load() — no race because game loop hasn't started yet.
+        if (!(await resetWebbuildForPreboot())) {
+          status("Webbuild not ready after preboot reload", "err");
+          return;
+        }
+        const win = webbuildFrameWindow();
+        inject = await injectXpBytesIntoWebbuild(win, xpBytes, {
+          override_names,
+          reload_player_name: "player",
         });
-        const receipt = await launchLegacyPreviewToken(token);
+        inject.preboot = true;
+      } else {
+        prep = await prepareWebbuildForSkinApply({ force_restart: true, restart_if_overlay_hidden: true });
+        if (!prep.ready) {
+          status("Webbuild not ready; preview failed to load", "err");
+          return;
+        }
+        const win = webbuildFrameWindow();
+        inject = await injectXpBytesIntoWebbuild(win, xpBytes, {
+          override_names,
+          reload_player_name: "player",
+        });
+      }
+      try {
         state.webbuild.uploadedXpBytes = xpBytes;
         state.webbuild.uploadedXpName = fileName || "upload.xp";
+        // External upload is not the current document: clear doc tracking so
+        // the contract viewer cannot mislabel it as the loaded doc.
+        state.webbuild.injectedSessionId = "";
+        state.webbuild.injectedChecksum = "";
+        state.webbuild.injectedAt = "";
+        state.webbuild.injectedDocKind = "external_upload";
+        renderDocContractPanel(null, { external_upload: state.webbuild.uploadedXpName, inject });
         $("webbuildOut").textContent = JSON.stringify({
-          mode: "legacy_pre_main_upload_preview",
+          mode: "upload_test_skin",
+          override_mode: OVERRIDE_MODE,
           file: state.webbuild.uploadedXpName,
-          token: {
-            target_path: token.target_path,
-            runtime_state: token.runtime_state,
-            sha256: token.sha256,
-            size_bytes: token.size_bytes,
-          },
-          receipt,
+          prep,
+          inject,
         }, null, 2);
         state.webbuild.ready = true;
         updateWebbuildUI();
@@ -1736,16 +2152,14 @@
       $("exportOut").textContent = JSON.stringify(j, null, 2);
       status(`Authoring artifact exported: ${j.profile_id}`, "ok");
       
-      // Auto-download the JSON file (cross-browser compatible)
+      // Auto-download the JSON file
       const blob = new Blob([JSON.stringify(j, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `${j.profile_id}_artifact.json`;
-      document.body.appendChild(a);  // Required for Firefox/Safari
       a.click();
-      document.body.removeChild(a);  // Clean up
-      setTimeout(() => URL.revokeObjectURL(url), 100);  // Delay to allow download to start
+      URL.revokeObjectURL(url);
     } catch (e) {
       status(`Export error: ${e}`, "err");
     }
@@ -2395,7 +2809,7 @@
   }
 
   function authoringProjectionCount() {
-    return Math.max(1, Number(state.projs || 1));
+    return Math.max(1, Number(state.sourceProjs || 1));
   }
 
   function semanticFrameCount() {
@@ -3548,6 +3962,8 @@
     state.inspectorCol = Math.max(0, col);
     state.inspectorHover = null;
     state.inspectorLastHoverAnchor = null;
+    const diagnostics = $("advancedDiagnostics");
+    if (diagnostics) diagnostics.open = true;
     const panel = $("cellInspectorPanel");
     if (panel) panel.classList.remove("hidden");
     renderInspector();
@@ -4023,6 +4439,14 @@
     renderSourceCanvas();
     const row = state.selectedRow === null ? 0 : state.selectedRow;
     renderPreviewFrame(Math.max(0, Math.min(state.angles - 1, row)), 0);
+    // XP animation/metadata preview binding: label which document the preview
+    // renders so a doc switch (or no doc) can never masquerade as another sprite.
+    const previewLabel = $("previewDocLabel");
+    if (previewLabel) {
+      previewLabel.textContent = state.sessionId
+        ? `preview: ${String(state.sessionId).slice(0, 8)}... [${String(state.sessionKind || "unknown")}]`
+        : "preview: no document loaded";
+    }
     renderInspector();
     updateSessionDirtyBadge();
   }
@@ -4040,13 +4464,6 @@
           state.bundleId = null;
           state.actionStates = {};
         }
-        return;
-      }
-      // Raw / non-template session. When the caller asked to preserve bundle
-      // context (e.g. importXp adopted this raw upload into an active bundle
-      // action), keep state.bundleId/actionStates/templateSetKey/activeActionKey
-      // so the action tab strip and Test Bundle Skin gating survive.
-      if (preserveBundleContext && state.bundleId) {
         return;
       }
       state.bundleId = null;
@@ -4068,6 +4485,7 @@
       state.cellHChars = Number(j.cell_h || 1);
       state.sessionKind = String(j.session_kind || "");
       state.metadataStatus = String(j.metadata_status || "");
+      state.family = String(j.family || "");
       applyLoadedSessionOwnership(j, opts);
       state.layerNames = Array.isArray(j.layer_names) && j.layer_names.length ? [...j.layer_names] : [...DEFAULT_LAYER_NAMES];
       state.wholeSheetCanvasZoom = Number.isFinite(Number(j.whole_sheet_canvas_zoom)) ? Number(j.whole_sheet_canvas_zoom) : 0;
@@ -4137,44 +4555,16 @@
         syncLayersFromSessionCells();
       }
       status(`Session active: ${state.sessionId.slice(0, 8)}...`, "ok");
+      stopPreview();
       renderAll();
+      // Doc switch invalidates any previously injected dock skin: the dock no
+      // longer tracks a document until Test This Skin injects the new one.
+      state.webbuild.injectedSessionId = "";
+      state.webbuild.injectedChecksum = "";
+      state.webbuild.injectedAt = "";
+      state.webbuild.injectedDocKind = "";
+      renderDocContractPanel(null, null);
       hydrateWholeSheetEditor();
-      // FL-4178 fix: ?focusFrame=row,col auto-opens whole-sheet editor on that frame after hydration
-      try {
-        const ff = String(params.get("focusFrame") || "").trim();
-        if (ff) {
-          const parts = ff.split(",").map((s) => Number(String(s).trim()));
-          const fr = Number.isFinite(parts[0]) ? Math.max(0, parts[0] | 0) : 0;
-          const fc = Number.isFinite(parts[1]) ? Math.max(0, parts[1] | 0) : 0;
-          const tryFocus = async (attempt) => {
-            try {
-              // Seed selection (the button click handler reads these)
-              state.selectedRow = fr;
-              state.selectedCols = new Set([fc]);
-              state.selectionFocus = { row: fr, col: fc };
-              const wsEditor = window.__wholeSheetEditor;
-              const editorReady = !!(wsEditor && typeof wsEditor.mount === "function");
-              if (!editorReady) throw new Error("wsEditor not ready");
-              // Re-entrant + idempotent — returns existing promise if mount in flight
-              const p = hydrateWholeSheetEditor();
-              if (p && typeof p.then === "function") await p;
-              const panel = $("wholeSheetPanel");
-              if (panel) panel.classList.remove("hidden");
-              // openInspectorForSelectedFrame is the exact path the button click takes
-              const ok = openInspectorForSelectedFrame();
-              if (ok !== false) {
-                try { if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (_e) {}
-                status(`focusFrame=${fr},${fc} - whole-sheet editor focused`, "ok");
-                return true;
-              }
-            } catch (_e) {}
-            if (attempt < 40) setTimeout(() => { void tryFocus(attempt + 1); }, 250);
-            else status(`focusFrame=${fr},${fc} - whole-sheet editor did not mount within 10s`, "warn");
-            return false;
-          };
-          setTimeout(() => { void tryFocus(0); }, 400);
-        }
-      } catch (_e) {}
       // Avoid an expensive immediate full-session save (and background webbuild boot) right after convert/load.
       // Large sprite sheets can make the UI feel frozen here; defer both until the user edits or runs skin test.
       stopWebbuildReadyPoll();
@@ -4253,11 +4643,6 @@
       }
       state.jobId = String(j.job_id || "");
       hydrateLoadedSession(j, opts);
-      document.body.classList.add('ws-session-loaded');
-      const _rh = document.getElementById('mobileRotateHint');
-      if (_rh) _rh.classList.remove('hidden');
-      // Dismiss mobile first screen for all session-load paths (URL restore, Open XP, template apply)
-      if (typeof window._dismissFirstScreen === 'function') window._dismissFirstScreen();
       return true;
     } catch (e) {
       status("Session load failed: fetch/timeout", "err");
@@ -4289,14 +4674,43 @@
     }
   }
 
+  // Read-only session fetch for Browse whole-sheet previews. Unlike
+  // loadSession it never hydrates workbench state or switches documents.
+  async function previewSessionForBrowse(sessionId) {
+    const sid = String(sessionId || "").trim();
+    if (!sid) throw new Error("missing session_id");
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 20000);
+    try {
+      const r = await fetch(bp("/api/workbench/load-session"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sid }),
+        signal: ctl.signal,
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "preview load failed");
+      return j;
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
   async function browseOpenSession(sessionId) {
     const sid = String(sessionId || "").trim();
-    if (!sid || sid === String(state.sessionId || "")) return true;
+    if (!sid) return false;
+    if (sid === String(state.sessionId || "")) {
+      // Already open: stay on the visible sheet in the Edit workspace.
+      setProductShellMode("edit");
+      return true;
+    }
     await ensureSessionSavedBeforeBrowseOpen(sid);
     const ok = await loadSession(sid, { reason: `Opening session ${sid.slice(0, 8)}...` });
     if (!ok) {
       throw new Error(`session open failed: ${sid}`);
     }
+    // Open leaves Browse: the loaded sheet stays visible in Edit.
+    setProductShellMode("edit");
     return true;
   }
 
@@ -4375,24 +4789,46 @@
         return;
       }
       state.jobId = j.job_id;
-      // When imported inside an active bundle action tab, the new session
-      // takes over that action — keep bundle mode and rebind the action's
-      // sessionId so subsequent save/export/payload calls target it.
-      const inBundle = isBundleMode() && !!state.activeActionKey && !!state.actionStates[state.activeActionKey];
-      if (inBundle) {
-        state.actionStates[state.activeActionKey].sessionId = j.session_id;
-        state.actionStates[state.activeActionKey].status = "blank";
-      }
-      await loadSession(j.session_id, {
-        reason: "Imported XP session ready...",
-        preserveBundleContext: inBundle,
-      });
+      await loadSession(j.session_id, { reason: "Imported XP session ready..." });
     } catch (e) {
       status("Import failed: " + String(e), "err");
       $("sessionOut").textContent = String(e);
     } finally {
       clearTimeout(t);
     }
+  }
+
+  // Direct raw-XP authoring: primary path that never requires template or
+  // bundle selection. Clears template/bundle context, creates a blank root
+  // session, loads it, and stays on the visible sheet in the Edit workspace.
+  async function newRawXp() {
+    if (state.sessionDirty && state.sessionId) {
+      await flushPendingWholeSheetDrawSaveTimer();
+      const saveRes = await saveSessionState("pre-new-raw-xp", { wait_for_idle: true, timeout_ms: 15000 });
+      if (!saveRes || !saveRes.ok) {
+        status("New raw XP blocked: session save failed/timed out", "err");
+        throw new Error("new raw xp blocked: current session save failed/timed out");
+      }
+    }
+    let geometry = {};
+    try {
+      geometry = readClassicGeometryInputs();
+    } catch (e) {
+      // Classic inputs invalid or unavailable: backend falls back to its
+      // default root blank geometry.
+      geometry = {};
+    }
+    status("Creating new raw XP...", "warn");
+    state.bundleId = null;
+    state.actionStates = {};
+    state.templateSetKey = "";
+    state.activeActionKey = "idle";
+    const j = await createBlankRootSession(geometry);
+    const ok = await loadSession(j.session_id, { reason: "New blank raw XP session..." });
+    if (!ok) throw new Error("new raw xp failed: session load failed");
+    setProductShellMode("edit");
+    status(`New raw XP ready: ${j.grid_cols}x${j.grid_rows}`, "ok");
+    return j;
   }
 
   async function newXp() {
@@ -6486,11 +6922,8 @@
       setGridSelection(coords, { anchor, focus: next });
     }
     renderFrameGrid();
-    // U7: auto-scroll active frame into view in mobile filmstrip. Match the
-    // CSS filmstrip condition — width alone misses iPad landscape (1194px,
-    // coarse pointer), where the filmstrip is active but this never fired.
-    if (window.matchMedia('(pointer: coarse)').matches ||
-        window.matchMedia('(max-width: 1024px)').matches) {
+    // U7: auto-scroll active frame into view in mobile filmstrip
+    if (window.matchMedia('(max-width: 768px)').matches) {
       const activeCell = $("gridPanel")?.querySelector('.frame-cell[data-row="' + next.row + '"][data-col="' + next.col + '"]');
       if (activeCell) {
         try { activeCell.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' }); } catch (_e) {}
@@ -6524,33 +6957,23 @@
 
   function hydrateWholeSheetEditor() {
     const wsEditor = window.__wholeSheetEditor;
-    if (!wsEditor || typeof wsEditor.mount !== "function") return null;
+    if (!wsEditor || typeof wsEditor.mount !== "function") return;
     const panel = $("wholeSheetPanel");
-    const mountEl = $("wholeSheetMount");
+    const mount = $("wholeSheetMount");
     const wsStatus = $("wholeSheetStatus");
-    if (!panel || !mountEl) return null;
+    if (!panel || !mount) return;
 
     if (!state.sessionId || !state.layers || state.layers.length === 0 || state.gridCols <= 0 || state.gridRows <= 0) {
       panel.classList.add("hidden");
       if (wsStatus) wsStatus.textContent = "not loaded";
-      return null;
-    }
-
-    // Re-entrancy guard: mount() is async; without this, retry-loop callers
-    // (e.g. tryFocus) stack concurrent mounts. Each pending mount eventually
-    // resolves and clobbers editorState.activeTool back to 'cell', breaking
-    // the Select tool and silently disabling copy/paste.
-    if (state._wsHydrateInflight) return state._wsHydrateInflight;
-    const sigNow = `${state.sessionId}|${state.gridCols}x${state.gridRows}`;
-    if (state._wsHydratedSig === sigNow && wsEditor.getState && wsEditor.getState().mounted) {
-      return Promise.resolve();
+      return;
     }
 
     panel.classList.remove("hidden");
     if (wsStatus) wsStatus.textContent = "loading...";
 
-    const mountPromise = wsEditor.mount({
-      container: mountEl,
+    wsEditor.mount({
+      container: mount,
       gridCols: state.gridCols,
       gridRows: state.gridRows,
       frameW: state.frameWChars,
@@ -6590,11 +7013,6 @@
       onExport: function() { exportXp(); },
       onDocumentStateChange: function(snapshot, reason) {
         if (!applyWholeSheetDocumentSnapshot(snapshot)) return;
-        // A stroke-revert restores the pre-stroke document: net delta zero.
-        // It must not mark dirty or persist — a successful save would clear
-        // sessionDirty and silently commit unrelated pending work from a
-        // gesture the user cancelled.
-        if (String(reason) === "stroke-revert") return;
         markSessionDirty(`whole-sheet-${String(reason || "document")}`);
         saveSessionState(`whole-sheet-${String(reason || "document")}`);
       },
@@ -6604,9 +7022,9 @@
       onBrowseRename: browseRenameSession,
       onBrowseDuplicate: browseDuplicateSession,
       onBrowseDelete: browseDeleteSession,
-    });
-    const tracked = mountPromise.then(() => {
-      state._wsHydratedSig = sigNow;
+      onBrowsePreview: previewSessionForBrowse,
+      onBrowseNewRaw: newRawXp,
+    }).then(() => {
       if (wsStatus) {
         const st = wsEditor.getState();
         wsStatus.textContent = st.hasFontLoaded
@@ -6614,14 +7032,11 @@
           : `${st.gridCols}\u00d7${st.gridRows}, ${st.layerCount} layers (font fallback)`;
       }
       updateUndoRedoButtons();
+      syncProductShellMode(productMode);
     }).catch((err) => {
       console.error("[whole-sheet] mount failed:", err);
       if (wsStatus) wsStatus.textContent = "mount failed";
-    }).finally(() => {
-      state._wsHydrateInflight = null;
     });
-    state._wsHydrateInflight = tracked;
-    return tracked;
   }
 
   function panWholeSheetToFrame(row, col) {
@@ -7093,6 +7508,22 @@
     });
   }
 
+  // First-class PNG import entry point (Browse panel + mobile Import button).
+  // Opens the file chooser directly; falls back to scrolling the
+  // Upload + Convert panel into view when no file is chosen yet.
+  function focusPngImport() {
+    const panel = $("uploadConvertPanel");
+    if (panel && typeof panel.scrollIntoView === "function") {
+      panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    const fileInput = $("wbFile");
+    if (fileInput && typeof fileInput.click === "function") {
+      fileInput.click();
+    } else {
+      status("Use Upload PNG in the Upload + Convert panel", "warn");
+    }
+  }
+
   async function wbUpload() {
     const f = $("wbFile").files[0];
     if (!f) {
@@ -7280,7 +7711,10 @@
   }
 
   async function fetchTemplateRegistry() {
-    if (state.templateRegistry) return state.templateRegistry;
+    if (state.templateRegistry) {
+      renderRegistryActionNavigation();
+      return state.templateRegistry;
+    }
     try {
       const r = await fetch(bp("/api/workbench/templates"));
       if (!r.ok) {
@@ -7297,6 +7731,7 @@
         return state.templateRegistry;
       }
       state.templateRegistry = await r.json();
+      renderRegistryActionNavigation();
       // Surface degraded registry state from registry_status
       const rs = state.templateRegistry?.registry_status;
       if (rs) {
@@ -7338,6 +7773,7 @@
   // Null-guard: if the gating script failed to load (e.g. cache staleness, 404),
   // provide safe no-op fallbacks so the IIFE doesn't crash.
   const _gating = window.__workbenchTemplateGating || null;
+  const _actionNavigation = window.__workbenchActionNavigation || null;
   if (!_gating) {
     console.error('[workbench] workbench-template-gating.js not loaded — template gating features will be unavailable');
   }
@@ -7351,6 +7787,93 @@
 
   function getEnabledActions(ts) {
     return _getEnabledActions(ts, state.templateRegistry, state.templateSetKey);
+  }
+
+  function populateTemplateSelectFromRegistry(model) {
+    const select = $("templateSelect");
+    if (!select || !model?.valid) return;
+    const selected = select.value;
+    select.replaceChildren();
+    for (const templateSet of model.templateSets) {
+      const option = document.createElement("option");
+      option.value = templateSet.templateSetKey;
+      option.textContent = templateSet.label;
+      select.appendChild(option);
+    }
+    if ([...select.options].some((option) => option.value === selected)) select.value = selected;
+  }
+
+  function renderRegistryActionNavigation() {
+    const catalog = $("registryActionCatalog");
+    if (!catalog) return;
+    if (!_actionNavigation || !state.templateRegistry) {
+      catalog.textContent = "Registry action navigation unavailable.";
+      catalog.className = "registry-action-catalog small warn";
+      return;
+    }
+    const model = _actionNavigation.getRegistryActionNavigation(state.templateRegistry);
+    if (!model.valid) {
+      catalog.textContent = `Registry unavailable: ${model.errors.join("; ")}`;
+      catalog.className = "registry-action-catalog small err";
+      return;
+    }
+    populateTemplateSelectFromRegistry(model);
+    catalog.className = "registry-action-catalog";
+    catalog.replaceChildren();
+
+    const authorableSets = model.templateSets.filter((entry) => entry.actions.some((action) => action.authorable));
+    const label = document.createElement("label");
+    label.className = "registry-action-picker-label";
+    label.setAttribute("for", "registryActionSelect");
+    label.textContent = "Skin / action";
+    const actionSelect = document.createElement("select");
+    actionSelect.id = "registryActionSelect";
+    actionSelect.className = "registry-action-picker";
+    for (const templateSet of authorableSets) {
+      const group = document.createElement("optgroup");
+      group.label = templateSet.label;
+      for (const action of templateSet.actions.filter((entry) => entry.authorable)) {
+        const option = document.createElement("option");
+        option.value = `${action.templateSetKey}:${action.actionKey}`;
+        option.textContent = action.label;
+        option.dataset.templateSetKey = action.templateSetKey;
+        option.dataset.actionKey = action.actionKey;
+        option.selected = state.templateSetKey === action.templateSetKey && state.activeActionKey === action.actionKey;
+        group.appendChild(option);
+      }
+      actionSelect.appendChild(group);
+    }
+    actionSelect.addEventListener("change", () => {
+      const option = actionSelect.selectedOptions[0];
+      const templateSetKey = option?.dataset.templateSetKey;
+      const actionKey = option?.dataset.actionKey;
+      const templateSet = authorableSets.find((entry) => entry.templateSetKey === templateSetKey);
+      const action = templateSet?.actions.find((entry) => entry.actionKey === actionKey);
+      if (!templateSet || !action) return;
+      if (state.bundleId && state.templateSetKey === templateSetKey && state.actionStates[actionKey]) {
+        void switchBundleAction(actionKey);
+        return;
+      }
+      const templateSelect = $("templateSelect");
+      if (templateSelect) templateSelect.value = templateSetKey;
+      status(`${templateSet.label} / ${action.label} selected — Apply Template to start authoring`, "ok");
+    });
+    catalog.appendChild(label);
+    catalog.appendChild(actionSelect);
+
+    const unavailable = [];
+    for (const family of model.families) {
+      for (const prefix of family.prefixes) {
+        if (prefix.proofOnly) unavailable.push(`${prefix.label}: proof-only`);
+        else if (prefix.deferred) unavailable.push(`${prefix.label}: deferred`);
+      }
+    }
+    if (unavailable.length) {
+      const note = document.createElement("div");
+      note.className = "registry-action-classifications small";
+      note.textContent = unavailable.join(" · ");
+      catalog.appendChild(note);
+    }
   }
 
   function isBundleActionReadyStatus(statusValue) {
@@ -7399,11 +7922,6 @@
 
   async function persistBundleActionStatus(actionKey, statusValue) {
     if (!isBundleMode() || !state.bundleId) return { ok: false, skipped: "not_bundle_mode" };
-    // Include the live session_id so the backend rebinds bundle.actions[key].session_id
-    // when an XP upload (or any session swap) changed which session this action owns.
-    // Without this, the bundle JSON keeps pointing at the original blank session and the
-    // web-skin-bundle-payload step emits empty content instead of the imported XP.
-    const liveSessionId = state.actionStates[actionKey]?.sessionId || state.sessionId || null;
     const r = await fetch(bp("/api/workbench/bundle/action-status"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -7411,7 +7929,6 @@
         bundle_id: state.bundleId,
         action_key: actionKey,
         status: statusValue,
-        session_id: liveSessionId,
       }),
     });
     const j = await r.json();
@@ -7625,7 +8142,7 @@
       );
       if (!proceed) {
         status("Template apply cancelled", "ok");
-        return false;
+        return;
       }
       // Auto-save current work before replacing
       if (state.sessionDirty) {
@@ -7637,12 +8154,12 @@
     const reg = await fetchTemplateRegistry();
     if (!reg) {
       status("Failed to load template registry", "err");
-      return false;
+      return;
     }
     const ts = reg.template_sets?.[key];
     if (!ts) {
       status(`Unknown template: ${key}`, "err");
-      return false;
+      return;
     }
     const enabledActions = getEnabledActions(ts);
     const actionKeys = Object.keys(enabledActions);
@@ -7654,17 +8171,15 @@
       status("Creating blank authoring session...", "warn");
       try {
         const j = await createBlankTemplateSession(key, state.activeActionKey);
-        const loaded = await loadSession(j.session_id, { reason: `Loading ${ts.label} authoring session...` });
-        if (!loaded) return false;
+        await loadSession(j.session_id, { reason: `Loading ${ts.label} authoring session...` });
         renderBundleActionTabs();
         updateBundleUI();
         $("btnNewXp").disabled = false;
         status(`Authoring session ready: ${ts.label}`, "ok");
-        return true;
       } catch (e) {
         status(`Blank session creation failed: ${e}`, "err");
-        return false;
       }
+      return;
     }
     // Multi-action: create bundle plus blank sessions for each enabled action.
     status("Creating blank authoring bundle...", "warn");
@@ -7677,7 +8192,7 @@
       const j = await r.json();
       if (!r.ok) {
         status(`Bundle creation failed: ${j.error || "unknown"}`, "err");
-        return false;
+        return;
       }
       state.bundleId = j.bundle_id;
       state.activeActionKey = actionKeys[0];
@@ -7692,20 +8207,17 @@
       }
       const firstAction = state.actionStates[state.activeActionKey];
       if (firstAction && firstAction.sessionId) {
-        const loaded = await loadSession(firstAction.sessionId, {
+        await loadSession(firstAction.sessionId, {
           reason: `Loading ${state.activeActionKey} authoring session...`,
           preserveBundleContext: true,
         });
-        if (!loaded) return false;
       }
       renderBundleActionTabs();
       updateBundleUI();
       $("btnNewXp").disabled = false;
       status(`Authoring bundle ready: ${ts.label}`, "ok");
-      return true;
     } catch (e) {
       status(`Bundle creation error: ${e}`, "err");
-      return false;
     }
   }
 
@@ -7827,7 +8339,6 @@
       target_cols: Math.max(1, Number(state.gridCols || 1)),
       target_rows: Math.max(1, Number(state.gridRows || 1)),
       native_compat: false,
-      assignment_mode: state.assignmentMode || "geometric",
     };
     const r = await fetch(bp("/api/run"), {
       method: "POST",
@@ -7967,17 +8478,17 @@
     const payload = draft.payload;
     if (!payload) {
       status("Draft restore failed: empty payload", "warn");
-      return false;
+      return;
     }
     // Validate draft matches current session
     if (payload.sessionId && state.sessionId && payload.sessionId !== state.sessionId) {
       status("Draft is from a different session — skipping restore", "warn");
-      return false;
+      return;
     }
     if (payload.gridCols && payload.gridRows && state.gridCols && state.gridRows) {
       if (payload.gridCols !== state.gridCols || payload.gridRows !== state.gridRows) {
         status("Draft grid dimensions mismatch — skipping restore", "warn");
-        return false;
+        return;
       }
     }
     try {
@@ -7998,13 +8509,6 @@
       if (typeof payload.gridStep === "string") state.wholeSheetGridStep = payload.gridStep;
       if (typeof payload.gridCustomW === "number") state.wholeSheetGridCustomW = payload.gridCustomW;
       if (typeof payload.gridCustomH === "number") state.wholeSheetGridCustomH = payload.gridCustomH;
-      // Restore geometry so saveSessionState() sends correct angles/anims/projs.
-      // Without these, state remains at page-load defaults (angles=1, anims=[1])
-      // and the server rejects save with HTTP 422 (session_geometry_invalid).
-      if (typeof payload.angles === "number") state.angles = payload.angles;
-      if (Array.isArray(payload.anims)) state.anims = [...payload.anims];
-      if (typeof payload.projs === "number") state.projs = payload.projs;
-      if (typeof payload.sourceProjs === "number") state.sourceProjs = payload.sourceProjs;
 
       // Refresh cells from the visual layer (layer 2)
       if (Array.isArray(payload.layers) && payload.layers[2]) {
@@ -8013,18 +8517,10 @@
 
       // Re-mount the whole-sheet editor with restored state
       hydrateWholeSheetEditor();
-      // Enable save/export buttons (normally enabled by hydrateLoadedSession, which
-      // _restoreDraft does not call).
-      if ($("btnSave")) $("btnSave").disabled = false;
-      if ($("btnExport")) $("btnExport").disabled = false;
-      // Hide the draft-available banner that was shown on session load.
-      _dismissDraftBanner();
       markSessionDirty("draft-restore");
       status("Draft restored from browser storage", "ok");
-      return true;
     } catch (e) {
       status("Draft restore failed: " + String(e), "warn");
-      return false;
     }
   }
 
@@ -8049,7 +8545,7 @@
     if (!result || !result.data) {
       // User cancelled or error — silent
       status("Open cancelled", "warn");
-      return false;
+      return;
     }
     // Store the handle for save-back
     _currentFileHandle = result.handle || null;
@@ -8071,17 +8567,14 @@
       if (!r.ok) {
         status("Open failed: " + (j.error || "unknown"), "err");
         $("sessionOut").textContent = JSON.stringify(j, null, 2);
-        return false;
+        return;
       }
       state.jobId = j.job_id;
-      const loaded = await loadSession(j.session_id, { reason: "Opened XP file from disk..." });
-      if (!loaded) return false;
+      await loadSession(j.session_id, { reason: "Opened XP file from disk..." });
       status("Opened: " + (result.name || "file"), "ok");
       _updateFileButtonStates();
-      return true;
     } catch (e) {
       status("Open failed: " + String(e), "err");
-      return false;
     } finally {
       clearTimeout(t);
     }
@@ -8215,9 +8708,109 @@
     if (saveAsBtn) saveAsBtn.disabled = !hasSession;
   }
 
+  function syncProductShellMode(mode = productMode) {
+    const requested = String(mode || "browse").toLowerCase();
+    productMode = requested === "paint" || requested === "edit" ? "edit" : "browse";
+    const browsePanel = $("productBrowsePanel");
+    const editEmptyState = $("productEditEmptyState");
+    const editor = window.__wholeSheetEditor;
+    const editorState = editor && typeof editor.getState === "function" ? editor.getState() : null;
+    const hasDocument = !!(editorState?.mounted && state.sessionId);
+    if (browsePanel) browsePanel.classList.toggle("hidden", productMode !== "browse");
+    if (editEmptyState) editEmptyState.classList.toggle("hidden", productMode !== "edit" || hasDocument);
+    const shell = $("productShell");
+    if (shell) shell.dataset.mode = productMode;
+    for (const [id, modeName] of [["productBrowseBtn", "browse"], ["productEditBtn", "edit"]]) {
+      const button = $(id);
+      if (!button) continue;
+      const active = productMode === modeName;
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+      button.classList.toggle("primary", active);
+    }
+  }
+
+  function setProductShellMode(mode) {
+    const requested = String(mode || "").toLowerCase();
+    const next = requested === "edit" || requested === "paint" ? "edit" : "browse";
+    syncProductShellMode(next);
+    const editor = window.__wholeSheetEditor;
+    if (editor && typeof editor.setMode === "function") editor.setMode(next === "browse" ? "browse" : "paint");
+  }
+
+  // ── Desktop/mobile viewport toggle (Browse/home front door) ──
+  // Tier C UI preference: persists in localStorage, never touches Tier A drafts
+  // or Tier B files. Emulation constrains the shell to 390px via
+  // body.wb-viewport-mobile (see styles.css); real narrow viewports match the
+  // same layout through the max-width media queries.
+  function getViewportMode() {
+    try {
+      return localStorage.getItem(VIEWPORT_MODE_STORAGE_KEY) === "mobile" ? "mobile" : "desktop";
+    } catch (_e) {
+      return "desktop";
+    }
+  }
+
+  function setViewportMode(mode) {
+    const next = mode === "mobile" ? "mobile" : "desktop";
+    const mobile = next === "mobile";
+    document.body.classList.toggle("wb-viewport-mobile", mobile);
+    const btn = $("viewportToggleBtn");
+    if (btn) {
+      btn.setAttribute("aria-pressed", mobile ? "true" : "false");
+      btn.textContent = mobile ? "Desktop view" : "Mobile view";
+      btn.classList.toggle("tool-active", mobile);
+    }
+    try {
+      localStorage.setItem(VIEWPORT_MODE_STORAGE_KEY, next);
+    } catch (_e) { /* preference only — ignore */ }
+    return next;
+  }
+
+  function attachProductBrowseApp() {
+    const editor = window.__wholeSheetEditor;
+    const container = $("productBrowseSurface");
+    if (!editor || typeof editor.mountBrowseApp !== "function" || !container) return false;
+    editor.mountBrowseApp({
+      container,
+      currentSessionId: state.sessionId,
+      onBrowseList: browseListSessions,
+      onBrowseOpen: browseOpenSession,
+      onBrowseRename: browseRenameSession,
+      onBrowseDuplicate: browseDuplicateSession,
+      onBrowseDelete: browseDeleteSession,
+      onBrowsePreview: previewSessionForBrowse,
+      onBrowseNewRaw: newRawXp,
+    });
+    if (typeof editor.setMode === "function") editor.setMode(productMode === "browse" ? "browse" : "paint");
+    syncProductShellMode(productMode);
+    return true;
+  }
+
   function bindUI() {
     moveWebbuildDockToBottom();
     movePanelsToBottom();
+    $("productBrowseBtn")?.addEventListener("click", () => setProductShellMode("browse"));
+    $("productEditBtn")?.addEventListener("click", () => setProductShellMode("edit"));
+    $("viewportToggleBtn")?.addEventListener("click", () => {
+      setViewportMode(getViewportMode() === "mobile" ? "desktop" : "mobile");
+    });
+    $("mobileKeyboardBtn")?.addEventListener("click", () => {
+      setProductShellMode("edit");
+      const editor = window.__wholeSheetEditor;
+      if (editor && typeof editor.openMobileKeyboard === "function") editor.openMobileKeyboard();
+    });
+    document.querySelectorAll("[data-product-mode]").forEach((button) => {
+      button.addEventListener("click", () => setProductShellMode(button.dataset.productMode));
+    });
+    window.addEventListener("whole-sheet-mode-change", (event) => {
+      syncProductShellMode(event?.detail?.mode || "browse");
+    });
+    if (!attachProductBrowseApp()) {
+      window.addEventListener("whole-sheet-editor-ready", attachProductBrowseApp, { once: true });
+    }
+    syncProductShellMode("browse");
+    setViewportMode(getViewportMode());
+    void fetchTemplateRegistry();
     renderInspectorPaletteSwatches();
     updateSessionDirtyBadge();
     updateBugReportPreview();
@@ -8297,13 +8890,13 @@
     $("createProfileBtn")?.addEventListener("click", createActorVisualProfile);
     $("wbUpload").addEventListener("click", wbUpload);
     $("wbRun").addEventListener("click", wbRun);
+    // First-class PNG import entry: Browse/mobile Import goes straight to the
+    // file chooser; the panel scrolls into view so Upload/Convert stay visible.
+    $("browseImportPngBtn")?.addEventListener("click", focusPngImport);
     $("classicGeomAutoPlanBtn")?.addEventListener("click", applyClassicGeometryAutoPlan);
     ["classicGeomAngles", "classicGeomFrames", "classicGeomSourceProjs", "classicGeomCellW", "classicGeomCellH"].forEach((id) => {
       $(id)?.addEventListener("input", updateClassicGeometryHint);
       $(id)?.addEventListener("change", updateClassicGeometryHint);
-    });
-    $("wbAssignmentMode")?.addEventListener("change", (e) => {
-      state.assignmentMode = e.target.value;
     });
     $("wbFile").addEventListener("change", () => {
       const f = $("wbFile").files[0];
@@ -8469,12 +9062,6 @@
     if ($("gridZoomInput")) $("gridZoomInput").addEventListener("input", () => {
       state.gridPanelZoom = clampGridPanelZoom($("gridZoomInput").value || 0);
       renderFrameGrid();
-    });
-    if ($("gridToggleLabels")) $("gridToggleLabels").addEventListener("click", () => {
-      const panel = $("gridPanel");
-      if (!panel) return;
-      const shown = panel.classList.toggle("frame-labels-visible");
-      $("gridToggleLabels").classList.toggle("active", shown);
     });
     $("assignAnimCategoryBtn").addEventListener("click", assignRowCategory);
     $("assignFrameGroupBtn").addEventListener("click", assignFrameGroup);
@@ -9008,10 +9595,6 @@
           gridStep: wsSnapshot.gridStep,
           gridCustomW: wsSnapshot.gridCustomW,
           gridCustomH: wsSnapshot.gridCustomH,
-          angles: state.angles,
-          anims: [...state.anims],
-          projs: state.projs,
-          sourceProjs: state.sourceProjs,
         };
         p.saveDraftSync(payload);
         p.setDirtyFlag();
@@ -9028,7 +9611,6 @@
       angles: state.angles,
       anims: [...state.anims],
       projs: state.projs,
-      sourceProjs: state.sourceProjs,
       frameWChars: state.frameWChars,
       frameHChars: state.frameHChars,
       selectedFrames: selectedFrameCoordsSorted().map((coord) => ({ row: coord.row, col: coord.col })),
@@ -9107,12 +9689,12 @@
           progressValue: progressEl ? Number(progressEl.value || 0) : null,
           progressMax: progressEl ? Number(progressEl.max || 0) : null,
           overlayVisible: webbuildLoginOverlayVisible(win),
-          legacyPreview: win.__legacySkinPreview || null,
+          prebootApplied: win.__prebootXpApplied || null,
         };
       } catch (e) {
         out.iframeError = String(e);
       }
-      out.overrideMode = "legacy_pre_main_token";
+      out.overrideMode = OVERRIDE_MODE;
       return out;
     },
     // Verifier-only autosave suppression. During recipe replay the runner
@@ -9443,6 +10025,8 @@
       renderAll();
       return { activeLayer: state.activeLayer, layerCount: state.layers.length };
     },
+    getViewportMode: () => getViewportMode(),
+    setViewportMode: (mode) => setViewportMode(mode),
   };
   installUiRecorderHooks();
   refreshUiRecorderUi();
@@ -9452,21 +10036,11 @@
   // Opens/closes bottom-sheet drawers on mobile. Only one drawer open at a time.
   // Passing the name of the already-open drawer (or null) closes all drawers.
   function toggleDrawer(drawerName) {
-    // In landscape mobile the whole sidebar (Tools/Layers/Browse/Info) is
-    // pinned as a permanently visible left panel — the CSS pin covers every
-    // .ws-sidebar .ws-drawer, not just tools. Skip all of them in toggle
-    // logic so a pinned drawer never gains a phantom .open or raises a
-    // backdrop with no visible sheet behind it.
-    const sidebarPinned = window.matchMedia &&
-      window.matchMedia('(pointer: coarse) and (orientation: landscape)').matches &&
-      !document.body.classList.contains('ws-advanced') &&
-      !document.documentElement.classList.contains('ws-force-desktop');
     const drawers = document.querySelectorAll('.ws-drawer');
     const backdrop = document.querySelector('.ws-drawer-backdrop');
     let opened = false;
 
     drawers.forEach((el) => {
-      if (sidebarPinned && el.closest('.ws-sidebar')) return;
       if (drawerName && el.dataset.drawer === drawerName && !el.classList.contains('open')) {
         el.classList.add('open');
         opened = true;
@@ -9482,33 +10056,8 @@
         backdrop.classList.remove('visible');
       }
     }
-
-    // Keep the top-bar toggles honest for assistive tech / keyboard users.
-    document.querySelectorAll('[data-drawer-toggle]').forEach((btn) => {
-      const isOpen = opened && btn.dataset.drawerToggle === drawerName;
-      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    });
   }
   window.toggleDrawer = toggleDrawer;
-
-  // Rotating while a bottom-sheet drawer is open strands its state: into
-  // landscape, CSS pins the sheet static but .open + the backdrop persist as
-  // a full-screen dead overlay; back to portrait, a stale .open on a sidebar
-  // drawer pops a sheet with no backdrop. Reset drawer state on either
-  // crossing of the pinned-sidebar condition.
-  function _resetDrawerState() {
-    document.querySelectorAll('.ws-drawer.open').forEach((el) => el.classList.remove('open'));
-    const backdrop = document.querySelector('.ws-drawer-backdrop');
-    if (backdrop) backdrop.classList.remove('visible');
-    document.querySelectorAll('[data-drawer-toggle]').forEach((btn) => {
-      btn.setAttribute('aria-expanded', 'false');
-    });
-  }
-  try {
-    const pinnedMq = window.matchMedia('(pointer: coarse) and (orientation: landscape)');
-    if (pinnedMq.addEventListener) pinnedMq.addEventListener('change', _resetDrawerState);
-    else if (pinnedMq.addListener) pinnedMq.addListener(_resetDrawerState);
-  } catch (_e) {}
 
   // ── U6: Mobile chrome bars wiring ─────────────────────────────────────────
   // Top bar: drawer toggle buttons delegate to toggleDrawer (U5)
@@ -9518,7 +10067,8 @@
     });
   });
 
-  // Top bar: action buttons delegate to existing handlers
+  // Mobile/touch data-action hooks delegate to existing operations. Product
+  // file actions now live only in the persistent app toolbar.
   document.querySelectorAll('[data-action]').forEach(function(btn) {
     btn.addEventListener('click', function() {
       switch (btn.dataset.action) {
@@ -9526,7 +10076,7 @@
           newXp();
           break;
         case 'save':
-          saveCurrentActionProgress({ reason: 'mobile-top-bar-save', auto_advance: false });
+          saveCurrentActionProgress({ reason: 'mobile-top-bar-save', auto_advance: true });
           break;
         case 'export':
           exportXp();
@@ -9539,6 +10089,9 @@
           break;
         case 'share-file':
           shareXpFileLocal();
+          break;
+        case 'import-png':
+          focusPngImport();
           break;
       }
     });
@@ -9558,7 +10111,8 @@
     // Tool indicator
     if (wsState && wsState.activeTool) {
       var toolNames = {
-        cell: 'Cell', eyedropper: 'Dropper', erase: 'Erase', line: 'Line',
+        cell: 'Cell', slope: 'Slope', adaptive: 'Auto-wall',
+        eyedropper: 'Dropper', erase: 'Erase', line: 'Line',
         rect: 'Rect', oval: 'Oval', fill: 'Fill', text: 'Text', select: 'Select'
       };
       toolEl.textContent = toolNames[wsState.activeTool] || wsState.activeTool;
@@ -9638,10 +10192,11 @@
             break;
           case 'inspect':
             // Inspect is handled by tap-hold on the whole-sheet canvas (U3).
-            // From toolbar: switch tool to dropper/inspect for next tap.
-            if (wsEditor && typeof wsEditor.getState === 'function') {
-              // Toggle to cell tool for inspect-like behavior
-              var toolBtn = document.querySelector('.ws-tool-btn[data-tool="cell"]');
+            // From toolbar: switch to the eyedropper for next-tap sampling.
+            if (wsEditor && typeof wsEditor.setTool === 'function') {
+              wsEditor.setTool('eyedropper');
+            } else {
+              var toolBtn = document.getElementById('wsToolEyedropper');
               if (toolBtn) toolBtn.click();
             }
             break;
@@ -9758,206 +10313,6 @@
     window._hideTouchToolbar = hideTouchToolbar;
   })();
 
-  // ── UQ-013: Mobile first screen ────────────────────────────────────────────
-  // Shown on mobile/tablet (≤1024px) before a session loads. Wires task-root
-  // actions: Open XP, Continue Draft (via persistence.mjs), New From Template,
-  // Advanced. Not CSS-only: Continue Draft calls persistence.mjs listDrafts().
-
-  function _dismissFirstScreen() {
-    var screen = document.getElementById('mobileFirstScreen');
-    if (screen) screen.classList.add('hidden');
-  }
-  window._dismissFirstScreen = _dismissFirstScreen;
-
-  // D2 (UQ-013): treat as mobile/tablet by device CAPABILITY, not width alone.
-  // iPad landscape is 1194px wide and slips past a 1024px width breakpoint, so
-  // a coarse pointer (touch) qualifies regardless of width. Mirrors the CSS
-  // condition `@media (pointer: coarse), (max-width: 1024px)`.
-  function _isMobileLike() {
-    // "Request Desktop Site" forces desktop layout — never treat as mobile.
-    if (document.documentElement.classList.contains('ws-force-desktop')) return false;
-    try {
-      if (window.matchMedia('(pointer: coarse)').matches) return true;
-    } catch (_e) {}
-    if ((navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window) return true;
-    try {
-      if (window.matchMedia('(max-width: 1024px)').matches) return true;
-    } catch (_e) {}
-    return false;
-  }
-  window._isMobileLike = _isMobileLike;
-
-  (function _initMobileFirstScreen() {
-    if (!_isMobileLike()) return;
-
-    var screen = document.getElementById('mobileFirstScreen');
-    if (!screen) return;
-
-    // Open XP — await success before dismissing; re-enable button on cancel/error
-    var fsOpenBtn = document.getElementById('fsOpenXpBtn');
-    if (fsOpenBtn) {
-      fsOpenBtn.addEventListener('click', async function () {
-        var origText = fsOpenBtn.textContent;
-        fsOpenBtn.disabled = true;
-        fsOpenBtn.textContent = 'Opening…';
-        var ok = false;
-        try {
-          ok = await openXpFileLocal();
-        } finally {
-          if (!ok) {
-            fsOpenBtn.disabled = false;
-            fsOpenBtn.textContent = origText;
-          }
-        }
-        // loadSession() already sets ws-session-loaded + rotate hint on success
-        if (ok) _dismissFirstScreen();
-      });
-    }
-
-    // Continue Draft — calls persistence.mjs listDrafts() then loadLatestDraft().
-    // First screen stays visible until user confirms inline Restore or clicks Skip.
-    var fsDraftBtn = document.getElementById('fsContinueDraftBtn');
-    var fsDraftStatus = document.getElementById('fsDraftStatus');
-    if (fsDraftBtn) {
-      fsDraftBtn.addEventListener('click', function () {
-        var p = window.__wbPersistence;
-        if (!p || !p.isAvailable()) {
-          if (fsDraftStatus) fsDraftStatus.textContent = 'Draft storage not available.';
-          return;
-        }
-        if (fsDraftStatus) fsDraftStatus.textContent = 'Checking for drafts…';
-        fsDraftBtn.disabled = true;
-        p.listDrafts().then(function (drafts) {
-          if (!drafts || drafts.length === 0) {
-            fsDraftBtn.disabled = false;
-            if (fsDraftStatus) fsDraftStatus.textContent = 'No saved drafts found.';
-            return;
-          }
-          // Read the full payload to confirm it is valid before showing Restore
-          p.loadLatestDraft().then(function (draft) {
-            fsDraftBtn.disabled = false;
-            if (!draft || !draft.payload) {
-              if (fsDraftStatus) fsDraftStatus.textContent = 'Draft could not be read.';
-              return;
-            }
-            var ageMs = Date.now() - (draft.timestamp || 0);
-            var ageText = ageMs < 60000 ? 'just now'
-              : ageMs < 3600000 ? Math.round(ageMs / 60000) + 'm ago'
-              : ageMs < 86400000 ? Math.round(ageMs / 3600000) + 'h ago'
-              : Math.round(ageMs / 86400000) + 'd ago';
-            // Show inline confirm — first screen stays visible until user acts
-            if (!fsDraftStatus) return;
-            fsDraftStatus.innerHTML = '';
-            var ageEl = document.createElement('span');
-            ageEl.textContent = 'Draft from ' + ageText + '.';
-            fsDraftStatus.appendChild(ageEl);
-            var row = document.createElement('div');
-            row.style.cssText = 'display:flex; gap:6px; margin-top:5px;';
-            var restoreBtn = document.createElement('button');
-            restoreBtn.className = 'ws-first-screen-btn';
-            restoreBtn.style.cssText = 'width:auto; padding:5px 12px; font-size:12px;';
-            restoreBtn.textContent = 'Restore';
-            restoreBtn.addEventListener('click', function () {
-              if (_restoreDraft(draft)) {
-                document.body.classList.add('ws-session-loaded');
-                var rh = document.getElementById('mobileRotateHint');
-                if (rh) rh.classList.remove('hidden');
-                _dismissFirstScreen();
-              } else {
-                fsDraftStatus.textContent = 'Draft restore failed — session mismatch or empty payload.';
-              }
-            });
-            var skipBtn = document.createElement('button');
-            skipBtn.style.cssText = 'width:auto; padding:5px 12px; font-size:12px; background:transparent; border:1px solid #444; color:#888; border-radius:4px; cursor:pointer;';
-            skipBtn.textContent = 'Skip';
-            skipBtn.addEventListener('click', function () {
-              fsDraftStatus.innerHTML = '';
-              fsDraftBtn.disabled = false;
-            });
-            row.appendChild(restoreBtn);
-            row.appendChild(skipBtn);
-            fsDraftStatus.appendChild(row);
-          }).catch(function () {
-            fsDraftBtn.disabled = false;
-            if (fsDraftStatus) fsDraftStatus.textContent = 'Failed to read draft.';
-          });
-        }).catch(function () {
-          fsDraftBtn.disabled = false;
-          if (fsDraftStatus) fsDraftStatus.textContent = 'Error checking drafts.';
-        });
-      });
-    }
-
-    // New From Template — syncs to main template select, awaits applyTemplate(),
-    // and dismisses only on success. Re-enables button on cancel/error.
-    // loadSession() inside applyTemplate() sets ws-session-loaded on success.
-    var fsTmplSelect = document.getElementById('fsTemplateSelect');
-    var fsTmplApply  = document.getElementById('fsTemplateApplyBtn');
-    if (fsTmplSelect && fsTmplApply) {
-      fsTmplSelect.addEventListener('change', function () {
-        fsTmplApply.disabled = !fsTmplSelect.value;
-      });
-      fsTmplApply.addEventListener('click', async function () {
-        var val = fsTmplSelect.value;
-        if (!val) return;
-        var mainSel = document.getElementById('templateSelect');
-        if (mainSel) mainSel.value = val;
-        var origText = fsTmplApply.textContent;
-        fsTmplApply.disabled = true;
-        fsTmplApply.textContent = 'Applying…';
-        var ok = false;
-        try {
-          ok = await applyTemplate();
-        } finally {
-          if (!ok) {
-            fsTmplApply.disabled = false;
-            fsTmplApply.textContent = origText;
-          }
-        }
-        if (ok) _dismissFirstScreen();
-      });
-    }
-
-    // Advanced Workbench — bypass first screen into the full dense dashboard.
-    // ws-advanced disables the editor-first mobile shell (see D4 CSS) so the
-    // legacy dashboard panels remain reachable as the documented escape hatch.
-    var fsAdvBtn = document.getElementById('fsAdvancedBtn');
-    if (fsAdvBtn) {
-      fsAdvBtn.addEventListener('click', function () {
-        document.body.classList.add('ws-advanced');
-        // Keep the top-bar toggle label in sync: we're now IN advanced mode,
-        // so the toggle's next action returns to the editor → label "Editor".
-        var advToggleSync = document.querySelector('.ws-mobile-top-bar [data-action="toggle-advanced"]');
-        if (advToggleSync) advToggleSync.textContent = 'Editor';
-        _dismissFirstScreen();
-      });
-    }
-
-    // Mobile top-bar Advanced ⇄ Editor toggle — keeps the dense dashboard
-    // reachable after a session has loaded into the editor-first shell.
-    var advToggle = document.querySelector('.ws-mobile-top-bar [data-action="toggle-advanced"]');
-    if (advToggle) {
-      advToggle.addEventListener('click', function () {
-        var nowAdvanced = !document.body.classList.contains('ws-advanced');
-        document.body.classList.toggle('ws-advanced', nowAdvanced);
-        advToggle.textContent = nowAdvanced ? 'Editor' : 'Advanced';
-        if (!nowAdvanced) window.scrollTo(0, 0);
-      });
-    }
-
-    // Portrait rotate hint dismiss
-    var rotateHintDismiss = document.getElementById('mobileRotateHintDismiss');
-    if (rotateHintDismiss) {
-      rotateHintDismiss.addEventListener('click', function () {
-        var hint = document.getElementById('mobileRotateHint');
-        if (hint) hint.classList.add('hidden');
-      });
-    }
-
-    // Show first screen (CSS hides it on desktop; remove hidden class for mobile)
-    screen.classList.remove('hidden');
-  }());
-
   bindUI();
   fetchRuntimePreflight().catch((_e) => {});
   updateSourceCanvasZoomUI();
@@ -10029,7 +10384,7 @@
       banner.style.boxShadow = '0 2px 8px rgba(0,0,0,0.4)';
 
       var label = document.createElement('span');
-      label.textContent = 'Install XPEdit for offline use';
+      label.textContent = 'Install REXPaint Web for offline use';
 
       var installBtn = document.createElement('button');
       installBtn.textContent = 'Install';
@@ -10067,7 +10422,7 @@
 
 // ── Workbench ID Overlay ─────────────────────────────────────────────────────
 // Shows the id= value of every button, input, select, textarea, canvas, and
-// iframe as a small fixed badge. Toggle with Alt+I or the "hide IDs" button.
+// iframe as a diagnostic overlay. It is off by default; toggle with Alt+I.
 // Call window.rebuildWbIdOverlay() after dynamic content is added.
 (function wbIdOverlay() {
   'use strict';
@@ -10097,35 +10452,9 @@
     'box-sizing:border-box',
   ].join(';');
 
-  const EXCLUDE = new Set(['wb-id-toggle-btn']);
+  const EXCLUDE = new Set();
 
-  // D1 (UQ-013): debug ID overlay defaults OFF on every device. It is a
-  // developer aid, not authoring UI. On mobile/touch, stale localStorage from
-  // the old default-on build must not re-enable the overlay over the editor.
-  // Enable mobile IDs explicitly via ?ids=1, Alt+I, or the corner toggle.
-  let on = (function readInitialIdState() {
-    try {
-      var qs = new URLSearchParams(window.location.search);
-      if (qs.get('ids') === '1' || qs.get('debugIds') === '1') return true;
-      if (qs.get('ids') === '0') return false;
-      var mobileLike = false;
-      try {
-        mobileLike = !!(
-          window.matchMedia('(pointer: coarse)').matches ||
-          window.matchMedia('(max-width: 1024px)').matches ||
-          navigator.maxTouchPoints > 0
-        );
-      } catch (_mq) {}
-      if (mobileLike) {
-        if (window.localStorage.getItem('wb-show-ids') === '1') {
-          window.localStorage.setItem('wb-show-ids', '0');
-        }
-        return false;
-      }
-      if (window.localStorage.getItem('wb-show-ids') === '1') return true;
-    } catch (_e) {}
-    return false;
-  })();
+  let on = false;
   let entries = [];
   let raf = null;
 
@@ -10164,33 +10493,8 @@
 
   function setOn(v) {
     on = v;
-    try { window.localStorage.setItem('wb-show-ids', v ? '1' : '0'); } catch (_e) {}
     schedule();
-    var btn = document.getElementById('wb-id-toggle-btn');
-    if (btn) btn.textContent = v ? 'hide IDs' : 'show IDs';
   }
-
-  // Fixed toggle button (bottom-right corner)
-  var toggleBtn = document.createElement('button');
-  toggleBtn.id = 'wb-id-toggle-btn';
-  toggleBtn.textContent = on ? 'hide IDs' : 'show IDs';
-  toggleBtn.style.cssText = [
-    'position:fixed',
-    'bottom:10px',
-    'right:10px',
-    'z-index:100000',
-    'font-size:9px',
-    'font-family:Consolas,monaco,monospace',
-    'font-weight:700',
-    'padding:2px 7px',
-    'background:#182131',
-    'border:1px solid #4c5c7b',
-    'color:#b8c9e7',
-    'cursor:pointer',
-    'border-radius:0',
-  ].join(';');
-  toggleBtn.addEventListener('click', function() { setOn(!on); });
-  document.body.appendChild(toggleBtn);
 
   // Alt+I keyboard shortcut
   document.addEventListener('keydown', function(e) {

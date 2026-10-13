@@ -18,10 +18,19 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 # This file lives in scripts/ (one level below repo root).
 # Need Y9-2 on sys.path for xp_core, layer2_browser, etc.
+# Guard: an uninitialized git submodule at pipeline-v3/asciicker-Y9-2/ creates an
+# empty directory that passes .is_dir() but contains nothing. Check for
+# scripts/pipeline presence to skip uninitialized submodule placeholders.
+def _has_pipeline(p: Path) -> bool:
+    return p.is_dir() and (p / "scripts" / "pipeline").is_dir()
+
 Y9_ROOT = REPO_ROOT / "asciicker-Y9-2"
-if not Y9_ROOT.is_dir():
+if not _has_pipeline(Y9_ROOT):
+    # When pipeline-v3 is a subdirectory of asciicker-Y9-2, the parent IS the Y9-2 root.
+    Y9_ROOT = REPO_ROOT.parent
+if not _has_pipeline(Y9_ROOT):
     Y9_ROOT = REPO_ROOT.parent / "asciicker-Y9-2"
-if not Y9_ROOT.is_dir():
+if not _has_pipeline(Y9_ROOT):
     Y9_ROOT = REPO_ROOT.parent.parent / "asciicker-Y9-2"
 if str(Y9_ROOT) not in sys.path:
     sys.path.insert(0, str(Y9_ROOT))
@@ -38,6 +47,15 @@ except ModuleNotFoundError:
     semantic_dict = None
     layer2_browser = None
     XPFile = None
+
+# FL-4162 step 8 — reviewed-decision write path (sibling module in scripts/).
+# The viewer is the interactive trigger; decision_capture owns the file format,
+# fingerprint guard, and atomic upsert. Optional: a missing module degrades the
+# [t] keybind to a status message rather than crashing the viewer.
+try:
+    import decision_capture
+except ModuleNotFoundError:
+    decision_capture = None
 
 
 def _require_y9_helpers() -> None:
@@ -1226,6 +1244,23 @@ class AnchorReviewState:
     skin_xp_index: int = 0
     skin_search_dirs: list[Path] = field(default_factory=list)
     skin_search_patterns: list[str] = field(default_factory=list)
+    # FL-4162 read-only evidence sidebar: this family's per-(sprite,layer) cards
+    # from layer_evidence_cards.jsonl, rejects-first. The viewer NEVER mutates
+    # this evidence — it only displays it (step 7; decision capture is later).
+    evidence_cards: list = field(default_factory=list)
+    show_evidence: bool = False
+    evidence_idx: int = 0
+    # FL-4162 step 8 read/WRITE decision capture: reviewed verdicts keyed by
+    # source_key, loaded from + written to source_layer_review_decisions.jsonl
+    # (a THIRD owner, proposal-only — see decision_capture.py). The sidebar stays
+    # a read-only microscope; the ONLY write is the explicit [t] keybind prompt.
+    decisions_path: object | None = None
+    decisions: dict = field(default_factory=dict)  # source_key -> decision record
+    decision_pending_role: str = ""  # carries role from the role prompt to the note prompt
+    decision_card_fp: str | None = None  # fingerprint captured when [t] opened the prompt
+    # FL-4162: set when an EXISTING decisions file failed to load (corrupt/unreadable).
+    # The viewer stays alive but must NOT pretend the file is valid/empty.
+    decisions_load_error: str | None = None
 
     @property
     def skin_asset(self) -> "RawAsset | None":
@@ -1263,6 +1298,112 @@ class AnchorReviewState:
             if a == angle and ridx == region_idx:
                 count += 1
         return count
+
+
+def _evi_clip(text: object, width: int) -> str:
+    """Single-line, ANSI-stripped, width-clipped text for the evidence panel."""
+    s = _ANSI_RE.sub("", str(text)).replace("\n", " ").replace("\r", " ").strip()
+    return s if len(s) <= width else s[: max(0, width - 1)] + "…"
+
+
+def _load_evidence_cards_for_family(anchor_path: Path, stem: str) -> list[dict]:
+    """Read this family's FL-4162 evidence cards from layer_evidence_cards.jsonl.
+
+    The jsonl lives in the same semantic_maps/ dir as the anchor file. Returns
+    the family's cards ordered rejects-first (review.review_rank). READ-ONLY:
+    the viewer never writes this evidence (step 7 is a microscope, not an
+    authoring surface). Returns [] if the file is missing/unreadable.
+    """
+    jsonl = anchor_path.parent / "layer_evidence_cards.jsonl"
+    if not jsonl.is_file():
+        return []
+    family = stem.split("-", 1)[0]
+    cards: list[dict] = []
+    try:
+        with open(jsonl, "r", encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    card = json.loads(line)
+                except ValueError:
+                    continue
+                if isinstance(card, dict) and card.get("family") == family:
+                    cards.append(card)
+    except OSError:
+        return []
+    cards.sort(key=lambda c: c.get("review", {}).get("review_rank", 1_000_000))
+    return cards
+
+
+def _anchor_render_evidence_panel(st: AnchorReviewState) -> list[str]:
+    """Read-only FL-4162 evidence card for the current sprite/layer.
+
+    Shows the hand label/note + provenance, engine composition facts, glyph
+    similarity, and the rejects-first review rank, alongside the viewer's
+    existing raw + merged sprite panels. [ / ] browse the family's cards.
+    """
+    cards = st.evidence_cards
+    if not cards:
+        return ["EVIDENCE", "", "no layer_evidence_cards.jsonl for this family"]
+    idx = max(0, min(st.evidence_idx, len(cards) - 1))
+    c = cards[idx]
+    hand = c.get("hand", {})
+    eng = c.get("engine", {})
+    sim = c.get("glyph_similarity", {})
+    rev = c.get("review", {})
+    cells = c.get("cells", {})
+    ft = eng.get("frame_topology") or {}
+    role = eng.get("fixed_role") or (
+        f"overlay#{eng.get('overlay_ordinal')}" if eng.get("is_overlay") else "?"
+    )
+    swoosh = "  SWOOSH(cyan)" if eng.get("swoosh_cyan_fg_detected") else ""
+    lines = [
+        f"EVIDENCE [{idx + 1}/{len(cards)}] family={c.get('family', '?')}  ([/] nav  [i] hide)",
+        f"card {c.get('card_id', '?')}  L{c.get('raw_layer_index', '?')}  ({c.get('source_xp_resolution', '?')})",
+        f"rank #{rev.get('review_rank', '?')}  {rev.get('queue_class_name', '?')}",
+        "",
+        f"STATUS {hand.get('status', '?')}   pre_source={_evi_clip(hand.get('pre_source', ''), 24)}",
+        f"label  {_evi_clip(hand.get('corrected_label', ''), 56)}",
+        f"note   {_evi_clip(hand.get('note', ''), 56)}",
+        f"guess  {_evi_clip(hand.get('pre_guess', ''), 48)}",
+    ]
+    if hand.get("auto_propagated_from"):
+        lines.append(
+            f"propagated<-{hand.get('auto_propagated_from')} ({_evi_clip(hand.get('auto_propagation_kind', ''), 20)})"
+        )
+    lines += [
+        "",
+        f"ENGINE {role}{swoosh}",
+        f"  layers={eng.get('family_layer_count', '?')} angles={ft.get('angles', '?')} "
+        f"anims={ft.get('anims', '?')} fr/ang={ft.get('frames_per_angle', '?')}",
+        f"GLYPH  {cells.get('glyph_count', '?')} cells  set={cells.get('visible_glyph_set', [])[:10]}",
+        f"MATCH  exact={len(sim.get('exact_matches', []) or [])} near={len(sim.get('near_matches', []) or [])}",
+        "",
+        _evi_clip("why: " + str(rev.get("rationale", "")), 60),
+    ]
+    # FL-4162 step 8: surface any reviewed decision for THIS card beside it.
+    # Read-only display; the verdict is authored via the [t] keybind, not here.
+    if getattr(st, "decisions_load_error", None):
+        # FL-4162 Law 6: the decisions file is present but did not load faithfully.
+        # Do NOT show "none recorded" as if the file were valid/empty.
+        lines += [
+            "",
+            _evi_clip("DECISION FILE LOAD FAILED: " + str(st.decisions_load_error), 58),
+            "  (decisions NOT loaded — fix the file; [t] blocked until valid)",
+        ]
+        return lines
+    dec = (st.decisions or {}).get(c.get("source_key"))
+    if dec:
+        lines += [
+            "",
+            f"DECISION = {_evi_clip(dec.get('approved_role', ''), 48)}  ([t] re-record)",
+            _evi_clip("  note: " + str(dec.get("reviewer_note", "") or "—"), 58),
+        ]
+    else:
+        lines += ["", "DECISION = none recorded  ([t] record draft)"]
+    return lines
 
 
 def _load_anchor_state(anchor_path: Path) -> AnchorReviewState:
@@ -1905,13 +2046,20 @@ def _anchor_status_bar(st: AnchorReviewState) -> list[str]:
     play_indicator = "  [PLAY]" if st.autoplay else ""
     composite_indicator = f"  [COMPOSITE: {st.skin_name}]" if st.show_composite else ""
     proj_indicator = f"  [REAR]" if st.proj_idx == 1 else ""
-    lines.append(f"{frame_info}  {cursor_info}{hb_indicator}{dirty_indicator}{play_indicator}{composite_indicator}{proj_indicator}")
+    evidence_indicator = (
+        f"  [EVIDENCE {st.evidence_idx + 1}/{len(st.evidence_cards)}]" if st.show_evidence else ""
+    )
+    lines.append(f"{frame_info}  {cursor_info}{hb_indicator}{dirty_indicator}{play_indicator}{composite_indicator}{proj_indicator}{evidence_indicator}")
 
     # Prompt line
     if st.prompt_mode == "new_region":
         lines.append(f"New region name: {st.prompt_buffer}_")
     elif st.prompt_mode == "bg_region":
         lines.append(f"bg region? [1-9 or n]: _")
+    elif st.prompt_mode == "decision_role":
+        lines.append(f"Decision role: {st.prompt_buffer}_   (ENTER=next, ESC=cancel)")
+    elif st.prompt_mode == "decision_note":
+        lines.append(f"Decision note: {st.prompt_buffer}_   (ENTER=save, ESC=cancel)")
     elif st.status:
         lines.append(st.status)
     else:
@@ -1925,7 +2073,7 @@ def _anchor_help_lines() -> list[str]:
         "Anchor review",
         "[arrows] move cursor  [a/d] angle  [w/s] anim  [,/.] frame  [x] toggle  [m] rect",
         "[1-9] assign region  [n] new region  [Backspace] unassign  [h] half-block mode",
-        "[r/f] cycle region focus  [g] region grid (all angles×frames)  [b] body map  [p] autoplay",
+        "[r/f] cycle region focus  [g] region grid (all angles×frames)  [b] body map  [p] autoplay  [i] evidence  [t] record decision",
         "[c] composite  [j/k] skin  [v] proj  [Ctrl+S/Ctrl+W] save  [q] quit",
         "Workflow: [r/f] focus region -> [g] grid check -> [m] rect or [e] select-all -> [1-9] assign -> [Ctrl+S] save",
         "Tip: [e] selects all cells in focused region for bulk reassign/unassign",
@@ -2010,10 +2158,18 @@ def _anchor_compose_screen(
     # Region info text list
     panel_lines = _anchor_region_panel(st)
 
-    if st.show_region_grid and st.region_focus is not None and asset is not None:
-        # Region grid mode: full-screen grid of focused region across angles × frames
+    if st.show_evidence:
+        # Evidence sidebar has explicit display priority when toggled on (FL-4306),
+        # so an auto-loaded body map / composite / region grid never hides it.
+        # [sprite+tint | read-only FL-4162 card]
+        box_evidence = _box_preview_lines(_anchor_render_evidence_panel(st))
+        top = _layout_preview_and_info(box_sprite, box_evidence, terminal_cols=cols)
+        visible = (help_lines + [""] + top + [""] + panel_lines + [""] + status_lines)[:max(1, rows)]
+    elif st.show_region_grid and st.region_focus is not None and asset is not None:
+        # Region grid mode: sprite reference on left, region grid on right (stacks if terminal too narrow)
         grid_lines = _anchor_render_region_grid(st, asset, layer_index)
-        visible = (help_lines + [""] + grid_lines + [""] + panel_lines + [""] + status_lines)[:max(1, rows)]
+        top = _layout_preview_and_info(box_sprite, grid_lines, terminal_cols=cols)
+        visible = (help_lines + [""] + top + [""] + panel_lines + [""] + status_lines)[:max(1, rows)]
     elif st.show_composite and st.skin_asset is not None:
         # Composite mode: [source/mount | composite result | skin selector]
         skin_layer = min(2, st.skin_asset.layer_count - 1)
@@ -2301,7 +2457,103 @@ def _handle_anchor_prompt_key(st: AnchorReviewState, key: str) -> bool:
                 return True
         return True
 
+    # --- FL-4162 step 8: reviewed-decision capture (two typed fields) ---
+    # role -> note -> atomic write. ESC at any step aborts with NO write; this is
+    # the ONLY mutation path for source_layer_review_decisions.jsonl.
+    if st.prompt_mode == "decision_role":
+        if key == "ESCAPE":
+            st.prompt_mode = ""
+            st.prompt_buffer = ""
+            st.decision_pending_role = ""
+            st.status = "Decision cancelled"
+            return True
+        if key == "ENTER":
+            role = st.prompt_buffer.strip()
+            st.prompt_buffer = ""
+            if not role:
+                st.prompt_mode = ""
+                st.status = "Empty role, decision cancelled"
+                return True
+            st.decision_pending_role = role
+            st.prompt_mode = "decision_note"
+            st.status = "Decision: optional note, ENTER to save, ESC to cancel"
+            return True
+        if key == "BACKSPACE":
+            st.prompt_buffer = st.prompt_buffer[:-1]
+            return True
+        if len(key) == 1 and key.isprintable():
+            st.prompt_buffer += key
+            return True
+        return True
+
+    if st.prompt_mode == "decision_note":
+        if key == "ESCAPE":
+            st.prompt_mode = ""
+            st.prompt_buffer = ""
+            st.decision_pending_role = ""
+            st.status = "Decision cancelled"
+            return True
+        if key == "ENTER":
+            note = st.prompt_buffer.strip()
+            role = st.decision_pending_role
+            st.prompt_mode = ""
+            st.prompt_buffer = ""
+            st.decision_pending_role = ""
+            st.status = _commit_decision(st, role, note)
+            return True
+        if key == "BACKSPACE":
+            st.prompt_buffer = st.prompt_buffer[:-1]
+            return True
+        if len(key) == 1 and key.isprintable():
+            st.prompt_buffer += key
+            return True
+        return True
+
     return False
+
+
+def _commit_decision(st: AnchorReviewState, approved_role: str, reviewer_note: str) -> str:
+    """Write one reviewed decision for the currently displayed evidence card.
+
+    Fail-closed: passes the fingerprint captured when [t] opened the prompt as
+    expected_fingerprint, so a card that changed underneath blocks the write.
+    Returns a status string; never raises into the input loop.
+    """
+    if decision_capture is None:
+        return "Decision capture unavailable (decision_capture module not importable)"
+    cards = st.evidence_cards
+    if not cards:
+        return "No evidence card to record a decision against"
+    idx = max(0, min(st.evidence_idx, len(cards) - 1))
+    card = cards[idx]
+    if st.decisions_path is None:
+        return "No decisions path resolved — cannot write"
+    provenance = {
+        "tool": "xp_uv_body_viewer",
+        "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "anchor": st.anchor_path.name,
+        "viewer_user": os.environ.get("USER", "?"),
+        "source_final_sha256": card.get("source_final_sha256"),
+    }
+    try:
+        rec = decision_capture.record_decision(
+            st.decisions_path,
+            card,
+            approved_role=approved_role,
+            reviewer_note=reviewer_note,
+            provenance=provenance,
+            expected_fingerprint=st.decision_card_fp,
+        )
+    except decision_capture.DecisionFingerprintMismatch:
+        return "Card changed since decision began — write BLOCKED (fail closed)"
+    except decision_capture.DecisionLoadError as exc:
+        return f"Decisions file unreadable/corrupt — write BLOCKED per FL-4162: {exc}"
+    except (OSError, ValueError) as exc:
+        return f"Decision write failed: {exc}"
+    finally:
+        st.decision_card_fp = None
+    st.decisions[rec["source_key"]] = rec
+    return f"Decision recorded: {card.get('card_id', '?')} -> {rec['approved_role']}"
 
 
 def _handle_anchor_key(
@@ -2483,6 +2735,52 @@ def _handle_anchor_key(
     if key in ("b", "B"):
         st.show_body_map = not st.show_body_map
         st.status = "Body map ON" if st.show_body_map else "Body map OFF"
+        st.quit_pending = False
+        return True
+
+    # --- Evidence sidebar toggle (i) — read-only FL-4162 cards ---
+    if key in ("i", "I"):
+        if not st.evidence_cards:
+            st.status = "No evidence cards for this family (layer_evidence_cards.jsonl)"
+        else:
+            st.show_evidence = not st.show_evidence
+            st.status = "Evidence ON ([ / ] browse)" if st.show_evidence else "Evidence OFF"
+        st.quit_pending = False
+        return True
+    # --- Evidence card navigation ([ prev / ] next) ---
+    if key == "[" and st.show_evidence and st.evidence_cards:
+        st.evidence_idx = (st.evidence_idx - 1) % len(st.evidence_cards)
+        st.status = f"Evidence {st.evidence_idx + 1}/{len(st.evidence_cards)}"
+        st.quit_pending = False
+        return True
+    if key == "]" and st.show_evidence and st.evidence_cards:
+        st.evidence_idx = (st.evidence_idx + 1) % len(st.evidence_cards)
+        st.status = f"Evidence {st.evidence_idx + 1}/{len(st.evidence_cards)}"
+        st.quit_pending = False
+        return True
+
+    # --- FL-4162 step 8: record reviewed decision (t) — evidence mode only ---
+    # Opens the role prompt; the actual write only happens after the reviewer
+    # types a role + ENTER (then optional note + ENTER). Never writes from this
+    # keypress alone, and is inert outside the evidence microscope.
+    if key in ("t", "T"):
+        if decision_capture is None:
+            st.status = "Decision capture unavailable (module not importable)"
+        elif not (st.show_evidence and st.evidence_cards):
+            st.status = "Open evidence first ([i]), then [t] to record a decision"
+        elif st.decisions_load_error:
+            # FL-4162 Law 6: do not author onto a file we could not load faithfully.
+            st.status = f"Decisions file load failed — [t] blocked: {st.decisions_load_error}"
+        else:
+            idx = max(0, min(st.evidence_idx, len(st.evidence_cards) - 1))
+            card = st.evidence_cards[idx]
+            # Pin the fingerprint of the card being reviewed (fail-closed on change).
+            st.decision_card_fp = decision_capture.card_fingerprint(card)
+            # Prefill the hand's own corrected label so the reviewer confirms or
+            # edits it (human-in-loop) rather than re-typing from scratch.
+            st.prompt_buffer = str((card.get("hand", {}) or {}).get("corrected_label", "") or "")
+            st.prompt_mode = "decision_role"
+            st.status = "Record decision: edit role, ENTER=next, ESC=cancel"
         st.quit_pending = False
         return True
 
@@ -2849,6 +3147,31 @@ def run_anchor_review(anchor_path: Path, sprite_dir: Path = SPRITE_DIR) -> int:
     # Use the asset's actual anim_lengths (from XP layer-0 metadata)
     st.anim_lengths = list(asset.entry.meta.anim_lengths)
 
+    # FL-4162 read-only evidence cards for this family (rejects-first); position
+    # on the card matching the current sprite+layer if present. Never mutated.
+    _evi_stem = ref_path.stem if ref_xp else anchor_path.stem
+    st.evidence_cards = _load_evidence_cards_for_family(anchor_path, _evi_stem)
+    _evi_target = f"{_evi_stem}-L{layer_index}"
+    for _i, _card in enumerate(st.evidence_cards):
+        if _card.get("card_id") == _evi_target:
+            st.evidence_idx = _i
+            break
+
+    # FL-4162 step 8: load any already-reviewed decisions (keyed by source_key)
+    # so each card shows its current verdict. Read here; written only via [t].
+    if decision_capture is not None:
+        st.decisions_path = anchor_path.parent / decision_capture.DECISIONS_FILENAME
+        try:
+            st.decisions = decision_capture.load_decisions(st.decisions_path)
+            st.decisions_load_error = None
+        except Exception as exc:
+            # FL-4162 Law 6: a present-but-corrupt/unreadable decisions file must not
+            # be silently treated as empty. Keep the viewer running, but record the
+            # failure so the panel surfaces it instead of "none recorded".
+            st.decisions = {}
+            st.decisions_load_error = str(exc) or exc.__class__.__name__
+            st.status = f"DECISION FILE LOAD FAILED — {st.decisions_load_error}"
+
     # Try to load body map XP from pipeline-v3/output/
     repo_root = Path(__file__).resolve().parents[1]
     candidate = repo_root / "output" / f"{anchor_path.stem}_body_map.xp"
@@ -3010,7 +3333,18 @@ def main(argv: list[str] | None = None) -> int:
 
     # Anchor review mode takes priority
     if args.anchor_review is not None:
-        return run_anchor_review(args.anchor_review, sprite_dir=args.sprite_dir)
+        try:
+            return run_anchor_review(args.anchor_review, sprite_dir=args.sprite_dir)
+        except ValueError as exc:
+            # FL-4306: a non-anchor JSON (roles/spatial/conventions doc — no
+            # grid_layout or frame_w<=0) was passed directly. Fail with a
+            # readable message instead of an unhandled traceback. The launcher
+            # picker also filters these out (_is_anchor_schema_file).
+            print(
+                f"not an anchor-schema semantic map: {args.anchor_review}\n  {exc}",
+                file=sys.stderr,
+            )
+            return 2
 
     dump_mode = args.json or args.sprite is not None or args.layer is not None
     if dump_mode:

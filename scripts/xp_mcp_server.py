@@ -2,7 +2,7 @@
 xp_mcp_server.py -- MCP server exposing .xp file manipulation over JSON-RPC/TCP.
 
 ARCHITECTURE:
-    This module is a FastMCP-based server that exposes REXPaint .xp sprite file
+    This module is an MCPServer-based server that exposes REXPaint .xp sprite file
     operations as remote-callable tools. It bridges external AI agents and editors
     to the Asciicker sprite pipeline by providing structured read/write access to
     .xp files through the Model Context Protocol (MCP).
@@ -33,16 +33,16 @@ PIPELINE CONTEXT:
     Downstream: Saved .xp files feed into assembler.py, validator.py,
     and ultimately the C++ engine's sprite loader (sprite.cpp).
 
-    [DEPENDENCY:MCP] -- Requires the `mcp` Python package (FastMCP server framework).
+    [DEPENDENCY:MCP] -- Requires the v2 `mcp` Python SDK.
     [DATA-CONTRACT:XP] -- All file I/O uses the REXPaint .xp binary format
         (gzip-compressed, column-major cells, 10 bytes/cell). See xp_core.py.
     [DATA-CONTRACT:CP437] -- Glyph values are CP437 code points (0-255).
         Glyph 0 = transparent/null in REXPaint; glyph 32 = visible space.
     [FLOW:CLI] -- Entry point: `python xp_mcp_server.py` or launched by an MCP
-        host. All tools are synchronous request/response over the FastMCP transport.
+        host. All tools are synchronous request/response over the MCP transport.
 """
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 import os
 import sys
 import copy
@@ -81,9 +81,9 @@ from xp_core import XPFile, XPLayer
 
 # WHY "XP Tool" name: This becomes the server identity string in MCP capability
 # negotiation. MCP clients display it to the user when listing available servers.
-# [DEPENDENCY:MCP] FastMCP handles JSON-RPC framing, tool schema advertisement,
+# [DEPENDENCY:MCP] MCPServer handles JSON-RPC framing, tool schema advertisement,
 # and transport (stdio for subprocess hosts, SSE for HTTP-based hosts).
-mcp = FastMCP("XP Tool")
+mcp = MCPServer("XP Tool")
 
 def _parse_color(color_str):
     """
@@ -754,7 +754,7 @@ def write_text(path: str, layer_idx: int, x: int, y: int, text: str, fg_hex: str
     return write_ascii_block(path, layer_idx, x, y, len(text), text, fg_hex, bg_hex)
 
 if __name__ == "__main__":
-    # WHY mcp.run(): FastMCP handles transport negotiation (stdio or SSE)
+    # WHY mcp.run(): MCPServer handles transport negotiation (stdio or HTTP)
     # based on environment. The server advertises all @mcp.tool() functions
     # to connected MCP clients (e.g. Claude Desktop, VS Code extensions).
     print("Starting XP Tool MCP Server...")

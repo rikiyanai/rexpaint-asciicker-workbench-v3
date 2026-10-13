@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fl4162.upstream_xp_cell_review_state_decision.v1",
+  "title": "FL-4162 reviewed upstream XP queue-state decision",
+  "type": "object",
+  "required": [
+    "schema",
+    "authority",
+    "is_proposal",
+    "review_unit_id",
+    "source_layer_sha256",
+    "frame_geometry",
+    "member_source_keys",
+    "source_decision_state",
+    "target_decision_state",
+    "review_provenance"
+  ],
+  "properties": {
+    "schema": {"const": "fl4162.upstream_xp_cell_review_state_decision.v1"},
+    "authority": {"const": false},
+    "is_proposal": {"const": true},
+    "review_unit_id": {"type": "string"},
+    "source_layer_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "frame_geometry": {"type": "object"},
+    "member_source_keys": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "pattern": "-L[0-9]+$"}
+    },
+    "source_decision_state": {"const": "needs_cell_semantic_confirmation"},
+    "target_decision_state": {
+      "enum": ["needs_cell_role_segmentation", "needs_source_contract"]
+    },
+    "review_provenance": {
+      "type": "object",
+      "required": ["reviewer", "reviewed_at", "evidence_refs", "decision"]
+    }
+  }
+}

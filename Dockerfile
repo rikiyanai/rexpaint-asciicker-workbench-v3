@@ -19,11 +19,6 @@ COPY web/ web/
 COPY config/ config/
 COPY sprites/ sprites/
 COPY runtime/ runtime/
-# scripts/glyph_assignment is imported at startup by service.py (commit 07c778a:
-# "promote Upload PNG to rich CP437 glyph matcher") — must be present in image.
-COPY scripts/glyph_assignment/ scripts/glyph_assignment/
-# glyph_assignment/font_atlas.py imports BdfFont + CP437_TO_UNI from png2xp2png.py.
-COPY scripts/png2xp2png.py scripts/png2xp2png.py
 COPY wsgi.py .
 
 # Create data directories (ephemeral on Cloud Run)

@@ -14,10 +14,6 @@
 
 "use strict";
 
-// Canonical action order for bundle tabs and initial selection.
-// Flask sorts JSON keys alphabetically; this restores the intended order.
-const BUNDLE_ACTION_ORDER = ["idle", "attack", "death"];
-
 /**
  * Pure implementation of the template-action authorability gate.
  *
@@ -44,13 +40,18 @@ function isTemplateActionAuthorable(ts, actionKey, spec, registry, templateSetKe
   const familyScope = registry?.skin_family_scope?.[skinFamily];
   if (!familyScope || familyScope.authorable === false || familyScope.proof_only === true) return false;
 
+  const allowedTemplateSets = Array.isArray(familyScope.authorable_template_sets)
+    ? familyScope.authorable_template_sets.map((value) => String(value || "").trim()).filter(Boolean)
+    : [];
+  const tsk = String(templateSetKey || "").trim();
+  if (allowedTemplateSets.length && (!tsk || !allowedTemplateSets.includes(tsk))) return false;
+
   const prefixSpec = registry?.prefix_catalog?.[prefix];
   if (!prefixSpec) return false;
   if (String(prefixSpec.filename_prefix || "").trim() !== prefix) return false;
   if (String(prefixSpec.skin_family || "").trim() !== skinFamily) return false;
   if (prefixSpec.authorable === false) return false;
 
-  const tsk = String(templateSetKey || "").trim();
   const templateActions = Array.isArray(prefixSpec.template_actions) ? prefixSpec.template_actions : [];
   if (templateActions.length) {
     if (!tsk) return false;
@@ -64,7 +65,40 @@ function isTemplateActionAuthorable(ts, actionKey, spec, registry, templateSetKe
 }
 
 /**
- * Returns the subset of ts.actions that are authorable, in canonical order.
+ * Build the stable action order from the normalized registry's prefix topology.
+ * Family prefix arrays are authoritative; unlisted prefixes fall back to a
+ * deterministic lexical order rather than a hard-coded action vocabulary.
+ */
+function compareTemplateActions(registry, left, right) {
+  const resolve = ([actionKey, spec]) => {
+    const prefix = String(spec?.filename_prefix || spec?.family || "").trim();
+    const skinFamily = String(spec?.skin_family || "").trim();
+    const familyScope = registry?.skin_family_scope?.[skinFamily];
+    const prefixOrder = [
+      ...(Array.isArray(familyScope?.on_foot_prefixes) ? familyScope.on_foot_prefixes : []),
+      ...(Array.isArray(familyScope?.mounted_prefixes) ? familyScope.mounted_prefixes : []),
+      ...(Array.isArray(familyScope?.deferred_prefixes) ? familyScope.deferred_prefixes : []),
+    ].map((value) => String(value || "").trim());
+    const rank = prefixOrder.indexOf(prefix);
+    return {
+      actionKey,
+      prefix,
+      skinFamily,
+      rank: rank < 0 ? Number.MAX_SAFE_INTEGER : rank,
+    };
+  };
+
+  const a = resolve(left);
+  const b = resolve(right);
+  return a.skinFamily.localeCompare(b.skinFamily)
+    || a.rank - b.rank
+    || a.prefix.localeCompare(b.prefix)
+    || a.actionKey.localeCompare(b.actionKey);
+}
+
+/**
+ * Returns the subset of ts.actions that are authorable, ordered by registry
+ * family/prefix topology (with deterministic fallback for unlisted prefixes).
  *
  * @param {object|null}  ts             - Template-set descriptor
  * @param {object|null}  registry       - Full normalized template registry object
@@ -73,18 +107,13 @@ function isTemplateActionAuthorable(ts, actionKey, spec, registry, templateSetKe
  */
 function getEnabledActions(ts, registry, templateSetKey) {
   if (!ts || !ts.actions) return {};
-  const unordered = {};
+  const entries = [];
   for (const [key, spec] of Object.entries(ts.actions)) {
-    if (isTemplateActionAuthorable(ts, key, spec, registry, templateSetKey)) unordered[key] = spec;
+    if (isTemplateActionAuthorable(ts, key, spec, registry, templateSetKey)) entries.push([key, spec]);
   }
-  // Re-order to canonical order; any unlisted keys appear at the end.
+  entries.sort((left, right) => compareTemplateActions(registry, left, right));
   const out = {};
-  for (const key of BUNDLE_ACTION_ORDER) {
-    if (unordered[key]) out[key] = unordered[key];
-  }
-  for (const key of Object.keys(unordered)) {
-    if (!out[key]) out[key] = unordered[key];
-  }
+  for (const [key, spec] of entries) out[key] = spec;
   return out;
 }
 
@@ -92,8 +121,8 @@ function getEnabledActions(ts, registry, templateSetKey) {
 
 if (typeof module !== "undefined" && module.exports) {
   // Node.js / CommonJS (unit tests)
-  module.exports = { BUNDLE_ACTION_ORDER, isTemplateActionAuthorable, getEnabledActions };
+  module.exports = { isTemplateActionAuthorable, getEnabledActions };
 } else if (typeof window !== "undefined") {
   // Browser (<script src="/workbench-template-gating.js"> loaded before workbench.js)
-  window.__workbenchTemplateGating = { BUNDLE_ACTION_ORDER, isTemplateActionAuthorable, getEnabledActions };
+  window.__workbenchTemplateGating = { isTemplateActionAuthorable, getEnabledActions };
 }

@@ -1,8 +1,6 @@
 """Knight 24px smoke test for the FINAL-JSON-derived bias pipeline.
 
-Source: Knight1_*.png from the 24px Mini Characters asset pack
-(directory given by --knight-dir or $KNIGHT_24PX_DIR; typically
-'<pack>/images/Characters'):
+Source: <KNIGHT_DIR>/Knight1_*.png (pass --knight-dir or set $ASCIICKER_KNIGHT_DIR)
   - Knight1_Idle.png    208x104  (4 frames × 2 angles, 52px tile)
   - Knight1_Move.png    208x416  (4 frames × 8 angles)
   - Knight1_Attack.png  208x416  (4 frames × 8 angles)
@@ -18,9 +16,7 @@ writes them into pipeline-v3/output/24px-mini-characters/source_sheets/
 as `knight1-{family}-source.png`, then invokes the existing converter.
 
 Run:
-  KNIGHT_24PX_DIR='/path/to/24px Mini Characters/images/Characters' \
-    python3 pipeline-v3/scripts/convert_knight_24px.py
-  # or: python3 pipeline-v3/scripts/convert_knight_24px.py --knight-dir <dir>
+  python3 pipeline-v3/scripts/convert_knight_24px.py --knight-dir <dir>
 """
 from __future__ import annotations
 
@@ -40,27 +36,6 @@ OUT_DIR = ROOT / "output" / "24px-mini-characters-template-2x"
 
 TILE_PX = 52
 ANGLES = 8
-
-
-def _resolve_knight_dir(cli_value: str | None) -> Path:
-    """Knight1_*.png source directory.
-
-    Precedence: --knight-dir, then $KNIGHT_24PX_DIR. The pack lives outside
-    this repo, so there is no repo-relative default: fail fast instead of
-    silently composing sheets from the wrong source.
-    """
-    raw = cli_value or os.environ.get("KNIGHT_24PX_DIR")
-    if not raw:
-        raise SystemExit(
-            "Knight source directory not configured. Pass --knight-dir DIR or set "
-            "KNIGHT_24PX_DIR to the 24px Mini Characters 'images/Characters' folder "
-            "holding Knight1_Idle.png / Knight1_Move.png / Knight1_Attack.png / "
-            "Knight1_Faint.png."
-        )
-    knight_dir = Path(raw).expanduser()
-    if not knight_dir.is_dir():
-        raise SystemExit(f"Knight source directory does not exist: {knight_dir}")
-    return knight_dir
 
 
 def _read_knight_strip(path: Path, expected_w: int, expected_h: int) -> Image.Image:
@@ -138,8 +113,28 @@ def _compose_plydie_sheet(knight_faint: Image.Image) -> Image.Image:
     return out
 
 
+def _resolve_knight_dir(value: Path | None) -> Path:
+    raw = value or os.environ.get("ASCIICKER_KNIGHT_DIR")
+    if not raw:
+        raise SystemExit(
+            "missing knight source dir: pass --knight-dir <dir> or set "
+            "$ASCIICKER_KNIGHT_DIR (dir must contain Knight1_*.png)"
+        )
+    knight_dir = Path(raw)
+    missing = [
+        name for name in (
+            "Knight1_Attack.png", "Knight1_Move.png",
+            "Knight1_Idle.png", "Knight1_Faint.png",
+        ) if not (knight_dir / name).is_file()
+    ]
+    if missing:
+        raise SystemExit(
+            f"--knight-dir {knight_dir} is missing: {', '.join(missing)}"
+        )
+    return knight_dir
+
+
 def preprocess(knight_dir: Path) -> dict:
-    # knight_dir comes from --knight-dir / $KNIGHT_24PX_DIR (see _resolve_knight_dir).
     knight_attack = _read_knight_strip(
         knight_dir / "Knight1_Attack.png", 4 * TILE_PX, ANGLES * TILE_PX
     )
@@ -193,18 +188,21 @@ def main() -> int:
         help="compose knight source sheets but do not run the converter",
     )
     parser.add_argument(
+        "--knight-dir", type=Path, default=None,
+        help="dir with Knight1_*.png (or $ASCIICKER_KNIGHT_DIR); required "
+             "unless --skip-preprocess",
+    )
+    parser.add_argument(
         "--skip-preprocess", action="store_true",
         help="skip composing knight sheets (use existing files)",
     )
-    parser.add_argument(
-        "--knight-dir", default=None,
-        help="directory holding Knight1_*.png (defaults to $KNIGHT_24PX_DIR)",
-    )
     args = parser.parse_args()
 
+    knight_dir = (
+        _resolve_knight_dir(args.knight_dir) if not args.skip_preprocess else None
+    )
+
     if not args.skip_preprocess:
-        # Source dir resolved from --knight-dir / $KNIGHT_24PX_DIR.
-        knight_dir = _resolve_knight_dir(args.knight_dir)
         print("preprocessing knight source sheets...")
         composed = preprocess(knight_dir)
         for family, info in composed.items():

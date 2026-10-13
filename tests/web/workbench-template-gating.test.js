@@ -11,7 +11,6 @@
 "use strict";
 
 const {
-  BUNDLE_ACTION_ORDER,
   isTemplateActionAuthorable,
   getEnabledActions,
 } = require("../../web/workbench-template-gating");
@@ -87,7 +86,13 @@ function makeRegistry({ authorable = true, proof_only = false } = {}) {
   return {
     schema_version: 2,
     skin_family_scope: {
-      humanoid: { authorable, proof_only },
+      humanoid: {
+        authorable,
+        proof_only,
+        on_foot_prefixes: ["hero_idle"],
+        mounted_prefixes: [],
+        deferred_prefixes: [],
+      },
     },
     prefix_catalog: {
       "hero_idle": {
@@ -235,6 +240,16 @@ describe("isTemplateActionAuthorable — familyScope registry guard", () => {
     const registry = makeRegistry({ authorable: true, proof_only: true });
     const ts = makeTs();
     const spec = makeSpec();
+    expect(isTemplateActionAuthorable(ts, "idle", spec, registry, "")).toBeFalse();
+  });
+
+  it("honors an explicit family authorable_template_sets allowlist", () => {
+    const registry = makeRegistry();
+    registry.skin_family_scope.humanoid.authorable_template_sets = ["approved"];
+    const ts = makeTs();
+    const spec = makeSpec();
+    expect(isTemplateActionAuthorable(ts, "idle", spec, registry, "approved")).toBeTrue();
+    expect(isTemplateActionAuthorable(ts, "idle", spec, registry, "other")).toBeFalse();
     expect(isTemplateActionAuthorable(ts, "idle", spec, registry, "")).toBeFalse();
   });
 
@@ -389,10 +404,15 @@ describe("getEnabledActions — basic cases", () => {
   });
 });
 
-describe("getEnabledActions — canonical ordering", () => {
-  it("orders actions in BUNDLE_ACTION_ORDER sequence: idle, attack, death", () => {
+describe("getEnabledActions — registry-declared ordering", () => {
+  it("orders actions by the family prefix topology, not action-name constants", () => {
     // Registry supports three prefixes so all three actions can pass.
     const registry = makeRegistry();
+    registry.skin_family_scope.humanoid.on_foot_prefixes = [
+      "hero_idle",
+      "hero_attack",
+      "hero_death",
+    ];
     for (const key of ["hero_attack", "hero_death"]) {
       registry.prefix_catalog[key] = {
         filename_prefix: key,
@@ -413,7 +433,7 @@ describe("getEnabledActions — canonical ordering", () => {
     expect(Object.keys(result)).toDeepEqual(["idle", "attack", "death"]);
   });
 
-  it("places non-canonical keys after canonical ones", () => {
+  it("places an unlisted prefix after registry-listed prefixes", () => {
     const registry = makeRegistry();
     registry.prefix_catalog["hero_taunt"] = {
       filename_prefix: "hero_taunt",
@@ -432,10 +452,6 @@ describe("getEnabledActions — canonical ordering", () => {
     const keys = Object.keys(result);
     expect(keys[0]).toBe("idle");
     expect(keys[1]).toBe("taunt");
-  });
-
-  it("returns BUNDLE_ACTION_ORDER constant as [idle, attack, death]", () => {
-    expect(BUNDLE_ACTION_ORDER).toDeepEqual(["idle", "attack", "death"]);
   });
 });
 
