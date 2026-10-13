@@ -13056,3 +13056,23 @@ file outside that ownership was edited; no row below is closed.
   here).
 - `git diff --check`: clean.
 - Open gap, not claimed: no service-worker freshness automation exists.
+
+### 2026-10-13 Lane merge to main + user-sim verdict (pre-merge record)
+
+Lanes landed as isolated commits on `fl4306-evidence-sidebar`:
+`993bec7` (4 parallel slices), `fe56ef9` (Lane B viewport toggle),
+`82055ff` (Lane A runtime contract), `a6dea37` (Lane D register +
+self-containment 47->38 blockers), `53bdabc` (Lane C 16/16).
+Suites at merge: npm green (38+7+22+16), pytest base-path 71 passed,
+`git diff --check` clean.
+
+Headed user-sim (local Flask :5071, Chromium) verdict, desktop + mobile
+toggle: flow works (select -> preview -> dblclick opens in Edit, dock tracks
+doc), UI unusable on mobile — emulation is a centered 390px column in a
+1365px page (outer chrome clipped); two Open buttons (toolbar Open ignores
+selection); 10 rows identically labeled `player 126x80 root_blank`, no
+thumbnails, below fold; preview postage-stamp magenta; editor lands at Fit
+0.22x black strip; Test dock reads "Webbuild not loaded" until Test pressed.
+Next slice: mobile-first Browse (one Open, thumbnails, distinct labels) +
+paintable-zoom editor. `rikiworld.com/xpedit` deploy explicitly deferred by
+operator. Merging fast-forward into `main`; `fl4306-*` branches to delete.
