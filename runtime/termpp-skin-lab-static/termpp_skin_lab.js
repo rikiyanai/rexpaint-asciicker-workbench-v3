@@ -1,141 +1,64 @@
 (() => {
   "use strict";
 
-  function _resolveWorkbenchBasePath(pathname, injectedBasePath) {
+  function resolveBasePath(pathname, injectedBasePath) {
     const injected = String(injectedBasePath || "").trim();
     if (injected) return injected;
     const path = String(pathname || "");
-    const markers = ["/termpp-web-flat", "/termpp-web", "/termpp-skin-lab", "/workbench", "/wizard"];
-    for (const marker of markers) {
-      const idx = path.indexOf(marker);
-      if (idx >= 0) return path.slice(0, idx);
+    for (const marker of ["/termpp-web-flat", "/termpp-web", "/termpp-skin-lab", "/workbench", "/wizard"]) {
+      const index = path.indexOf(marker);
+      if (index >= 0) return path.slice(0, index);
     }
     return "";
   }
 
-  const BASE_PATH = _resolveWorkbenchBasePath(window.location?.pathname, window.__WB_BASE_PATH);
-  function bp(path) {
-    return `${BASE_PATH}${path}`;
-  }
-
-  // Override-name generation: derives per-prefix W range from registry prefix_catalog.ahsw_range.
-  function _ahswNamesFromPrefixCatalog(prefixCatalog, prefixes) {
-    const out = [];
-    for (const prefix of prefixes) {
-      const spec = prefixCatalog[prefix];
-      const range = spec && spec.ahsw_range;
-      const wRange = range === "weapon_gte_1" ? [1, 2] : [0, 1, 2];
-      if (range === "all_16" && prefix === "player") out.push("player-nude.xp");
-      for (let a = 0; a < 2; a++)
-        for (let h = 0; h < 2; h++)
-          for (let s = 0; s < 2; s++)
-            for (const w of wRange)
-              out.push(`${prefix}-${a}${h}${s}${w}.xp`);
-    }
-    return out;
-  }
-
-  const DEFAULT_OVERRIDE_SETS = {
-    player_common: [], // populated from registry during init; empty if unavailable
-    single_player_nude: ["player-nude.xp"],
-    all_visible_test: [
-      "player-nude.xp",
-      "player-0000.xp",
-      "attack-0000.xp",
-      "plydie-0000.xp",
-      "wolfie-0000.xp",
-      "wolack-0000.xp",
-    ],
-  };
-  let _playerCommonLoadError = "";
-
-  async function _initPlayerCommonOverrides() {
-    const allPrefixes = ["player", "attack", "plydie", "wolfie", "wolack"];
-    _playerCommonLoadError = "";
-    try {
-      const r = await fetch(bp("/api/workbench/templates"));
-      if (!r.ok) {
-        throw new Error(`HTTP ${r.status}`);
-      }
-      const reg = await r.json();
-      const pc = reg && reg.prefix_catalog;
-      if (!pc || typeof pc !== "object") {
-        throw new Error("missing prefix_catalog");
-      }
-      const prefixes = allPrefixes.filter((p) => pc[p] && pc[p].ahsw_range);
-      DEFAULT_OVERRIDE_SETS.player_common = _ahswNamesFromPrefixCatalog(pc, prefixes);
-    } catch (e) {
-      DEFAULT_OVERRIDE_SETS.player_common = [];
-      _playerCommonLoadError = `Template registry unavailable: ${e?.message || "network error"}`;
-    }
-  }
-
+  const BASE_PATH = resolveBasePath(window.location?.pathname, window.__WB_BASE_PATH);
+  const bp = (path) => `${BASE_PATH}${path}`;
+  const $ = (id) => document.getElementById(id);
   const state = {
     webbuildLoaded: false,
     webbuildReady: false,
     readyPoll: null,
     lastXpBytes: null,
     lastXpName: "",
+    lastToken: null,
   };
 
-  const $ = (id) => document.getElementById(id);
-
   function setStatus(text, cls) {
-    const el = $("statusLine");
-    if (!el) return;
-    el.className = `small ${cls || ""}`.trim();
-    el.textContent = text;
+    const element = $("statusLine");
+    if (!element) return;
+    element.className = `small ${cls || ""}`.trim();
+    element.textContent = text;
   }
 
   function setWebbuildState(text, cls) {
-    const el = $("webbuildState");
-    if (!el) return;
-    el.className = `small ${cls || ""}`.trim();
-    el.textContent = text;
+    const element = $("webbuildState");
+    if (!element) return;
+    element.className = `small ${cls || ""}`.trim();
+    element.textContent = text;
   }
 
-  function out(obj) {
-    const el = $("out");
-    if (!el) return;
-    if (typeof obj === "string") el.textContent = obj;
-    else el.textContent = JSON.stringify(obj, null, 2);
+  function out(value) {
+    const element = $("out");
+    if (!element) return;
+    element.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
   }
 
   function frameWin() {
-    const f = $("gameFrame");
-    return f && f.contentWindow ? f.contentWindow : null;
-  }
-
-  function selectedOverrideNames() {
-    const mode = String($("overrideMode")?.value || "player_common");
-    const names = DEFAULT_OVERRIDE_SETS[mode];
-    return Array.isArray(names) ? [...names] : [];
-  }
-
-  function renderOverrideNames() {
-    const box = $("overrideNames");
-    if (!box) return;
-    box.innerHTML = "";
-    for (const n of selectedOverrideNames()) {
-      const span = document.createElement("span");
-      span.className = "pill";
-      span.textContent = n;
-      box.appendChild(span);
-    }
+    const frame = $("gameFrame");
+    return frame && frame.contentWindow ? frame.contentWindow : null;
   }
 
   function stopReadyPoll() {
-    if (state.readyPoll) {
-      clearInterval(state.readyPoll);
-      state.readyPoll = null;
-    }
+    if (!state.readyPoll) return;
+    clearInterval(state.readyPoll);
+    state.readyPoll = null;
   }
 
   function updateButtons() {
     const hasXp = !!(state.lastXpBytes && state.lastXpBytes.length);
-    const hasOverrides = selectedOverrideNames().length > 0;
-    $("applyBtn").disabled = !(hasXp && state.webbuildReady && hasOverrides);
-    $("reapplyBtn").disabled = !(hasXp && state.webbuildReady && hasOverrides);
+    $("applyBtn").disabled = !hasXp;
+    $("reapplyBtn").disabled = !hasXp;
     $("startBtn").disabled = !state.webbuildReady;
   }
 
@@ -143,89 +66,85 @@
     const win = frameWin();
     if (!win) return false;
     try {
-      const ready = !!(
-        win.Module &&
-        win.Module.calledRun &&
-        typeof win.Module.FS_createDataFile === "function" &&
-        typeof win.Module.FS_unlink === "function" &&
-        typeof win.Load === "function"
-      );
+      const receipt = win.__legacySkinPreview || null;
+      if (receipt && receipt.status === "failed") {
+        state.webbuildReady = false;
+        setWebbuildState(`Preview blocked: ${receipt.error || "bootstrap failed"}`, "err");
+        updateButtons();
+        return false;
+      }
+      const ready = !!(win.Module && win.Module.calledRun && win._wasmReady && typeof win.Load === "function");
       state.webbuildReady = ready;
       updateButtons();
       if (ready) {
-        setWebbuildState("Webbuild ready", "ok");
-        setStatus("Webbuild runtime is ready for XP injection", "ok");
+        setWebbuildState(receipt ? `Webbuild ready (${receipt.runtime_state})` : "Webbuild ready", "ok");
         stopReadyPoll();
       } else {
         setWebbuildState("Webbuild loading...", "warn");
       }
       return ready;
-    } catch (e) {
+    } catch (error) {
       state.webbuildReady = false;
+      setWebbuildState(`Iframe access error: ${String(error)}`, "err");
       updateButtons();
-      setWebbuildState(`Iframe access error: ${String(e)}`, "err");
       return false;
     }
   }
 
-  function openWebbuild() {
-    const f = $("gameFrame");
-    if (!f) return;
-    const src = String($("webbuildPath")?.value || "./termpp-web/index.html?solo=1&player=player").trim();
+  function selectedRuntimeUrl() {
+    const fallback = bp("/termpp-web-flat/index.html?solo=1&player=player");
+    const raw = String($("webbuildPath")?.value || fallback).trim() || fallback;
+    return raw.replace("/termpp-web/index.html", "/termpp-web-flat/index.html");
+  }
+
+  function runtimeUrlWithToken(token) {
+    const url = new URL(selectedRuntimeUrl(), window.location.origin);
+    url.searchParams.set("skin_preview_token", String(token));
+    url.searchParams.set("_skin_lab", String(Date.now()));
+    return `${url.pathname}${url.search}`;
+  }
+
+  function navigateFrame(src, label) {
+    const frame = $("gameFrame");
+    if (!frame) return;
     state.webbuildLoaded = true;
     state.webbuildReady = false;
     updateButtons();
-    setWebbuildState("Opening webbuild...", "warn");
-    setStatus("Loading webbuild iframe...", "warn");
     stopReadyPoll();
-    f.src = src;
+    setWebbuildState(label || "Opening webbuild...", "warn");
+    try { frame.src = "about:blank"; } catch (_e) {}
+    setTimeout(() => { frame.src = src; }, 10);
     state.readyPoll = setInterval(detectWebbuildReady, 500);
+  }
+
+  function openWebbuild() {
+    const src = selectedRuntimeUrl();
+    navigateFrame(src, "Opening webbuild...");
+    setStatus("Loading the packaged flat runtime", "warn");
     out({ action: "open_webbuild", src });
   }
 
   function reloadWebbuild() {
-    const f = $("gameFrame");
-    if (!f) return;
-    state.webbuildReady = false;
-    updateButtons();
-    setWebbuildState("Reloading webbuild...", "warn");
-    setStatus("Reloading webbuild iframe...", "warn");
-    stopReadyPoll();
-    try {
-      if (f.contentWindow && f.contentWindow.location) f.contentWindow.location.reload();
-      else openWebbuild();
-    } catch (_e) {
-      openWebbuild();
-    }
-    state.readyPoll = setInterval(detectWebbuildReady, 500);
+    navigateFrame(selectedRuntimeUrl(), "Reloading webbuild...");
+    setStatus("Reloading the packaged flat runtime", "warn");
   }
 
   function autoStartGameIfNeeded() {
     const win = frameWin();
     if (!win) throw new Error("iframe not available");
     const playerName = String($("playerName")?.value || "player").trim() || "player";
-    try {
-      const d = win.document;
-      const overlay = d && d.getElementById ? d.getElementById("login-overlay") : null;
-      const overlayVisible = !!(overlay && overlay.style && overlay.style.display !== "none");
-      if (!overlayVisible) return { started: false, reason: "overlay_hidden" };
-      const playerInput = d.getElementById("player-name");
-      const serverInput = d.getElementById("server-addr");
-      const playBtn = d.getElementById("play-btn");
-      if (playerInput) playerInput.value = playerName;
-      if (serverInput) serverInput.value = "";
-      if (playBtn) playBtn.disabled = false;
-      if (typeof win.StartGame !== "function") return { started: false, reason: "StartGame_missing" };
-      const startRes = win.StartGame();
-      if (startRes && typeof startRes.then === "function") {
-        startRes.catch((e) => {
-          try { console.warn("[termpp_skin_lab] StartGame rejected:", e); } catch (_e2) {}
-        });
-      }
-      return { started: true };
-    } catch (e) {
-      return { started: false, reason: String(e) };
-    }
+    const doc = win.document;
+    const overlay = doc?.getElementById?.("login-overlay");
+    if (!overlay || overlay.style?.display === "none") return { started: false, reason: "overlay_hidden" };
+    const playerInput = doc.getElementById("player-name");
+    const serverInput = doc.getElementById("server-addr");
+    const playButton = doc.getElementById("play-btn");
+    if (playerInput) playerInput.value = playerName;
+    if (serverInput) serverInput.value = "";
+    if (playButton) playButton.disabled = false;
+    if (typeof win.StartGame !== "function") return { started: false, reason: "StartGame_missing" };
+    win.StartGame();
+    return { started: true };
   }
 
   function startGame() {
@@ -233,87 +152,69 @@
       setStatus("Webbuild is not ready yet", "warn");
       return;
     }
-    const res = autoStartGameIfNeeded();
-    if (res.started) setStatus("Started webbuild game", "ok");
-    else setStatus(`Start game skipped (${res.reason})`, "warn");
-    out({ action: "start_game", result: res });
+    const result = autoStartGameIfNeeded();
+    setStatus(result.started ? "Started webbuild game" : `Start game skipped (${result.reason})`, result.started ? "ok" : "warn");
+    out({ action: "start_game", result });
   }
 
-  function ensureSpritesDir(M) {
-    if (typeof M.FS_createPath === "function") {
-      try { M.FS_createPath("/", "assets", true, true); } catch (_e) {}
-      try { M.FS_createPath("/assets", "sprites", true, true); } catch (_e) {}
+  function uint8ArrayToBase64(bytes) {
+    let binary = "";
+    const chunkSize = 0x8000;
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
     }
+    return btoa(binary);
   }
 
-  function emfsReplaceFile(M, absPath, bytes) {
-    const path = String(absPath || "");
-    if (!path.startsWith("/")) throw new Error(`invalid emfs path: ${path}`);
-    const slash = path.lastIndexOf("/");
-    const dir = slash > 0 ? path.slice(0, slash) : "/";
-    const name = path.slice(slash + 1);
-    if (!name) throw new Error(`invalid emfs filename: ${path}`);
-    const FS = M && M.FS;
-    if (FS && typeof FS.writeFile === "function") {
-      try {
-        FS.writeFile(path, bytes, { canOwn: true });
-        return { mode: "writeFile" };
-      } catch (_e) {}
-    }
-    try { M.FS_unlink(path); } catch (_e) {}
-    M.FS_createDataFile(dir, name, bytes, true, true, true);
-    return { mode: "createDataFile" };
+  async function mintPreviewToken() {
+    const response = await fetch(bp("/api/workbench/legacy-preview-token"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        xp_b64: uint8ArrayToBase64(state.lastXpBytes),
+        source_name: state.lastXpName || "upload.xp",
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload?.error || `preview token request failed (${response.status})`);
+    return payload;
   }
 
-  async function injectXpBytes(xpBytes) {
-    if (!xpBytes || !xpBytes.length) throw new Error("No XP bytes loaded");
-    const win = frameWin();
-    if (!win || !win.Module) throw new Error("Webbuild iframe not ready");
-    const M = win.Module;
-    if (win.__termppFlatMap && typeof win.__termppFlatMap.apply === "function") {
-      try { await win.__termppFlatMap.apply(true); } catch (_e) {}
-    }
-    ensureSpritesDir(M);
-    const names = selectedOverrideNames();
-    if (!names.length) {
-      throw new Error(_playerCommonLoadError || "Override names unavailable");
-    }
-    let fsWriteMode = "";
-    for (const name of names) {
-      const res = emfsReplaceFile(M, `/assets/sprites/${name}`, xpBytes);
-      if (!fsWriteMode && res && res.mode) fsWriteMode = String(res.mode);
-    }
-    const playerName = String($("playerName")?.value || "player").trim() || "player";
-    let startInfo = { started: false, reason: "auto_start_disabled" };
-    if ($("autoStartChk")?.checked) {
-      startInfo = autoStartGameIfNeeded();
-    }
-    if (!startInfo.started) {
-      if (typeof win.Load === "function") win.Load(playerName);
-      if (typeof win.Resize === "function") {
-        try { win.Resize(null); } catch (_e) {}
+  async function waitForInstalledPreview(tokenPayload, timeoutMs = 180000) {
+    const started = Date.now();
+    while (Date.now() - started < timeoutMs) {
+      const win = frameWin();
+      let receipt = null;
+      try { receipt = win?.__legacySkinPreview || null; } catch (_e) {}
+      if (receipt?.status === "failed") throw new Error(receipt.error || "preview bootstrap failed");
+      if (receipt?.status === "installed" && detectWebbuildReady()) {
+        if (receipt.target_path !== tokenPayload.target_path || receipt.actual_sha256 !== tokenPayload.sha256) {
+          throw new Error("preview install receipt mismatch");
+        }
+        return receipt;
       }
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
-    try { win.ak_canvas?.focus?.(); } catch (_e) {}
-    return { files_written: names.length, bytes: xpBytes.length, fs_write_mode: fsWriteMode || "unknown", player_name: playerName, override_names: names, started_via: startInfo.started ? "start_game" : "load", start_info: startInfo };
+    throw new Error("preview runtime initialization timed out");
   }
 
   async function applyLoadedXp() {
-    if (!state.lastXpBytes || !state.lastXpBytes.length) {
+    if (!state.lastXpBytes?.length) {
       setStatus("Choose an .xp file first", "warn");
       return;
     }
-    if (!detectWebbuildReady()) {
-      setStatus("Open the webbuild and wait for 'Webbuild ready'", "warn");
-      return;
-    }
     try {
-      const info = await injectXpBytes(state.lastXpBytes);
-      setStatus(`Applied ${state.lastXpName || "XP"} to webbuild`, "ok");
-      out({ action: "apply_xp", file: state.lastXpName, ...info });
-    } catch (e) {
-      setStatus(`XP apply failed: ${String(e)}`, "err");
-      out({ action: "apply_xp", error: String(e) });
+      setStatus("Validating XP and minting one-shot preview...", "warn");
+      const token = await mintPreviewToken();
+      state.lastToken = token;
+      navigateFrame(runtimeUrlWithToken(token.token), `Installing ${token.target_path} before runtime...`);
+      const receipt = await waitForInstalledPreview(token);
+      const startInfo = $("autoStartChk")?.checked ? autoStartGameIfNeeded() : { started: false, reason: "auto_start_disabled" };
+      setStatus(`Applied ${state.lastXpName || "XP"} before sprite construction`, "ok");
+      out({ action: "apply_xp", token, receipt, start_info: startInfo });
+    } catch (error) {
+      setStatus(`XP preview failed: ${String(error)}`, "err");
+      out({ action: "apply_xp", error: String(error) });
     }
   }
 
@@ -327,94 +228,67 @@
 
   async function loadFile(file) {
     if (!file) return;
-    const ab = await file.arrayBuffer();
-    setLoadedXp(file.name || "upload.xp", new Uint8Array(ab));
+    setLoadedXp(file.name || "upload.xp", new Uint8Array(await file.arrayBuffer()));
   }
 
   function attachDnD() {
     const zone = $("dropZone");
     if (!zone) return;
-    const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
-    ["dragenter", "dragover", "dragleave", "drop"].forEach((ev) => {
-      zone.addEventListener(ev, stop);
+    const stop = (event) => { event.preventDefault(); event.stopPropagation(); };
+    for (const eventName of ["dragenter", "dragover", "dragleave", "drop"]) zone.addEventListener(eventName, stop);
+    for (const eventName of ["dragenter", "dragover"]) zone.addEventListener(eventName, () => zone.classList.add("dragover"));
+    for (const eventName of ["dragleave", "drop"]) zone.addEventListener(eventName, () => zone.classList.remove("dragover"));
+    zone.addEventListener("drop", async (event) => {
+      try { await loadFile(event.dataTransfer?.files?.[0]); }
+      catch (error) { setStatus(`Failed to load dropped file: ${String(error)}`, "err"); }
     });
-    ["dragenter", "dragover"].forEach((ev) => {
-      zone.addEventListener(ev, () => zone.classList.add("dragover"));
-    });
-    ["dragleave", "drop"].forEach((ev) => {
-      zone.addEventListener(ev, () => zone.classList.remove("dragover"));
-    });
-    zone.addEventListener("drop", async (e) => {
-      const file = e.dataTransfer?.files?.[0];
-      if (!file) return;
-      try {
-        await loadFile(file);
-      } catch (err) {
-        setStatus(`Failed to load dropped file: ${String(err)}`, "err");
-      }
-    });
+  }
+
+  function renderTargetContract() {
+    const box = $("overrideNames");
+    if (!box) return;
+    box.innerHTML = "";
+    const pill = document.createElement("span");
+    pill.className = "pill";
+    pill.textContent = "player-0000 or wolfie-0000 (resolved from XP topology)";
+    box.appendChild(pill);
   }
 
   function runtimeInfo() {
     const win = frameWin();
-    if (!win) {
-      out({ error: "iframe not loaded" });
-      return;
-    }
     try {
-      const info = {
-        hasModule: !!win.Module,
-        calledRun: !!win.Module?.calledRun,
-        hasLoad: typeof win.Load === "function",
-        hasResize: typeof win.Resize === "function",
-        hasStartGame: typeof win.StartGame === "function",
-        hasFSCreateDataFile: typeof win.Module?.FS_createDataFile === "function",
-        hasFSUnlink: typeof win.Module?.FS_unlink === "function",
+      out({
+        hasModule: !!win?.Module,
+        calledRun: !!win?.Module?.calledRun,
+        wasmReady: !!win?._wasmReady,
+        hasLoad: typeof win?.Load === "function",
         currentSrc: $("gameFrame")?.src || "",
-        playerName: $("playerName")?.value || "",
-        overrideCount: selectedOverrideNames().length,
-        lastXpName: state.lastXpName,
-        lastXpBytes: state.lastXpBytes ? state.lastXpBytes.length : 0,
-      };
-      out(info);
+        previewReceipt: win?.__legacySkinPreview || null,
+        lastToken: state.lastToken,
+      });
       setStatus("Runtime info captured", "ok");
-    } catch (e) {
-      out({ error: String(e) });
+    } catch (error) {
+      out({ error: String(error) });
       setStatus("Runtime info failed", "err");
     }
   }
 
-  async function init() {
-    await _initPlayerCommonOverrides();
-    renderOverrideNames();
+  function init() {
+    renderTargetContract();
     attachDnD();
     updateButtons();
-    if (_playerCommonLoadError) {
-      setStatus(_playerCommonLoadError, "warn");
-    }
-    out({ ready: true, note: "Open the webbuild, then upload an .xp and click Apply Uploaded XP." });
-
-    $("overrideMode")?.addEventListener("change", () => {
-      renderOverrideNames();
-      updateButtons();
-    });
+    out({ ready: true, note: "Upload an XP; apply always restarts through the pre-main preview owner." });
+    $("overrideMode")?.setAttribute?.("disabled", "disabled");
     $("openBtn")?.addEventListener("click", openWebbuild);
     $("reloadBtn")?.addEventListener("click", reloadWebbuild);
     $("startBtn")?.addEventListener("click", startGame);
     $("applyBtn")?.addEventListener("click", applyLoadedXp);
     $("reapplyBtn")?.addEventListener("click", applyLoadedXp);
     $("downloadInfoBtn")?.addEventListener("click", runtimeInfo);
-    $("xpFile")?.addEventListener("change", async (e) => {
-      const file = e.target?.files?.[0];
-      if (!file) return;
-      try {
-        await loadFile(file);
-      } catch (err) {
-        setStatus(`Failed to load file: ${String(err)}`, "err");
-      }
+    $("xpFile")?.addEventListener("change", async (event) => {
+      try { await loadFile(event.target?.files?.[0]); }
+      catch (error) { setStatus(`Failed to load file: ${String(error)}`, "err"); }
     });
-
-    // Helpful defaults for repeat local use.
     try {
       const savedPath = localStorage.getItem("termpp_skin_lab_webbuild_path");
       if (savedPath) $("webbuildPath").value = savedPath;

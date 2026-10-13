@@ -55,6 +55,7 @@ from .source_manifest import (
 from .storage import save_json, load_json
 from .runtime_contract import action_spec_for_session, validate_runtime_export
 from .xp_codec import write_xp, read_xp
+from .xp_codec import encode_xp, write_xp, read_xp
 
 # Ensure the scripts directory is on sys.path so that mounted_rider_offset
 # (and other standalone scripts) can be imported by service functions.
@@ -62,6 +63,10 @@ import sys as _sys
 _SCRIPTS_DIR = str(ROOT / "scripts")
 if _SCRIPTS_DIR not in _sys.path:
     _sys.path.insert(0, _SCRIPTS_DIR)
+
+# Rich glyph assignment (FL-4095+ CP437 font-mask matcher)
+from glyph_assignment import GlyphAssignmentConfig, assign_image_cells
+from glyph_assignment.matcher import default_font_path
 
 MAGENTA_BG = (255, 0, 255)
 
@@ -84,6 +89,36 @@ WORKBENCH_TERMPP_DIR = ROOT / "output" / "termpp_skin_runs"
 WORKBENCH_STREAM_DIR = ROOT / "output" / "termpp_stream"
 _TERM_STREAM_LOCK = threading.Lock()
 _TERM_STREAMS: dict[str, dict[str, Any]] = {}
+
+_LEGACY_PREVIEW_TOKEN_TTL_SECONDS = 90
+_LEGACY_PREVIEW_MAX_XP_BYTES = 5 * 1024 * 1024
+_LEGACY_PREVIEW_LOCK = threading.Lock()
+_LEGACY_PREVIEW_TOKENS: dict[str, dict[str, Any]] = {}
+
+_LEGACY_PREVIEW_CONTRACTS: dict[tuple[int, int], dict[str, Any]] = {
+    (126, 72): {
+        "family": "player",
+        "runtime_state": "on_foot_no_equipment",
+        "mount_state": 0,
+    },
+    (180, 96): {
+        "family": "wolfie",
+        "runtime_state": "mounted_wolf_no_equipment",
+        "mount_state": 1,
+    },
+}
+
+
+def _legacy_preview_family_targets(family: str) -> list[str]:
+    if family not in {"player", "wolfie"}:
+        raise ValueError(f"unsupported legacy preview family: {family}")
+    return [
+        f"/sprites/{family}-{armor}{helmet}{shield}{weapon}.xp"
+        for armor in range(2)
+        for helmet in range(2)
+        for shield in range(2)
+        for weapon in range(3)
+    ]
 
 
 def _termpp_skin_override_names(registry: dict[str, Any]) -> list[str]:
@@ -1319,6 +1354,7 @@ def runtime_identity_for_action(
     skin_definition_id = int(skin_spec["skin_definition_id"])
     presentation_kind_id = int(presentation_spec["presentation_kind_id"])
     layer_definition_id = int(layer_spec["layer_definition_id"])
+    rig_definition_id: str | None = layer_spec.get("rig_definition_id") or None
     return {
         "schema_version": 1,
         "template_set_key": template_set_key,
@@ -1328,6 +1364,7 @@ def runtime_identity_for_action(
         "skin_definition_id": skin_definition_id,
         "presentation_kind_id": presentation_kind_id,
         "layer_definition_id": layer_definition_id,
+        "rig_definition_id": rig_definition_id,
     }
 
 
@@ -1479,6 +1516,7 @@ def resolve_blueprint_targets(bundle_blueprint_key: str) -> list[dict[str, Any]]
             desc["skin_definition_id"] = int(identity["skin_definition_id"])
             desc["presentation_kind_id"] = int(identity["presentation_kind_id"])
             desc["layer_definition_id"] = int(identity["layer_definition_id"])
+            desc["rig_definition_id"] = identity.get("rig_definition_id")
 
         # Blocker text for future rows (plan §2.3.2 appearance ownership model)
         if layer_owner_kind == "mount" and slot == "mount_composite":
@@ -1855,7 +1893,13 @@ def save_bundle(bundle: BundleSession) -> None:
     save_json(_bundle_path(bundle.bundle_id), bundle.to_dict())
 
 
-def workbench_update_bundle_action_status(bundle_id: str, action_key: str, status_value: str, req_id: str) -> dict[str, Any]:
+def workbench_update_bundle_action_status(
+    bundle_id: str,
+    action_key: str,
+    status_value: str,
+    req_id: str,
+    session_id: str | None = None,
+) -> dict[str, Any]:
     bundle = load_bundle(bundle_id, req_id)
     allowed_statuses = {"empty", "blank", "saved", "converted"}
     next_status = str(status_value or "").strip()
@@ -1870,6 +1914,22 @@ def workbench_update_bundle_action_status(bundle_id: str, action_key: str, statu
     action_state = bundle.actions.get(action_key)
     if action_state is None:
         raise ApiError("bundle action not found", "bundle_action_not_found", "workbench", req_id, 404)
+    # Rebind the bundle action to a new session if one was supplied. This is the
+    # path used after a raw-XP import inside an active bundle action tab — the
+    # frontend swapped to a new session and the bundle JSON must catch up before
+    # web-skin-bundle-payload reads it.
+    if session_id:
+        sess_path = _session_path(session_id)
+        if not sess_path.exists():
+            raise ApiError(
+                f"session_id {session_id} not found on disk",
+                "session_not_found",
+                "workbench",
+                req_id,
+                404,
+            )
+        action_state.session_id = session_id
+        action_state.job_id = ""
     if next_status in {"saved", "converted"} and not action_state.session_id:
         raise ApiError(
             "bundle action has no session to mark ready",
@@ -2653,6 +2713,63 @@ def _cell_from_patch(
     return (223, t_rgb, b_rgb)
 
 
+# ---------------------------------------------------------------------------
+# Rich glyph assignment helpers (FL-4095+ CP437 font-mask matcher)
+# ---------------------------------------------------------------------------
+
+
+def _make_rich_config(font_path: Path) -> GlyphAssignmentConfig:
+    """Create a FL-4095 baseline GlyphAssignmentConfig for generic sprite conversion."""
+    return GlyphAssignmentConfig(
+        font_path=font_path,
+        font_cell_size=(6, 6),
+        target_cell_size=(6, 6),
+        candidate_limit=5,
+        score_delta_threshold=0.15,
+        edge_aware=True,
+        edge_magnitude_threshold=80.0,
+        edge_use_dog=True,
+        edge_grid_shift_search_px=2,
+        ssim_for_strokes=True,
+        ssim_candidate_filter_by_orientation=True,
+        multi_scale_edges=True,
+        use_skeleton_polyline=True,
+        anti_fill_in_body=True,
+        polyline_primary=True,
+    )
+
+
+_RICH_CELL_PX = 6
+
+
+def _rich_cells_from_tile(
+    im: Image.Image,
+    font_path: Path,
+    out_w: int,
+    out_h: int,
+) -> list[list[Cell]]:
+    """Convert a source tile to a grid of Cells using the rich CP437 matcher.
+
+    Resizes *im* to (out_w * _RICH_CELL_PX) x (out_h * _RICH_CELL_PX) pixels,
+    then runs ``assign_image_cells`` which matches each 6x6 block against all
+    256 BDF font masks using IoU + edge detection + SSIM.
+    """
+    sheet = im.convert("RGBA").resize(
+        (out_w * _RICH_CELL_PX, out_h * _RICH_CELL_PX),
+        Image.Resampling.NEAREST,
+    )
+    config = _make_rich_config(font_path)
+    assigned = assign_image_cells(sheet, config)
+    cells: list[list[Cell]] = []
+    for y in range(out_h):
+        row: list[Cell] = []
+        for x in range(out_w):
+            ac = assigned[y * out_w + x]
+            row.append((ac.chosen.glyph, ac.chosen.fg, ac.chosen.bg))
+        cells.append(row)
+    return cells
+
+
 def _tile_to_cells(
     im: Image.Image,
     bg_rgb: tuple[int, int, int],
@@ -2789,7 +2906,11 @@ def run_pipeline(cfg: RunConfig, req_id: str) -> dict[str, Any]:
                 scaled_w = max(1, int(src_w * scale))
                 scaled_h = max(1, int(src_h * scale))
                 scaled_im = im.resize((scaled_w, scaled_h), Image.LANCZOS)
-                raw_cells = _tile_to_cells(scaled_im, bg_rgb, scaled_w, scaled_h, signal_mode=signal_mode)
+                if cfg.assignment_mode == "rich":
+                    font_path = default_font_path(ROOT)
+                    raw_cells = _rich_cells_from_tile(scaled_im, font_path, scaled_w, scaled_h)
+                else:
+                    raw_cells = _tile_to_cells(scaled_im, bg_rgb, scaled_w, scaled_h, signal_mode=signal_mode)
                 transparent = _transparent_cell()
                 flat: list[Cell] = [transparent] * (fb_cols * fb_rows)
                 for ty in range(scaled_h):
@@ -2886,13 +3007,17 @@ def run_pipeline(cfg: RunConfig, req_id: str) -> dict[str, Any]:
                             fg_tile = tile
                             inner_w = max(1, cell_w_chars)
                             inner_h = max(1, cell_h_chars)
-                            inner_cells = _tile_to_cells(
-                                fg_tile,
-                                bg_rgb,
-                                inner_w,
-                                inner_h,
-                                signal_mode=signal_mode,
-                            )
+                            if cfg.assignment_mode == "rich":
+                                font_path = default_font_path(ROOT)
+                                inner_cells = _rich_cells_from_tile(fg_tile, font_path, inner_w, inner_h)
+                            else:
+                                inner_cells = _tile_to_cells(
+                                    fg_tile,
+                                    bg_rgb,
+                                    inner_w,
+                                    inner_h,
+                                    signal_mode=signal_mode,
+                                )
                             tile_cells = [[_transparent_cell() for _ in range(cell_w_chars)] for _ in range(cell_h_chars)]
                             off_x = max(0, (cell_w_chars - inner_w) // 2)
                             off_y = max(0, cell_h_chars - inner_h)
@@ -4345,6 +4470,271 @@ def _skin_payload_doc_contract(
     }
 
 
+def _legacy_preview_contract_for_xp(
+    raw: bytes,
+    req_id: str,
+    *,
+    declared_family: str = "",
+) -> dict[str, Any]:
+    if not raw:
+        raise ApiError("XP preview payload is empty", "empty_xp", "workbench", req_id, 400)
+    if len(raw) > _LEGACY_PREVIEW_MAX_XP_BYTES:
+        raise ApiError("XP preview payload is too large", "xp_too_large", "workbench", req_id, 413)
+    try:
+        xp = read_xp(raw)
+    except Exception as exc:
+        raise ApiError(f"failed to parse XP preview payload: {exc}", "invalid_xp", "workbench", req_id, 422)
+
+    width = int(xp.get("width", 0))
+    height = int(xp.get("height", 0))
+    layers = int(xp.get("layers", 0))
+    contract = _LEGACY_PREVIEW_CONTRACTS.get((width, height))
+    if contract is None:
+        raise ApiError(
+            f"legacy preview accepts only player 126x72 or wolfie 180x96 XP; got {width}x{height}",
+            "legacy_preview_topology_mismatch",
+            "workbench",
+            req_id,
+            422,
+        )
+    if layers not in (3, 4):
+        raise ApiError(
+            f"legacy preview requires 3 or 4 XP layers; got {layers}",
+            "legacy_preview_layer_mismatch",
+            "workbench",
+            req_id,
+            422,
+        )
+
+    family = str(contract["family"])
+    declared = str(declared_family or "").strip().lower()
+    if declared and declared != family:
+        raise ApiError(
+            f"session family {declared!r} is incompatible with {width}x{height} {family} topology",
+            "legacy_preview_family_mismatch",
+            "workbench",
+            req_id,
+            422,
+        )
+
+    cells = xp.get("cells") or []
+    if not cells or len(cells[0]) < 3:
+        raise ApiError("XP is missing L0 metadata", "legacy_preview_metadata_missing", "workbench", req_id, 422)
+    marker = "".join(chr(int(cells[0][idx][0])) for idx in range(3))
+    if marker != "818":
+        raise ApiError(
+            f"legacy preview requires L0 marker 818; got {marker!r}",
+            "legacy_preview_metadata_mismatch",
+            "workbench",
+            req_id,
+            422,
+        )
+    key_rgb = tuple(int(v) for v in cells[0][0][2])
+    if key_rgb != (255, 255, 85):
+        raise ApiError(
+            f"legacy preview requires #ffff55 transparency key; got #{key_rgb[0]:02x}{key_rgb[1]:02x}{key_rgb[2]:02x}",
+            "legacy_preview_key_mismatch",
+            "workbench",
+            req_id,
+            422,
+        )
+
+    target_paths = _legacy_preview_family_targets(family)
+    return {
+        **contract,
+        "target_path": target_paths[0],
+        "target_paths": target_paths,
+        "width": width,
+        "height": height,
+        "layers": layers,
+        "l0_marker": marker,
+        "key_rgb": list(key_rgb),
+    }
+
+
+def _normalize_legacy_preview_xp(raw: bytes, req_id: str) -> tuple[bytes, int]:
+    """Adapt authored transparency to the frozen sprite.cpp L2 contract."""
+    try:
+        xp = read_xp(raw)
+        layers = [list(layer) for layer in xp["cells"]]
+    except Exception as exc:
+        raise ApiError(f"failed to normalize XP preview payload: {exc}", "invalid_xp", "workbench", req_id, 422)
+
+    layer0 = layers[0]
+    visual = layers[2]
+    normalized = 0
+    for index, (glyph, fg, bg) in enumerate(visual):
+        if int(glyph) in (0, 32) or tuple(bg) != MAGENTA_BG:
+            continue
+        output_key = tuple(int(value) for value in layer0[index][2])
+        if output_key == MAGENTA_BG:
+            raise ApiError(
+                f"drawn L2 cell {index} has no non-magenta layer-0 transparency key",
+                "legacy_preview_transparency_contract_mismatch",
+                "workbench",
+                req_id,
+                422,
+            )
+        visual[index] = (int(glyph), tuple(fg), output_key)
+        normalized += 1
+
+    if not normalized:
+        return raw, 0
+    return encode_xp(int(xp["width"]), int(xp["height"]), layers), normalized
+
+
+def _build_legacy_player_preview_xp(session: dict[str, Any], req_id: str) -> bytes:
+    """Project the 126x80 authoring contract into the frozen 126x72 web runtime."""
+    cols = int(session["grid_cols"])
+    rows = int(session["grid_rows"])
+    angles = int(session.get("angles", 0))
+    anims = [int(value) for value in session.get("anims", [])]
+    projs = int(session.get("projs", 0))
+    semantic_frames = sum(anims)
+    if (cols, rows, angles, semantic_frames, projs) != (126, 80, 8, 9, 2):
+        raise ApiError(
+            "player session cannot be projected into the legacy 126x72 preview contract",
+            "legacy_preview_projection_unsupported",
+            "workbench",
+            req_id,
+            422,
+        )
+
+    reference_path = (ROOT / "sprites" / "player-0000.xp").resolve()
+    try:
+        reference = read_xp(reference_path)
+    except Exception as exc:
+        raise ApiError(
+            f"failed reading legacy player preview reference: {exc}",
+            "legacy_preview_reference_unavailable",
+            "workbench",
+            req_id,
+            500,
+        )
+    if (int(reference["width"]), int(reference["height"]), int(reference["layers"])) != (126, 72, 3):
+        raise ApiError(
+            "legacy player preview reference contract drifted from 126x72x3",
+            "legacy_preview_reference_mismatch",
+            "workbench",
+            req_id,
+            500,
+        )
+
+    source = _session_visual_cells(session, req_id)
+    source_grid = [source[y * cols:(y + 1) * cols] for y in range(rows)]
+    target_visual = [_transparent_cell() for _ in range(126 * 72)]
+    target_grid = [target_visual[y * 126:(y + 1) * 126] for y in range(72)]
+    for angle in range(8):
+        for frame in range(18):
+            x0 = frame * 7
+            source_matrix = [row[x0:x0 + 7] for row in source_grid[angle * 10:(angle + 1) * 10]]
+            projected = _resample_frame_matrix(source_matrix, 7, 9)
+            for y, row in enumerate(projected):
+                target_grid[angle * 9 + y][x0:x0 + 7] = row
+
+    layers = [list(layer) for layer in reference["cells"]]
+    layers[2] = [target_grid[y][x] for y in range(72) for x in range(126)]
+    return encode_xp(126, 72, layers)
+
+
+def workbench_mint_legacy_preview_token(
+    req_id: str,
+    *,
+    session_id: str = "",
+    xp_b64: str = "",
+    source_name: str = "",
+) -> dict[str, Any]:
+    sid = str(session_id or "").strip()
+    encoded = str(xp_b64 or "").strip()
+    if bool(sid) == bool(encoded):
+        raise ApiError(
+            "provide exactly one of session_id or xp_b64",
+            "legacy_preview_source_required",
+            "workbench",
+            req_id,
+            400,
+        )
+
+    declared_family = ""
+    if sid:
+        session_path = _session_path(sid)
+        if not session_path.exists():
+            raise ApiError("session not found", "session_not_found", "workbench", req_id, 404)
+        session = load_json(session_path)
+        session_family = str(session.get("filename_prefix") or session.get("family") or "").strip()
+        if not (_session_kind(session) == "raw_xp" and session_family in {"", "uploaded"}):
+            declared_family = session_family
+        export = workbench_export_xp(sid, req_id)
+        xp_path = Path(export["xp_path"]).expanduser().resolve()
+        try:
+            raw = xp_path.read_bytes()
+        except OSError as exc:
+            raise ApiError(f"failed reading exported XP: {exc}", "xp_read_failed", "workbench", req_id, 500)
+        source_raw = raw
+        if declared_family == "player" and (int(session["grid_cols"]), int(session["grid_rows"])) == (126, 80):
+            raw = _build_legacy_player_preview_xp(session, req_id)
+        source_name = source_name or xp_path.name
+    else:
+        try:
+            raw = base64.b64decode(encoded, validate=True)
+        except Exception:
+            raise ApiError("xp_b64 is not valid base64", "invalid_xp_base64", "workbench", req_id, 400)
+        source_raw = raw
+
+    contract = _legacy_preview_contract_for_xp(raw, req_id, declared_family=declared_family)
+    runtime_raw, normalized_cells = _normalize_legacy_preview_xp(raw, req_id)
+    token = uuid.uuid4().hex
+    now = time.monotonic()
+    record = {
+        **contract,
+        "token": token,
+        "xp_bytes": runtime_raw,
+        "source_sha256": hashlib.sha256(source_raw).hexdigest(),
+        "source_size_bytes": len(source_raw),
+        "sha256": hashlib.sha256(runtime_raw).hexdigest(),
+        "size_bytes": len(runtime_raw),
+        "legacy_transparency_normalized_cells": normalized_cells,
+        "source_name": Path(str(source_name or "preview.xp")).name,
+        "session_id": sid,
+        "created_at": now,
+        "expires_at": now + _LEGACY_PREVIEW_TOKEN_TTL_SECONDS,
+    }
+    with _LEGACY_PREVIEW_LOCK:
+        expired = [key for key, value in _LEGACY_PREVIEW_TOKENS.items() if float(value["expires_at"]) <= now]
+        for key in expired:
+            _LEGACY_PREVIEW_TOKENS.pop(key, None)
+        _LEGACY_PREVIEW_TOKENS[token] = record
+
+    return {
+        key: value
+        for key, value in record.items()
+        if key not in {"xp_bytes", "created_at", "expires_at"}
+    } | {"expires_in_seconds": _LEGACY_PREVIEW_TOKEN_TTL_SECONDS}
+
+
+def workbench_consume_legacy_preview_token(token: str, req_id: str) -> dict[str, Any]:
+    key = str(token or "").strip().lower()
+    if len(key) != 32 or any(ch not in "0123456789abcdef" for ch in key):
+        raise ApiError("invalid legacy preview token", "invalid_preview_token", "workbench", req_id, 400)
+    now = time.monotonic()
+    with _LEGACY_PREVIEW_LOCK:
+        record = _LEGACY_PREVIEW_TOKENS.pop(key, None)
+    if record is None or float(record["expires_at"]) <= now:
+        raise ApiError(
+            "legacy preview token not found, expired, or already consumed",
+            "preview_token_unavailable",
+            "workbench",
+            req_id,
+            404,
+        )
+    raw = bytes(record["xp_bytes"])
+    return {
+        key: value
+        for key, value in record.items()
+        if key not in {"xp_bytes", "created_at", "expires_at"}
+    } | {"xp_b64": base64.b64encode(raw).decode("ascii")}
+
+
 def _action_override_names(family: str, ahsw_range: str) -> list[str]:
     """Generate override filenames for a family/AHSW range.
 
@@ -4550,6 +4940,154 @@ def workbench_export_bundle(bundle_id: str, req_id: str) -> dict[str, Any]:
     }
 
 
+_BLANK_CELL: tuple[int, tuple[int, int, int], tuple[int, int, int]] = (0, (0, 0, 0), (255, 0, 255))
+
+
+def _cell_to_tuple(cell: Any) -> tuple[int, tuple[int, int, int], tuple[int, int, int]]:
+    """Coerce a (glyph, fg, bg) cell into the canonical tuple form."""
+    if cell is None:
+        return _BLANK_CELL
+    glyph, fg, bg = cell
+    fg_t = fg if isinstance(fg, tuple) else (int(fg[0]), int(fg[1]), int(fg[2]))
+    bg_t = bg if isinstance(bg, tuple) else (int(bg[0]), int(bg[1]), int(bg[2]))
+    return (int(glyph), fg_t, bg_t)
+
+
+def _downsample_layer_visual(
+    src_layer: list[Any],
+    src_w: int,
+    expected_w: int,
+    expected_h: int,
+    factor: int,
+) -> list[tuple[int, tuple[int, int, int], tuple[int, int, int]]]:
+    """Stride-N nearest-neighbour sampler for art/visual layers (L2/L3).
+    Picks the top-left cell of each N×N source block.
+    """
+    out: list[tuple[int, tuple[int, int, int], tuple[int, int, int]]] = []
+    for r in range(expected_h):
+        sr = r * factor
+        for c in range(expected_w):
+            sc = c * factor
+            out.append(_cell_to_tuple(src_layer[sr * src_w + sc]))
+    return out
+
+
+def _downsample_layer_metadata(
+    src_layer: list[Any],
+    src_w: int,
+    expected_w: int,
+    expected_h: int,
+) -> list[tuple[int, tuple[int, int, int], tuple[int, int, int]]]:
+    """Native-position slice for metadata layers (L0/L1). 2x and higher
+    authored XPs encode L0 family codes ("818", "88", "85") and L1 anim-row
+    countdowns at NATIVE column/row positions, not at scaled positions, with
+    the remainder zero-padded. Copying cells at (col, row) for col<native_w
+    and row<native_h preserves those metadata cells where G12/registry expect
+    them. Stride-N sampling would skip them (col=1 → source col 2 = wrong).
+    """
+    out: list[tuple[int, tuple[int, int, int], tuple[int, int, int]]] = []
+    for r in range(expected_h):
+        for c in range(expected_w):
+            out.append(_cell_to_tuple(src_layer[r * src_w + c]))
+    return out
+
+
+def _downsample_xp_to_native(
+    xp_path_in: Path,
+    expected_dims: tuple[int, int] | list[int],
+    expected_layers: int,
+    out_dir: Path,
+    l1_marker_glyph: int = 0,
+) -> Path:
+    """If an authored XP is an integer-N multiple of the expected runtime dims,
+    write a native-dim copy beside it and return the new path. Otherwise return
+    the input path unchanged.
+
+    Layer-aware behaviour:
+      - L0, L1 (metadata): native-position slice (col, row directly). 2x XPs
+        place family codes / anim-row markers at native positions with zero
+        padding, so stride sampling would drop them.
+      - L0 post-process: zero-glyph cells replaced with space (32) using the
+        background colour from the first non-zero L0 cell (default yellow).
+      - L1 post-process: if all cells are zero (2x source had no L1 metadata),
+        fills with l1_marker_glyph on white background.
+      - L2, L3 (art/visual): stride-N nearest-neighbour. Visual content scales
+        with cell_w/cell_h.
+      - Extra layers beyond `expected_layers` (e.g. 2x plydie ships 4 layers
+        while the native death template wants 3) are dropped to match G11.
+    """
+    expected_w = int(expected_dims[0])
+    expected_h = int(expected_dims[1])
+    xp = read_xp(str(xp_path_in))
+    src_w = int(xp["width"])
+    src_h = int(xp["height"])
+    src_layer_count = len(xp["cells"])
+    target_layer_count = int(expected_layers) if expected_layers else src_layer_count
+
+    if expected_w <= 0 or expected_h <= 0:
+        return xp_path_in
+
+    dim_match = src_w == expected_w and src_h == expected_h
+    layer_match = src_layer_count == target_layer_count
+    if dim_match and layer_match:
+        return xp_path_in
+    if not dim_match:
+        if src_w % expected_w != 0 or src_h % expected_h != 0:
+            return xp_path_in
+        factor_x = src_w // expected_w
+        factor_y = src_h // expected_h
+        if factor_x != factor_y or factor_x < 2:
+            return xp_path_in
+        factor = factor_x
+    else:
+        factor = 1
+
+    new_layers: list[list[tuple[int, tuple[int, int, int], tuple[int, int, int]]]] = []
+    for layer_idx in range(target_layer_count):
+        if layer_idx >= src_layer_count:
+            new_layers.append([_BLANK_CELL] * (expected_w * expected_h))
+            continue
+        src_layer = xp["cells"][layer_idx]
+        if factor == 1:
+            new_layers.append([_cell_to_tuple(c) for c in src_layer])
+            continue
+        if layer_idx in (0, 1):
+            new_layers.append(_downsample_layer_metadata(src_layer, src_w, expected_w, expected_h))
+        else:
+            new_layers.append(_downsample_layer_visual(src_layer, src_w, expected_w, expected_h, factor))
+
+    # ── L0 post-process: fill zero-glyph cells with space (32) ──
+    # The 2x source may only have the family-marker cells (e.g. "818") non-zero
+    # in L0; all other cells are glyph=0. Working native XPs fill the rest with
+    # space characters on a consistent background (typically yellow 255,255,85).
+    if len(new_layers) > 0:
+        l0 = new_layers[0]
+        # Find first non-zero cell's background for the fill colour
+        l0_bg = (255, 255, 85)  # default yellow
+        for g, _fg, bg in l0:
+            if g != 0:
+                l0_bg = bg
+                break
+        for i, (g, fg, bg) in enumerate(l0):
+            if g == 0:
+                l0[i] = (32, (0, 0, 0), l0_bg)
+
+    # ── L1 post-process: fill empty L1 with anim-row marker ──
+    # 2x authored XPs often ship with L1 entirely zero. The engine requires L1
+    # to be fully populated with the anim-row marker glyph. Working native XPs
+    # use '9' (57) for player/attack and 'A' (65) for plydie/death.
+    if len(new_layers) > 1 and l1_marker_glyph > 0:
+        l1 = new_layers[1]
+        if all(g == 0 for g, _fg, _bg in l1):
+            for i in range(len(l1)):
+                l1[i] = (l1_marker_glyph, (0, 0, 0), (255, 255, 255))
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{xp_path_in.stem}.native-{expected_w}x{expected_h}-L{target_layer_count}.xp"
+    write_xp(out_path, expected_w, expected_h, new_layers)
+    return out_path
+
+
 def workbench_web_skin_bundle_payload(bundle_id: str, req_id: str) -> dict[str, Any]:
     """Build per-action XP bytes + target filenames for bundle WASM injection."""
     bundle = load_bundle(bundle_id, req_id)
@@ -4601,6 +5139,29 @@ def workbench_web_skin_bundle_payload(bundle_id: str, req_id: str) -> dict[str, 
         xp_path = Path(export["xp_path"]).expanduser().resolve()
 
         # Structural gates G7-G12 (fail-closed via runtime contract adapter)
+        # Derive L1 anim-row marker glyph from action family.
+        # Working native XPs: player/attack use '9' (57), plydie/death use 'A' (65).
+        _L1_MARKER_BY_FAMILY: dict[str, int] = {
+            "player": 57,  # '9'
+            "attack": 57,  # '9'
+            "plydie": 65,  # 'A'
+        }
+        l1_marker = _L1_MARKER_BY_FAMILY.get(family, 57)
+
+        # Authoring sessions may store geometry at an integer multiple (2x, 3x, ...)
+        # of the runtime template dims and may carry extra layers. Downsample
+        # to native here so the runtime receives canonical-size XP bytes and
+        # structural gates accept. L0/L1 metadata stays at native positions;
+        # L2/L3 art is stride-sampled; layer count is clamped to expected.
+        xp_path = _downsample_xp_to_native(
+            xp_path,
+            action_spec.get("xp_dims", [0, 0]),
+            int(action_spec.get("layers", 0)),
+            EXPORT_DIR,
+            l1_marker_glyph=l1_marker,
+        )
+
+        # Structural gates G7-G12
         gates = _run_structural_gates(str(xp_path), action_spec, req_id)
         validate_runtime_export(
             gates,
@@ -4868,6 +5429,9 @@ def workbench_save_session(session_id: str, payload: dict[str, Any], req_id: str
     derived_cols, derived_rows = _derive_session_grid_geometry(
         angles=next_angles,
         anims=next_anims,
+        # The editable XP session is materialized at target projection count.
+        # source_projs describes imported source imagery and must not shrink
+        # the session geometry during save validation.
         projs=next_projs,
         cell_w=next_cell_w,
         cell_h=next_cell_h,
@@ -5353,6 +5917,7 @@ def workbench_create_actor_visual_profile(
     presentation_kind: str,
     variation: str,
     req_id: str,
+    rig_definition_id: str | None = None,
 ) -> dict[str, Any]:
     """Create ActorVisualProfile from current session (Phase 2, Task 2).
     
@@ -5441,6 +6006,7 @@ def workbench_create_actor_visual_profile(
         domain=domain,  # type: ignore
         layers=[layer],
         variation=variation if variation != "default" else None,
+        rig_definition_id=rig_definition_id or None,
     )
     
     # Save profile
@@ -5459,6 +6025,7 @@ def workbench_create_actor_visual_profile(
         "presentation_kind": presentation_kind,
         "variation": variation,
         "skin_definition_id": skin_definition_id,
+        "rig_definition_id": rig_definition_id,
         "layers_count": len(profile.layers),
         "session_id": session_id,
     }

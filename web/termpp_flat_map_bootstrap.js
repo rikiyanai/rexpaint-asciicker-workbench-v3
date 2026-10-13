@@ -19,6 +19,7 @@
   var startGuardTimer = 0;
   var autoMenuTimer = 0;
   var autoMenuStartedAt = 0;
+  var autoStartAttempted = false;
   var loadingUiCleared = false;
   var diagnosticTraceTimer = 0;
 
@@ -490,6 +491,45 @@
     }, 500);
   }
 
+  function scheduleAutoStartGame() {
+    if (!AUTO_NEW_GAME || autoStartAttempted) return;
+    var startedAt = nowMs();
+    var timer = setInterval(function () {
+      try {
+        if (autoStartAttempted) {
+          clearInterval(timer);
+          return;
+        }
+        if (nowMs() - startedAt > 45000) {
+          clearInterval(timer);
+          log("auto-start timeout waiting for runtime readiness");
+          return;
+        }
+        if (window._wasmReady !== true || typeof window.StartGame !== "function") return;
+        if (!overlayVisibleNow()) {
+          clearInterval(timer);
+          return;
+        }
+        var playerInput = document.getElementById("player-name");
+        var serverInput = document.getElementById("server-addr");
+        if (playerInput && !String(playerInput.value || "").trim()) {
+          playerInput.value = String(qs("player") || "player");
+        }
+        if (serverInput && boolParam("solo", false)) serverInput.value = "";
+        autoStartAttempted = true;
+        clearInterval(timer);
+        log("autonewgame starting through StartGame");
+        var result = window.StartGame();
+        if (result && typeof result.catch === "function") {
+          result.catch(function (error) { log("autonewgame StartGame rejected: " + error); });
+        }
+      } catch (error) {
+        clearInterval(timer);
+        log("autonewgame StartGame failed: " + error);
+      }
+    }, 100);
+  }
+
   // ── Auto-attack test: fires Space key (attack) 2s after player is grounded ──
   var autoAttackFired = false;
   function scheduleAutoAttackTest() {
@@ -693,6 +733,7 @@
   installLoadWrapperWhenReady();
   installBenignErrnoSuppression();
   prefetchSoon();
+  scheduleAutoStartGame();
   log("bootstrap active (flatmap=" + selectedMapName() + ")");
 
   // ── Keyboard/Focus diagnostic instrumentation ──

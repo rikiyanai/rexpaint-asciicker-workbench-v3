@@ -1,0 +1,113 @@
+{
+  "overallPass": true,
+  "downloadedXpPath": "/Users/r/Downloads/asciicker-pipeline-v3/artifacts/2026-06-16-share-xp/downloaded-share.xp",
+  "results": [
+    {
+      "name": "fresh-mobile-first-screen",
+      "pass": true,
+      "error": "",
+      "data": {
+        "visible": true
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false
+      },
+      "post": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false
+      },
+      "screenshot": "artifacts/2026-06-16-share-xp/01-fresh-mobile-first-screen.png"
+    },
+    {
+      "name": "apply-template",
+      "pass": true,
+      "error": "",
+      "data": {
+        "template": "player_native_idle_only",
+        "sessionId": "ea5564bd"
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false
+      },
+      "post": {
+        "sessionId": "ea5564bd-1f17-4174-931f-e6066b8eddce",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-share-xp/02-apply-template.png"
+    },
+    {
+      "name": "share-file",
+      "pass": true,
+      "error": "",
+      "data": {
+        "suggestedFilename": "export.xp",
+        "savedTo": "/Users/r/Downloads/asciicker-pipeline-v3/artifacts/2026-06-16-share-xp/downloaded-share.xp"
+      },
+      "pre": {
+        "sessionId": "ea5564bd-1f17-4174-931f-e6066b8eddce",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "ea5564bd-1f17-4174-931f-e6066b8eddce",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-share-xp/03-share-file.png"
+    },
+    {
+      "name": "verify-download-header",
+      "pass": true,
+      "error": "",
+      "data": {
+        "headerCheck": "ok version=-1 n_layers=4"
+      },
+      "pre": {
+        "sessionId": "ea5564bd-1f17-4174-931f-e6066b8eddce",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "ea5564bd-1f17-4174-931f-e6066b8eddce",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-share-xp/04-verify-download-header.png"
+    },
+    {
+      "name": "artifact-oracle",
+      "pass": true,
+      "error": "",
+      "data": {
+        "totalNonZero": 10087
+      },
+      "pre": {
+        "sessionId": "ea5564bd-1f17-4174-931f-e6066b8eddce",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "ea5564bd-1f17-4174-931f-e6066b8eddce",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-share-xp/05-artifact-oracle.png"
+    }
+  ]
+}

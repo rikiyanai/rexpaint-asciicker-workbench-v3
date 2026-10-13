@@ -13,6 +13,7 @@ function parseArgs(argv) {
     clickTest: true,
     forceOpen: true,
     headed: false,
+    moveSec: 0,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -21,6 +22,7 @@ function parseArgs(argv) {
     else if (a === "--no-click-test") out.clickTest = false;
     else if (a === "--no-force-open") out.forceOpen = false;
     else if (a === "--headed") out.headed = true;
+    else if (a === "--move-sec" && argv[i + 1]) out.moveSec = Math.max(0, Number(argv[++i]) || 0);
   }
   return out;
 }
@@ -89,8 +91,25 @@ async function main() {
         webbuildState: String(document.getElementById("webbuildState")?.textContent || ""),
         quickBtnDisabled: !!document.getElementById("webbuildQuickTestBtn")?.disabled,
       });
-      if (!window.__wb_debug || typeof window.__wb_debug.getWebbuildDebugState !== "function") return fallback();
-      return { label: label0, ...window.__wb_debug.getWebbuildDebugState() };
+      const data = window.__wb_debug && typeof window.__wb_debug.getWebbuildDebugState === "function"
+        ? { label: label0, ...window.__wb_debug.getWebbuildDebugState() }
+        : fallback();
+      try {
+        const runtime = document.getElementById("webbuildFrame")?.contentWindow;
+        const diagText = typeof runtime?.MultiplayerDiagJson === "function" ? runtime.MultiplayerDiagJson() : "";
+        data.runtime = {
+          diag: diagText ? JSON.parse(diagText) : null,
+          worldReady: typeof runtime?.GameWorldReady === "function" ? runtime.GameWorldReady() : null,
+          visibleLocalPlayers: typeof runtime?.VisibleLocalPlayers === "function" ? runtime.VisibleLocalPlayers() : null,
+          visibleLocalBodyPlayers: typeof runtime?.VisibleLocalBodyPlayers === "function" ? runtime.VisibleLocalBodyPlayers() : null,
+          actorRenderDir: typeof runtime?.ActorRenderDir === "function" ? runtime.ActorRenderDir() : null,
+          actorAnim: typeof runtime?.ActorAnim === "function" ? runtime.ActorAnim() : null,
+          actorFrame: typeof runtime?.ActorFrame === "function" ? runtime.ActorFrame() : null,
+        };
+      } catch (error) {
+        data.runtime = { error: String(error) };
+      }
+      return data;
     }, label);
     timeline.push({ t: Date.now(), ...data });
     return data;
@@ -134,6 +153,21 @@ async function main() {
     await page.waitForTimeout(1000);
   }
 
+  const iframeBeforePath = path.join(outDir, "skin-dock-iframe-before.png");
+  await page.locator("#webbuildFrame").screenshot({ path: iframeBeforePath });
+  if (args.moveSec > 0) {
+    const runtimeFrame = page.frames().find((frame) => frame.url().includes("/termpp-web-flat/index.html"));
+    if (runtimeFrame) {
+      await runtimeFrame.locator("#asciicker_canvas").click({ position: { x: 400, y: 250 } });
+      await page.keyboard.down("w");
+      await page.waitForTimeout(args.moveSec * 1000);
+      await page.keyboard.up("w");
+      await page.waitForTimeout(500);
+      await snap("after_move");
+    }
+  }
+  const iframeAfterPath = path.join(outDir, "skin-dock-iframe-after.png");
+  await page.locator("#webbuildFrame").screenshot({ path: iframeAfterPath });
   const screenshotPath = path.join(outDir, "skin-dock-debug.png");
   await page.screenshot({ path: screenshotPath, fullPage: true });
   await snap("final");
@@ -148,10 +182,12 @@ async function main() {
     requestFails,
     consoleLogs,
     screenshotPath,
+    iframeBeforePath,
+    iframeAfterPath,
   };
   const resultPath = path.join(outDir, "skin-dock-debug.json");
   await fs.writeFile(resultPath, JSON.stringify(result, null, 2));
-  console.log(JSON.stringify({ resultPath, screenshotPath, final: timeline[timeline.length - 1], pageErrors, requestFails: requestFails.slice(-5) }, null, 2));
+  console.log(JSON.stringify({ resultPath, screenshotPath, iframeBeforePath, iframeAfterPath, final: timeline[timeline.length - 1], pageErrors, requestFails: requestFails.slice(-5) }, null, 2));
 
   await context.close();
   await browser.close();

@@ -1,0 +1,57 @@
+{
+  "run": "2026-06-21T00:37:01.700Z",
+  "probe": "ux_fixes_probe",
+  "summary": "10/10 PASS",
+  "results": [
+    {
+      "name": "sidebar-visible-without-toggle",
+      "status": "PASS",
+      "detail": "display=flex"
+    },
+    {
+      "name": "tools-drawer-visible",
+      "status": "PASS",
+      "detail": "display=flex"
+    },
+    {
+      "name": "tools-toggle-hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "layout-offset",
+      "status": "PASS",
+      "detail": "paddingLeft=200px"
+    },
+    {
+      "name": "first-screen-hidden-after-load",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "ws-force-desktop-class-applied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "mobile-first-screen-suppressed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "mobile-bars-suppressed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "_isMobileLike-returns-false",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "mobile-first-screen-stays-suppressed",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

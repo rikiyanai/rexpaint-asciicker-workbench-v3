@@ -1,0 +1,330 @@
+{
+  "overallPass": true,
+  "finalXpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-b4109e87-a4cb-42f1-b2ba-9599b78cba94.xp",
+  "results": [
+    {
+      "name": "fresh-mobile-first-screen",
+      "pass": true,
+      "error": "",
+      "data": {
+        "visible": true
+      },
+      "pre": {
+        "sourceImageLoaded": false,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "select",
+        "jobId": "",
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "post": {
+        "sourceImageLoaded": false,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "select",
+        "jobId": "",
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-source-import/01-fresh-mobile-first-screen.png"
+    },
+    {
+      "name": "apply-template",
+      "pass": true,
+      "error": "",
+      "data": {
+        "template": "player_native_idle_only",
+        "sessionId": "37fcdae2"
+      },
+      "pre": {
+        "sourceImageLoaded": false,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "select",
+        "jobId": "",
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "post": {
+        "sourceImageLoaded": false,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "select",
+        "jobId": "",
+        "sessionId": "37fcdae2-1975-4bf2-808a-e86e32134c80",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-source-import/02-apply-template.png"
+    },
+    {
+      "name": "upload-png",
+      "pass": true,
+      "error": "",
+      "data": {
+        "sourceImageLoaded": true
+      },
+      "pre": {
+        "sourceImageLoaded": false,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "select",
+        "jobId": "",
+        "sessionId": "37fcdae2-1975-4bf2-808a-e86e32134c80",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "post": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "select",
+        "jobId": "",
+        "sessionId": "37fcdae2-1975-4bf2-808a-e86e32134c80",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-source-import/03-upload-png.png"
+    },
+    {
+      "name": "source-drawer-visible",
+      "pass": true,
+      "error": "",
+      "data": {
+        "sourceCanvasVisible": true,
+        "drawBoxVisible": true,
+        "extractVisible": true,
+        "sourceImageLoaded": true
+      },
+      "pre": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "select",
+        "jobId": "",
+        "sessionId": "37fcdae2-1975-4bf2-808a-e86e32134c80",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "post": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "select",
+        "jobId": "",
+        "sessionId": "37fcdae2-1975-4bf2-808a-e86e32134c80",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-source-import/04-source-drawer-visible.png"
+    },
+    {
+      "name": "draw-source-box",
+      "pass": true,
+      "error": "",
+      "data": {
+        "drawCurrent": {
+          "x": 3,
+          "y": 2,
+          "w": 26,
+          "h": 26
+        }
+      },
+      "pre": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "select",
+        "jobId": "",
+        "sessionId": "37fcdae2-1975-4bf2-808a-e86e32134c80",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "post": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 0,
+        "drawCurrent": {
+          "x": 3,
+          "y": 2,
+          "w": 26,
+          "h": 26
+        },
+        "sourceMode": "draw_box",
+        "jobId": "",
+        "sessionId": "37fcdae2-1975-4bf2-808a-e86e32134c80",
+        "sessionDirty": true,
+        "wsAdvanced": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-source-import/05-draw-source-box.png"
+    },
+    {
+      "name": "find-sprites",
+      "pass": true,
+      "error": "",
+      "data": {
+        "extractedBoxes": 1,
+        "advanced": false
+      },
+      "pre": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 0,
+        "drawCurrent": {
+          "x": 3,
+          "y": 2,
+          "w": 26,
+          "h": 26
+        },
+        "sourceMode": "draw_box",
+        "jobId": "",
+        "sessionId": "37fcdae2-1975-4bf2-808a-e86e32134c80",
+        "sessionDirty": true,
+        "wsAdvanced": false
+      },
+      "post": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 1,
+        "drawCurrent": {
+          "x": 3,
+          "y": 2,
+          "w": 26,
+          "h": 26
+        },
+        "sourceMode": "draw_box",
+        "jobId": "",
+        "sessionId": "37fcdae2-1975-4bf2-808a-e86e32134c80",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-source-import/06-find-sprites.png"
+    },
+    {
+      "name": "convert-to-xp",
+      "pass": true,
+      "error": "",
+      "data": {
+        "initialCount": 0,
+        "newCount": 4110,
+        "jobId": "53263751",
+        "sessionId": "b4109e87"
+      },
+      "pre": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 1,
+        "drawCurrent": {
+          "x": 3,
+          "y": 2,
+          "w": 26,
+          "h": 26
+        },
+        "sourceMode": "draw_box",
+        "jobId": "",
+        "sessionId": "37fcdae2-1975-4bf2-808a-e86e32134c80",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "post": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "draw_box",
+        "jobId": "53263751-8ca7-40e0-9d66-492b0f9cac83",
+        "sessionId": "b4109e87-a4cb-42f1-b2ba-9599b78cba94",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-source-import/07-convert-to-xp.png"
+    },
+    {
+      "name": "save-via-topbar",
+      "pass": true,
+      "error": "",
+      "data": {
+        "sessionDirty": false
+      },
+      "pre": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "draw_box",
+        "jobId": "53263751-8ca7-40e0-9d66-492b0f9cac83",
+        "sessionId": "b4109e87-a4cb-42f1-b2ba-9599b78cba94",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "post": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "draw_box",
+        "jobId": "53263751-8ca7-40e0-9d66-492b0f9cac83",
+        "sessionId": "b4109e87-a4cb-42f1-b2ba-9599b78cba94",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-source-import/08-save-via-topbar.png"
+    },
+    {
+      "name": "export-via-files-drawer",
+      "pass": true,
+      "error": "",
+      "data": {
+        "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-b4109e87-a4cb-42f1-b2ba-9599b78cba94.xp"
+      },
+      "pre": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "draw_box",
+        "jobId": "53263751-8ca7-40e0-9d66-492b0f9cac83",
+        "sessionId": "b4109e87-a4cb-42f1-b2ba-9599b78cba94",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "post": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "draw_box",
+        "jobId": "53263751-8ca7-40e0-9d66-492b0f9cac83",
+        "sessionId": "b4109e87-a4cb-42f1-b2ba-9599b78cba94",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-source-import/09-export-via-files-drawer.png"
+    },
+    {
+      "name": "artifact-oracle",
+      "pass": true,
+      "error": "",
+      "data": {
+        "totalNonZero": 14197,
+        "editorCount": 4110
+      },
+      "pre": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "draw_box",
+        "jobId": "53263751-8ca7-40e0-9d66-492b0f9cac83",
+        "sessionId": "b4109e87-a4cb-42f1-b2ba-9599b78cba94",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "post": {
+        "sourceImageLoaded": true,
+        "extractedBoxes": 0,
+        "drawCurrent": null,
+        "sourceMode": "draw_box",
+        "jobId": "53263751-8ca7-40e0-9d66-492b0f9cac83",
+        "sessionId": "b4109e87-a4cb-42f1-b2ba-9599b78cba94",
+        "sessionDirty": false,
+        "wsAdvanced": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-source-import/10-artifact-oracle.png"
+    }
+  ]
+}

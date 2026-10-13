@@ -1,0 +1,264 @@
+{
+  "overallPass": true,
+  "finalXpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-009a9dd9-412f-46a3-94dc-6aec5b19fe85.xp",
+  "results": [
+    {
+      "name": "fresh-mobile-first-screen",
+      "pass": true,
+      "error": "",
+      "data": {
+        "visible": true
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": false
+      },
+      "post": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-file-session/01-fresh-mobile-first-screen.png"
+    },
+    {
+      "name": "apply-template",
+      "pass": true,
+      "error": "",
+      "data": {
+        "sessionId": "009a9dd9"
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": false
+      },
+      "post": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-file-session/02-apply-template.png"
+    },
+    {
+      "name": "author-cells",
+      "pass": true,
+      "error": "",
+      "data": {
+        "cells": 9,
+        "mismatches": []
+      },
+      "pre": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "post": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-file-session/03-author-cells.png"
+    },
+    {
+      "name": "save-session",
+      "pass": true,
+      "error": "",
+      "data": {
+        "sessionDirty": false,
+        "sessionId": "009a9dd9"
+      },
+      "pre": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "post": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-file-session/04-save-session.png"
+    },
+    {
+      "name": "reload-with-session-id",
+      "pass": true,
+      "error": "",
+      "data": {
+        "sessionId": "009a9dd9",
+        "wsAdvanced": false,
+        "canvasRaceFix": true
+      },
+      "pre": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "post": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-file-session/05-reload-with-session-id.png"
+    },
+    {
+      "name": "verify-cells-persist-url",
+      "pass": true,
+      "error": "",
+      "data": {
+        "mismatches": []
+      },
+      "pre": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "post": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-file-session/06-verify-cells-persist-url.png"
+    },
+    {
+      "name": "save-idb-draft",
+      "pass": true,
+      "error": "",
+      "data": {
+        "idbOk": true
+      },
+      "pre": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "post": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-file-session/07-save-idb-draft.png"
+    },
+    {
+      "name": "reload-fresh",
+      "pass": true,
+      "error": "",
+      "data": {
+        "firstScreenVisible": true
+      },
+      "pre": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "post": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": false
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-file-session/08-reload-fresh.png"
+    },
+    {
+      "name": "continue-draft-restore",
+      "pass": true,
+      "error": "",
+      "data": {
+        "restored": true,
+        "advanced": false
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": false
+      },
+      "post": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-file-session/09-continue-draft-restore.png"
+    },
+    {
+      "name": "verify-cells-persist-idb",
+      "pass": true,
+      "error": "",
+      "data": {
+        "mismatches": []
+      },
+      "pre": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "post": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-file-session/10-verify-cells-persist-idb.png"
+    },
+    {
+      "name": "export-via-files-drawer",
+      "pass": true,
+      "error": "",
+      "data": {
+        "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-009a9dd9-412f-46a3-94dc-6aec5b19fe85.xp"
+      },
+      "pre": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": true,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "post": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-file-session/11-export-via-files-drawer.png"
+    },
+    {
+      "name": "artifact-oracle",
+      "pass": true,
+      "error": "",
+      "data": {
+        "count": 9,
+        "expected": 9
+      },
+      "pre": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "post": {
+        "sessionId": "009a9dd9-412f-46a3-94dc-6aec5b19fe85",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "firstScreenHidden": true
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-file-session/12-artifact-oracle.png"
+    }
+  ]
+}

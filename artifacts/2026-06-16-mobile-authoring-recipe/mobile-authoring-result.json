@@ -1,0 +1,803 @@
+{
+  "result": "PASS",
+  "url": "http://localhost:5071/workbench",
+  "seed": 42,
+  "recipe_path": "artifacts/2026-06-16-mobile-authoring-recipe/mobile-authoring-recipe.json",
+  "export_xp_path": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-9acda17c-6f39-4936-9f6b-285c451e4437.xp",
+  "exported_glyph_count": 74,
+  "steps": [
+    {
+      "name": "fresh-mobile-first-screen",
+      "pass": true,
+      "error": "",
+      "data": {
+        "visible": true
+      },
+      "pre": {
+        "sessionId": "",
+        "templateSetKey": "",
+        "gridCols": 0,
+        "gridRows": 0,
+        "selectedRow": null,
+        "selectedCols": [],
+        "selectedFrames": [],
+        "historyDepth": 0,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 0,
+        "wsAdvanced": false,
+        "sessionLoadedClass": false,
+        "firstScreenHidden": false,
+        "openDrawer": "",
+        "wholeSheetMounted": false,
+        "activeTool": "cell",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 1,
+        "exportOut": {}
+      },
+      "post": {
+        "sessionId": "",
+        "templateSetKey": "",
+        "gridCols": 0,
+        "gridRows": 0,
+        "selectedRow": null,
+        "selectedCols": [],
+        "selectedFrames": [],
+        "historyDepth": 0,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 0,
+        "wsAdvanced": false,
+        "sessionLoadedClass": false,
+        "firstScreenHidden": false,
+        "openDrawer": "",
+        "wholeSheetMounted": false,
+        "activeTool": "cell",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 1,
+        "exportOut": {}
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-authoring-recipe/01-fresh-mobile-first-screen.png"
+    },
+    {
+      "name": "apply-template",
+      "pass": true,
+      "error": "",
+      "data": {
+        "template": "player_native_idle_only"
+      },
+      "pre": {
+        "sessionId": "",
+        "templateSetKey": "",
+        "gridCols": 0,
+        "gridRows": 0,
+        "selectedRow": null,
+        "selectedCols": [],
+        "selectedFrames": [],
+        "historyDepth": 0,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 0,
+        "wsAdvanced": false,
+        "sessionLoadedClass": false,
+        "firstScreenHidden": false,
+        "openDrawer": "",
+        "wholeSheetMounted": false,
+        "activeTool": "cell",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 1,
+        "exportOut": {}
+      },
+      "post": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 126,
+        "gridRows": 80,
+        "selectedRow": null,
+        "selectedCols": [],
+        "selectedFrames": [],
+        "historyDepth": 0,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "",
+        "wholeSheetMounted": true,
+        "activeTool": "cell",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.74375,
+        "exportOut": {}
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-authoring-recipe/02-apply-template.png"
+    },
+    {
+      "name": "set-draw-state-through-tools-drawer",
+      "pass": true,
+      "error": "",
+      "data": {
+        "glyph": 67,
+        "fg": "#ffec27",
+        "bg": "#1d2b53"
+      },
+      "pre": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 126,
+        "gridRows": 80,
+        "selectedRow": null,
+        "selectedCols": [],
+        "selectedFrames": [],
+        "historyDepth": 0,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "",
+        "wholeSheetMounted": true,
+        "activeTool": "cell",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.74375,
+        "exportOut": {}
+      },
+      "post": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 126,
+        "gridRows": 80,
+        "selectedRow": null,
+        "selectedCols": [],
+        "selectedFrames": [],
+        "historyDepth": 0,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "",
+        "wholeSheetMounted": true,
+        "activeTool": "cell",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.74375,
+        "exportOut": {}
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-authoring-recipe/03-set-draw-state-through-tools-drawer.png"
+    },
+    {
+      "name": "paint-seed-cells",
+      "pass": true,
+      "error": "",
+      "data": {
+        "before": {
+          "idx": 385,
+          "glyph": 0,
+          "fg": [
+            0,
+            0,
+            0
+          ],
+          "bg": [
+            255,
+            0,
+            255
+          ]
+        },
+        "painted": [
+          {
+            "action": "paint_cell",
+            "x": 7,
+            "y": 3,
+            "glyph": 67,
+            "actualGlyph": 67
+          },
+          {
+            "action": "paint_cell",
+            "x": 15,
+            "y": 5,
+            "glyph": 67,
+            "actualGlyph": 67
+          },
+          {
+            "action": "paint_cell",
+            "x": 10,
+            "y": 2,
+            "glyph": 67,
+            "actualGlyph": 67
+          },
+          {
+            "action": "paint_cell",
+            "x": 12,
+            "y": 4,
+            "glyph": 67,
+            "actualGlyph": 67
+          },
+          {
+            "action": "paint_cell",
+            "x": 22,
+            "y": 18,
+            "glyph": 67,
+            "actualGlyph": 67
+          },
+          {
+            "action": "paint_cell",
+            "x": 21,
+            "y": 10,
+            "glyph": 67,
+            "actualGlyph": 67
+          },
+          {
+            "action": "paint_cell",
+            "x": 16,
+            "y": 16,
+            "glyph": 67,
+            "actualGlyph": 67
+          },
+          {
+            "action": "paint_cell",
+            "x": 15,
+            "y": 3,
+            "glyph": 67,
+            "actualGlyph": 67
+          }
+        ]
+      },
+      "pre": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 126,
+        "gridRows": 80,
+        "selectedRow": null,
+        "selectedCols": [],
+        "selectedFrames": [],
+        "historyDepth": 0,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "",
+        "wholeSheetMounted": true,
+        "activeTool": "cell",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.74375,
+        "exportOut": {}
+      },
+      "post": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 126,
+        "gridRows": 80,
+        "selectedRow": null,
+        "selectedCols": [],
+        "selectedFrames": [],
+        "historyDepth": 8,
+        "futureDepth": 0,
+        "sessionDirty": true,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "",
+        "wholeSheetMounted": true,
+        "activeTool": "cell",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.74375,
+        "exportOut": {}
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-authoring-recipe/04-paint-seed-cells.png"
+    },
+    {
+      "name": "draw-rectangle-through-canvas",
+      "pass": true,
+      "error": "",
+      "data": {
+        "rect": {
+          "action": "rect_drag",
+          "x1": 29,
+          "y1": 10,
+          "x2": 50,
+          "y2": 22,
+          "glyph": 67
+        },
+        "tl": {
+          "idx": 1289,
+          "glyph": 67,
+          "fg": [
+            255,
+            236,
+            39
+          ],
+          "bg": [
+            29,
+            43,
+            83
+          ]
+        },
+        "br": {
+          "idx": 2822,
+          "glyph": 67,
+          "fg": [
+            255,
+            236,
+            39
+          ],
+          "bg": [
+            29,
+            43,
+            83
+          ]
+        }
+      },
+      "pre": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 126,
+        "gridRows": 80,
+        "selectedRow": null,
+        "selectedCols": [],
+        "selectedFrames": [],
+        "historyDepth": 8,
+        "futureDepth": 0,
+        "sessionDirty": true,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "",
+        "wholeSheetMounted": true,
+        "activeTool": "cell",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.74375,
+        "exportOut": {}
+      },
+      "post": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 126,
+        "gridRows": 80,
+        "selectedRow": null,
+        "selectedCols": [],
+        "selectedFrames": [],
+        "historyDepth": 9,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "",
+        "wholeSheetMounted": true,
+        "activeTool": "rect",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.74375,
+        "exportOut": {}
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-authoring-recipe/05-draw-rectangle-through-canvas.png"
+    },
+    {
+      "name": "frames-add-frame-through-drawer",
+      "pass": true,
+      "error": "",
+      "data": {
+        "before": 72,
+        "after": 80
+      },
+      "pre": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 126,
+        "gridRows": 80,
+        "selectedRow": null,
+        "selectedCols": [],
+        "selectedFrames": [],
+        "historyDepth": 9,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "",
+        "wholeSheetMounted": true,
+        "activeTool": "rect",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.74375,
+        "exportOut": {}
+      },
+      "post": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 140,
+        "gridRows": 80,
+        "selectedRow": 0,
+        "selectedCols": [
+          9
+        ],
+        "selectedFrames": [
+          {
+            "row": 0,
+            "col": 9
+          }
+        ],
+        "historyDepth": 10,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "frames",
+        "wholeSheetMounted": true,
+        "activeTool": "rect",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.6892857142857143,
+        "exportOut": {}
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-authoring-recipe/06-frames-add-frame-through-drawer.png"
+    },
+    {
+      "name": "save-through-mobile-topbar",
+      "pass": true,
+      "error": "",
+      "data": {
+        "sessionDirty": false,
+        "diag": {
+          "wbStatus": "Added frame slot (frames=10)",
+          "sessionDirtyBadge": "Session: saved",
+          "exportOut": "",
+          "saveInFlight": false,
+          "wbState": {
+            "jobId": "",
+            "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+            "angles": 8,
+            "anims": [
+              1,
+              9
+            ],
+            "projs": 2,
+            "frameWChars": 14,
+            "frameHChars": 10,
+            "selectedFrames": [
+              {
+                "row": 0,
+                "col": 9
+              }
+            ],
+            "selectedRows": [
+              0
+            ],
+            "selectedRow": 0,
+            "selectedCols": [
+              9
+            ],
+            "rowCategories": {},
+            "frameGroups": [],
+            "sourceMode": "select",
+            "rapidManualAdd": false,
+            "sourceImageLoaded": false,
+            "drawCurrent": null,
+            "sourceSelection": [],
+            "extractedBoxes": 0,
+            "sourceBoxes": [],
+            "anchorBox": null,
+            "historyDepth": 10,
+            "futureDepth": 0,
+            "wrapperHistoryDepth": 0,
+            "wrapperFutureDepth": 0,
+            "wholeSheetHistoryDepth": 10,
+            "wholeSheetFutureDepth": 0,
+            "bundleId": "",
+            "activeActionKey": "idle",
+            "templateSetKey": "player_native_idle_only",
+            "activeLayer": 2,
+            "visibleLayers": [
+              2
+            ],
+            "layerCount": 4,
+            "sessionDirty": false,
+            "gridCols": 140,
+            "gridRows": 80,
+            "sourceCutsV": 0,
+            "sourceCanvasZoom": 1,
+            "gridPanelZoom": 0
+          },
+          "wsState": {
+            "mounted": true,
+            "gridCols": 140,
+            "gridRows": 80,
+            "layerCount": 4,
+            "mode": "paint",
+            "activeLayerIndex": 2,
+            "hasFontLoaded": true,
+            "activeTool": "rect",
+            "selectionBounds": null,
+            "hasClipboard": false,
+            "clipboardCellCount": 0,
+            "pasteMode": false,
+            "browseItemCount": 109,
+            "browseSelectedId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+            "drawGlyph": 67,
+            "drawFg": [
+              255,
+              236,
+              39
+            ],
+            "drawBg": [
+              29,
+              43,
+              83
+            ],
+            "canvasZoom": 0,
+            "appliedCanvasZoom": 0.6892857142857143,
+            "sessionKind": "template_owned",
+            "metadataStatus": "generated",
+            "gridVisible": false,
+            "gridStep": "frame",
+            "gridCustomW": 1,
+            "gridCustomH": 1,
+            "resolvedGridW": 14,
+            "resolvedGridH": 10,
+            "canUndo": true,
+            "canRedo": false,
+            "historyDepth": 10,
+            "futureDepth": 0
+          },
+          "wsSnapshotMeta": {
+            "gridCols": 140,
+            "gridRows": 80,
+            "frameW": 14,
+            "frameH": 10,
+            "layerLengths": [
+              11200,
+              11200,
+              11200,
+              11200
+            ]
+          }
+        }
+      },
+      "pre": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 140,
+        "gridRows": 80,
+        "selectedRow": 0,
+        "selectedCols": [
+          9
+        ],
+        "selectedFrames": [
+          {
+            "row": 0,
+            "col": 9
+          }
+        ],
+        "historyDepth": 10,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "frames",
+        "wholeSheetMounted": true,
+        "activeTool": "rect",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.6892857142857143,
+        "exportOut": {}
+      },
+      "post": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 140,
+        "gridRows": 80,
+        "selectedRow": 0,
+        "selectedCols": [
+          9
+        ],
+        "selectedFrames": [
+          {
+            "row": 0,
+            "col": 9
+          }
+        ],
+        "historyDepth": 10,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "frames",
+        "wholeSheetMounted": true,
+        "activeTool": "rect",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.6892857142857143,
+        "exportOut": {}
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-authoring-recipe/07-save-through-mobile-topbar.png"
+    },
+    {
+      "name": "export-through-files-drawer",
+      "pass": true,
+      "error": "",
+      "data": {
+        "exportOut": {
+          "checksum": "9f2425f142900c74e1927c24d2bc5dd260a0d93228e13797d0dc978ef340f141",
+          "layer_count": 4,
+          "session_id": "9acda17c-6f39-4936-9f6b-285c451e4437",
+          "source": "persisted_layers",
+          "xp_path": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-9acda17c-6f39-4936-9f6b-285c451e4437.xp"
+        }
+      },
+      "pre": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 140,
+        "gridRows": 80,
+        "selectedRow": 0,
+        "selectedCols": [
+          9
+        ],
+        "selectedFrames": [
+          {
+            "row": 0,
+            "col": 9
+          }
+        ],
+        "historyDepth": 10,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "frames",
+        "wholeSheetMounted": true,
+        "activeTool": "rect",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.6892857142857143,
+        "exportOut": {}
+      },
+      "post": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 140,
+        "gridRows": 80,
+        "selectedRow": 0,
+        "selectedCols": [
+          9
+        ],
+        "selectedFrames": [
+          {
+            "row": 0,
+            "col": 9
+          }
+        ],
+        "historyDepth": 10,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "files",
+        "wholeSheetMounted": true,
+        "activeTool": "rect",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.6892857142857143,
+        "exportOut": {
+          "checksum": "9f2425f142900c74e1927c24d2bc5dd260a0d93228e13797d0dc978ef340f141",
+          "layer_count": 4,
+          "session_id": "9acda17c-6f39-4936-9f6b-285c451e4437",
+          "source": "persisted_layers",
+          "xp_path": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-9acda17c-6f39-4936-9f6b-285c451e4437.xp"
+        }
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-authoring-recipe/08-export-through-files-drawer.png"
+    },
+    {
+      "name": "verify-exported-xp-glyph",
+      "pass": true,
+      "error": "",
+      "data": {
+        "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-9acda17c-6f39-4936-9f6b-285c451e4437.xp",
+        "glyph": 67,
+        "exportedGlyphCount": 74
+      },
+      "pre": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 140,
+        "gridRows": 80,
+        "selectedRow": 0,
+        "selectedCols": [
+          9
+        ],
+        "selectedFrames": [
+          {
+            "row": 0,
+            "col": 9
+          }
+        ],
+        "historyDepth": 10,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "files",
+        "wholeSheetMounted": true,
+        "activeTool": "rect",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.6892857142857143,
+        "exportOut": {
+          "checksum": "9f2425f142900c74e1927c24d2bc5dd260a0d93228e13797d0dc978ef340f141",
+          "layer_count": 4,
+          "session_id": "9acda17c-6f39-4936-9f6b-285c451e4437",
+          "source": "persisted_layers",
+          "xp_path": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-9acda17c-6f39-4936-9f6b-285c451e4437.xp"
+        }
+      },
+      "post": {
+        "sessionId": "9acda17c-6f39-4936-9f6b-285c451e4437",
+        "templateSetKey": "player_native_idle_only",
+        "gridCols": 140,
+        "gridRows": 80,
+        "selectedRow": 0,
+        "selectedCols": [
+          9
+        ],
+        "selectedFrames": [
+          {
+            "row": 0,
+            "col": 9
+          }
+        ],
+        "historyDepth": 10,
+        "futureDepth": 0,
+        "sessionDirty": false,
+        "activeLayer": 2,
+        "layerCount": 4,
+        "wsAdvanced": false,
+        "sessionLoadedClass": true,
+        "firstScreenHidden": true,
+        "openDrawer": "files",
+        "wholeSheetMounted": true,
+        "activeTool": "rect",
+        "canvasZoom": 0,
+        "appliedCanvasZoom": 0.6892857142857143,
+        "exportOut": {
+          "checksum": "9f2425f142900c74e1927c24d2bc5dd260a0d93228e13797d0dc978ef340f141",
+          "layer_count": 4,
+          "session_id": "9acda17c-6f39-4936-9f6b-285c451e4437",
+          "source": "persisted_layers",
+          "xp_path": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-9acda17c-6f39-4936-9f6b-285c451e4437.xp"
+        }
+      },
+      "screenshot": "artifacts/2026-06-16-mobile-authoring-recipe/09-verify-exported-xp-glyph.png"
+    }
+  ]
+}

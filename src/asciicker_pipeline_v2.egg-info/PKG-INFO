@@ -1,0 +1,88 @@
+Metadata-Version: 2.4
+Name: asciicker-pipeline-v2
+Version: 0.1.0
+Summary: Greenfield sprite-sheet to XP pipeline MVP
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: Flask>=3.0
+Requires-Dist: Pillow>=10.0
+Requires-Dist: numpy>=1.26
+Provides-Extra: deploy
+Requires-Dist: gunicorn>=21.2; extra == "deploy"
+
+# Asciicker XPEdit ( PRE-ALPHA, PLEASE REPORT ANY BUGS )
+
+Greenfield rebuild of main sprite-sheet pipeline features currently still broken in the main Asciicker-Y9-2 Fork. This repo is intentionally independent of the main Asciicker and Asciicker-Y9-2 Fork codebase. This is a browser-based XP sprite editor and functional alternative to the Windows-only REXPaint Editor, adapted specifically for the Asciicker Game Engine. Features include: convert PNG sprite sheets to `.xp` files, edit cells in a whole-sheet editor with true REXPaint parity, and test skins live in the game engine. More features to come, please report any bugs or complaints.
+
+## Run
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+PYTHONPATH=src python3 -m pipeline_v2.app
+```
+
+Open:
+
+- Live: `https://rikiworld.com/xpedit`
+- Local (default): `http://127.0.0.1:5071/` (redirects to `/workbench`)
+- Local (direct): `http://127.0.0.1:5071/workbench`
+
+
+## Required Inputs
+
+- `image_file` (`.png`)
+- `name` (string)
+- `angles` (int >= 1)
+- `frames` (CSV like `8,8,8,8`)
+- `source_projs` (`1|2`, default `1`)
+- `render_resolution` (int, default `24`)
+- `bg_mode` (`key_color|alpha|none`, default `key_color`)
+- `bg_tolerance` (int, default `8`)
+
+## Required Outputs
+
+- `.xp` file path
+- preview PNG path
+- run report JSON
+- gates JSON with G7/G8/G9
+- workbench session with `populated_cells > 0`
+- exported `.xp` from workbench
+
+## API
+
+- `POST /api/upload`
+- `POST /api/analyze`
+- `POST /api/run`
+- `GET /api/status/<job_id>`
+- `POST /api/workbench/load-from-job`
+- `POST /api/workbench/export-xp`
+
+All failures return:
+
+```json
+{
+  "error": "human readable",
+  "code": "machine_code",
+  "stage": "upload|analyze|run|workbench",
+  "request_id": "uuid"
+}
+```
+
+
+## Tests
+
+```bash
+PYTHONPATH=src python3 -m pytest
+```
+
+## Notes
+
+- The XP codec implemented here writes/reads classic REXPaint-style layers.
+- This MVP uses deterministic grayscale glyph mapping; it is not final art-quality conversion.
+
+## Docs
+
+- Canonical spec: `docs/plans/2026-03-23-workbench-canonical-spec.md`
+- Failure log: `PLAYWRIGHT_FAILURE_LOG.md`

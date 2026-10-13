@@ -60,6 +60,13 @@ If a lower-priority doc conflicts with a higher-priority source or with current 
 ## Current Milestone
 
 - The overall product goal remains **full XP-file editor parity** as defined in `docs/XP_EDITOR_ACCEPTANCE_CONTRACT.md`.
+- Current doc-routing correction (2026-06-11): mobile XP intake is proven enough
+  to expose a product blocker in the first-screen workbench UX. Read
+  `PLAYWRIGHT_FAILURE_LOG.md` rows `FL-MOB-01`, `FL-DOC-ROUTE-01`,
+  `FL-PRINT-01`, and the canonical spec queue rows `UQ-013` / `UQ-014` before
+  implementing mobile pruning or printable grid-paper work. As of 2026-06-13,
+  UQ-013 mobile usability leads: broad prune implementation waits on an approved
+  mobile Open Workbench design.
 - **Milestone 1 is closed.** It is the baseline, not the active workstream.
 - The current working milestone is **Milestone 2: practical PNG ingest and manual assembly**.
 - Milestone 2 means:
@@ -367,6 +374,7 @@ No distinct palette asset files (`.pal`, `palette.json`, etc.) exist in the repo
 - The finding that the editor modal/UI is still incomplete for REXPaint-parity goals remains valid; existence of whole-sheet integration does not mean full parity is proven.
 - XP-file fidelity is not proven end-to-end. No canonical test exists. The deleted harness was not a valid fidelity test — see `PLAYWRIGHT_FAILURE_LOG.md`.
 - Self-containment is now machine-enforced via `scripts/self_containment_audit.py` and installable git hooks in `.githooks/`. Blocking findings are external symlinks and live/build/runtime/test references to absolute paths outside this repo.
+- `docs/plans/2026-06-09-workbench-prune-proposal.md` records the current workbench pruning proposal: three Skin Dock controls are hidden/unreachable DOM controls, `mounted_native_full` is registry-present but not UI-reachable, and ActorVisualProfile UI must be labeled draft-only until Y9-2 consumes authored profile JSON.
 
 ## 2026-04-22 Audit Note: Bundle Coverage, Rollback Contract, Wizard Parity, Migration Gates
 

@@ -1,235 +1,69 @@
 "use strict";
 
+const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
-const vm = require("vm");
 
-class TestRunner {
-  constructor() {
-    this.tests = [];
-    this.ok = 0;
-    this.fail = 0;
-  }
-
-  describe(_suiteName, suiteFunc) {
-    suiteFunc();
-  }
-
-  it(testName, testFunc) {
-    this.tests.push({ testName, testFunc });
-  }
-
-  async run() {
-    for (const { testName, testFunc } of this.tests) {
-      try {
-        await testFunc();
-        this.ok++;
-        console.log(`\u2713 ${testName}`);
-      } catch (error) {
-        this.fail++;
-        console.log(`\u2717 ${testName}`);
-        console.log(`  ${error.message}`);
-      }
-    }
-    console.log(`\n${this.ok} ok, ${this.fail} failed`);
-    process.exit(this.fail > 0 ? 1 : 0);
-  }
-}
-
-function expect(value) {
-  return {
-    toBe(expected) {
-      if (value !== expected) {
-        throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(value)}`);
-      }
-    },
-    toContain(expected) {
-      if (typeof value !== "string" || !value.includes(expected)) {
-        throw new Error(`Expected ${JSON.stringify(value)} to contain ${JSON.stringify(expected)}`);
-      }
-    },
-  };
-}
-
-function makeElement(initial = {}) {
-  const element = {
-    value: "",
-    disabled: false,
-    checked: false,
-    textContent: "",
-    className: "",
-    children: [],
-    addEventListener() {},
-    appendChild(node) {
-      this.children.push(node);
-    },
-    classList: {
-      add() {},
-      remove() {},
-    },
-    ...initial,
-  };
-  let innerHtml = "";
-  Object.defineProperty(element, "innerHTML", {
-    get() {
-      return innerHtml;
-    },
-    set(value) {
-      innerHtml = String(value);
-      this.children = [];
-    },
-  });
-  return element;
-}
-
-async function runScript({
-  scriptPath,
-  pathname,
-  injectedBasePath,
-  fetchImpl,
-}) {
-  const source = fs.readFileSync(scriptPath, "utf8");
-  const listeners = new Map();
-  const elements = {
-    overrideMode: makeElement({ value: "player_common" }),
-    overrideNames: makeElement(),
-    statusLine: makeElement(),
-    webbuildState: makeElement(),
-    out: makeElement(),
-    dropZone: makeElement(),
-    applyBtn: makeElement(),
-    reapplyBtn: makeElement(),
-    startBtn: makeElement(),
-    openBtn: makeElement(),
-    reloadBtn: makeElement(),
-    downloadInfoBtn: makeElement(),
-    xpFile: makeElement(),
-    webbuildPath: makeElement({ value: "./termpp-web/index.html?solo=1&player=player" }),
-    playerName: makeElement({ value: "player" }),
-    autoStartChk: makeElement(),
-    gameFrame: makeElement({ contentWindow: null, src: "" }),
-  };
-  const document = {
-    getElementById(id) {
-      return elements[id] || null;
-    },
-    createElement() {
-      return makeElement();
-    },
-  };
-  const fetchCalls = [];
-  const context = {
-    console,
-    URLSearchParams,
-    Uint8Array,
-    setInterval() { return 1; },
-    clearInterval() {},
-    setTimeout,
-    clearTimeout,
-    fetch: async (url) => {
-      fetchCalls.push(url);
-      return fetchImpl(url);
-    },
-    localStorage: {
-      getItem() { return null; },
-      setItem() {},
-    },
-    document,
-    window: {
-      location: { pathname, search: "" },
-      __WB_BASE_PATH: injectedBasePath,
-      addEventListener(eventName, callback) {
-        listeners.set(eventName, callback);
-      },
-      removeEventListener() {},
-    },
-  };
-  context.window.window = context.window;
-  context.window.document = document;
-  context.window.fetch = context.fetch;
-  context.window.localStorage = context.localStorage;
-  context.globalThis = context;
-
-  vm.runInNewContext(source, context, { filename: scriptPath });
-  const onReady = listeners.get("DOMContentLoaded");
-  if (typeof onReady !== "function") {
-    throw new Error("DOMContentLoaded listener not registered");
-  }
-  await onReady();
-  return { elements, fetchCalls };
-}
-
-const t = new TestRunner();
 const repoRoot = process.cwd();
 const webScriptPath = path.join(repoRoot, "web", "termpp_skin_lab.js");
 const runtimeScriptPath = path.join(repoRoot, "runtime", "termpp-skin-lab-static", "termpp_skin_lab.js");
+const workbenchPath = path.join(repoRoot, "web", "workbench.js");
+const bootstrapPath = path.join(
+  repoRoot,
+  "runtime",
+  "termpp-skin-lab-static",
+  "termpp-web-flat",
+  "legacy_skin_preview_bootstrap.js",
+);
+const runtimeIndexPath = path.join(
+  repoRoot,
+  "runtime",
+  "termpp-skin-lab-static",
+  "termpp-web-flat",
+  "index.html",
+);
 
-const MOCK_REGISTRY = {
-  prefix_catalog: {
-    player: { ahsw_range: "all_16" },
-    attack: { ahsw_range: "weapon_gte_1" },
-    plydie: { ahsw_range: "all_16" },
-    wolfie: { ahsw_range: "all_16" },
-    wolack: { ahsw_range: "weapon_gte_1" },
-  },
-};
+const webScript = fs.readFileSync(webScriptPath, "utf8");
+const runtimeScript = fs.readFileSync(runtimeScriptPath, "utf8");
+const workbench = fs.readFileSync(workbenchPath, "utf8");
+const bootstrap = fs.readFileSync(bootstrapPath, "utf8");
+const runtimeIndex = fs.readFileSync(runtimeIndexPath, "utf8");
 
-t.describe("termpp skin lab registry loading", () => {
-  t.it("keeps both termpp skin lab copies byte-identical", async () => {
-    const webScript = fs.readFileSync(webScriptPath, "utf8");
-    const runtimeScript = fs.readFileSync(runtimeScriptPath, "utf8");
-    expect(webScript).toBe(runtimeScript);
-  });
+assert.strictEqual(webScript, runtimeScript, "Skin Lab source and packaged copy must remain byte-identical");
 
-  t.it("injects uploaded skins into the engine asset path", async () => {
-    const webScript = fs.readFileSync(webScriptPath, "utf8");
-    expect(webScript).toContain('M.FS_createPath("/", "assets", true, true)');
-    expect(webScript).toContain('M.FS_createPath("/assets", "sprites", true, true)');
-    expect(webScript).toContain("`/assets/sprites/${name}`");
-  });
+for (const removedOwner of [
+  "FS_createDataFile",
+  "FS.writeFile",
+  "emfsReplaceFile",
+  "injectXp",
+  "/assets/sprites/",
+]) {
+  assert.ok(!webScript.includes(removedOwner), `Skin Lab must not retain post-init writer ${removedOwner}`);
+}
 
-  t.it("uses injected BASE_PATH for registry fetch on prefixed termpp-skin-lab route", async () => {
-    const { fetchCalls } = await runScript({
-      scriptPath: webScriptPath,
-      pathname: "/xpedit/termpp-skin-lab",
-      injectedBasePath: "/xpedit",
-      fetchImpl: async () => ({ ok: true, json: async () => MOCK_REGISTRY }),
-    });
-    expect(fetchCalls[0]).toBe("/xpedit/api/workbench/templates");
-  });
+assert.ok(webScript.includes('/api/workbench/legacy-preview-token'));
+assert.ok(webScript.includes('skin_preview_token'));
+assert.ok(webScript.includes('/termpp-web-flat/index.html'));
 
-  t.it("infers BASE_PATH from termpp-web-flat pathname when no injected base path exists", async () => {
-    const { fetchCalls } = await runScript({
-      scriptPath: webScriptPath,
-      pathname: "/xpedit/termpp-web-flat/index.html",
-      injectedBasePath: "",
-      fetchImpl: async () => ({ ok: true, json: async () => MOCK_REGISTRY }),
-    });
-    expect(fetchCalls[0]).toBe("/xpedit/api/workbench/templates");
-  });
+assert.ok(bootstrap.includes('module.preRun.push'));
+assert.ok(bootstrap.includes('module.addRunDependency'));
+assert.ok(bootstrap.includes('var allowedFamilies = { player: 0, wolfie: 1 }'));
+assert.ok(bootstrap.includes('expectedTargets.push("/sprites/" + family'));
+assert.ok(bootstrap.includes('waitForPackagedTarget(fs, targetPath'));
+assert.ok(bootstrap.includes('fs.writeFile(installPath, bytes.slice()'));
+assert.ok(bootstrap.includes('actual_sha256_by_path'));
+assert.ok(bootstrap.includes('installed_target_count'));
+assert.ok(bootstrap.includes('runtime_activation_status'));
+assert.ok(bootstrap.includes('window.Keyb(0, 108)'));
+assert.ok(bootstrap.includes('window.Keyb(1, 108)'));
+assert.ok(workbench.includes('waitForLegacyPreviewRuntimeActivation(tokenPayload.family)'));
+assert.ok(!bootstrap.includes('player-nude.xp'));
+assert.ok(!bootstrap.includes('/assets/sprites/'));
 
-  t.it("fails closed when the registry fetch fails instead of regenerating hardcoded player_common names", async () => {
-    const { elements } = await runScript({
-      scriptPath: webScriptPath,
-      pathname: "/xpedit/termpp-skin-lab",
-      injectedBasePath: "/xpedit",
-      fetchImpl: async () => {
-        throw new Error("network down");
-      },
-    });
-    expect(elements.overrideNames.children.length).toBe(0);
-    expect(elements.statusLine.textContent).toContain("Template registry unavailable");
-  });
+const bootstrapIndex = runtimeIndex.indexOf('legacy_skin_preview_bootstrap.js');
+const engineIndex = runtimeIndex.indexOf('src=index.js');
+assert.ok(bootstrapIndex >= 0, "preview bootstrap script must be present");
+assert.ok(engineIndex >= 0, "engine script must be present");
+assert.ok(bootstrapIndex < engineIndex, "preview bootstrap must execute before index.js");
 
-  t.it("renders the full player_common override set only after registry load succeeds", async () => {
-    const { elements } = await runScript({
-      scriptPath: webScriptPath,
-      pathname: "/xpedit/termpp-skin-lab",
-      injectedBasePath: "/xpedit",
-      fetchImpl: async () => ({ ok: true, json: async () => MOCK_REGISTRY }),
-    });
-    expect(elements.overrideNames.children.length).toBe(105);
-  });
-});
-
-void t.run();
+console.log("termpp skin lab preview ownership checks passed");

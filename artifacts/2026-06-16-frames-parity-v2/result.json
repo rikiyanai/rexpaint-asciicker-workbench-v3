@@ -1,0 +1,175 @@
+{
+  "overall": "PASS",
+  "steps": [
+    {
+      "step": 1,
+      "name": "fresh-mobile-first-screen",
+      "status": "PASS",
+      "error": null,
+      "visible": true
+    },
+    {
+      "step": 2,
+      "name": "apply-template",
+      "status": "PASS",
+      "error": null,
+      "sessionId": "f988d296-6736-47c5-8c59-8fde9d1c41ad",
+      "gridCols": 126,
+      "gridRows": 80
+    },
+    {
+      "step": 3,
+      "name": "open-frames-drawer",
+      "status": "PASS",
+      "error": null,
+      "frameCount": 72,
+      "addFrameVisible": true,
+      "buttons": {
+        "rowUpEnabled": false,
+        "rowDownEnabled": false,
+        "gridZoomInput": true,
+        "gridToggleLabels": true,
+        "deleteCellBtn": true
+      }
+    },
+    {
+      "step": 4,
+      "name": "select-frame-tile",
+      "status": "PASS",
+      "error": null,
+      "selected": {
+        "row": 0,
+        "col": 0
+      },
+      "addEnabled": true,
+      "rowDownEnabled": true
+    },
+    {
+      "step": 5,
+      "name": "col-right",
+      "status": "PASS",
+      "error": null,
+      "before": {
+        "row": 0,
+        "col": 0
+      },
+      "after": {
+        "row": 0,
+        "col": 1
+      },
+      "moved": true
+    },
+    {
+      "step": 6,
+      "name": "col-left",
+      "status": "PASS",
+      "error": null,
+      "before": {
+        "row": 0,
+        "col": 1
+      },
+      "after": {
+        "row": 0,
+        "col": 0
+      }
+    },
+    {
+      "step": 7,
+      "name": "add-frame",
+      "status": "PASS",
+      "error": null,
+      "countBefore": 72,
+      "countAfter": 80
+    },
+    {
+      "step": 8,
+      "name": "delete-frame",
+      "status": "PASS",
+      "error": null,
+      "countBefore": 80,
+      "countAfter": 72
+    },
+    {
+      "step": 9,
+      "name": "row-down",
+      "status": "PASS",
+      "error": null,
+      "rowBefore": 0,
+      "rowAfter": 1,
+      "rowUpNowEnabled": true
+    },
+    {
+      "step": 10,
+      "name": "row-up",
+      "status": "PASS",
+      "error": null,
+      "rowBefore": 1,
+      "rowAfter": 0
+    },
+    {
+      "step": 11,
+      "name": "grid-zoom-input",
+      "status": "PASS",
+      "error": null,
+      "zoomBefore": 0,
+      "zoomAfter": 2,
+      "changed": true
+    },
+    {
+      "step": 12,
+      "name": "grid-toggle-labels",
+      "status": "PASS",
+      "error": null,
+      "labelsBefore": false,
+      "labelsAfter": true,
+      "toggled": true
+    },
+    {
+      "step": 13,
+      "name": "clear-selected-deletecellbtn",
+      "status": "PASS",
+      "error": null,
+      "nonZeroBefore": 1,
+      "executed": true,
+      "selectedFrames": 1
+    },
+    {
+      "step": 14,
+      "name": "context-menu-copy-paste",
+      "status": "PASS",
+      "error": null,
+      "skipped": true,
+      "reason": "context menu not visible after right-click"
+    },
+    {
+      "step": 15,
+      "name": "layer-select",
+      "status": "PASS",
+      "error": null,
+      "skipped": true,
+      "reason": "no layer select in frames drawer"
+    },
+    {
+      "step": 16,
+      "name": "focus-whole-sheet",
+      "status": "PASS",
+      "error": null,
+      "wholeSheetVisible": true
+    },
+    {
+      "step": 17,
+      "name": "export-via-files-drawer",
+      "status": "PASS",
+      "error": null,
+      "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-f988d296-6736-47c5-8c59-8fde9d1c41ad.xp"
+    },
+    {
+      "step": 18,
+      "name": "artifact-oracle",
+      "status": "PASS",
+      "error": null,
+      "xpPath": "/Users/r/Downloads/asciicker-pipeline-v3/data/exports/session-f988d296-6736-47c5-8c59-8fde9d1c41ad.xp",
+      "totalNonZero": 10087
+    }
+  ]
+}

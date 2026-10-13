@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 import gzip
+import io
 import struct
 from pathlib import Path
 
 
 # Color-key transparency.
 #
-# Upstream sprite.cpp uses layer-0's background color at cell (0,0) as the
-# per-sprite transparency key (read once, then any layer cell whose fg or bg
-# matches that color is treated as transparent). Magenta is also treated as
-# transparent unconditionally as a hardcoded safety net.
+# Upstream sprite.cpp compares every visual cell against the corresponding
+# layer-0 background cell. A magenta visual background is a stronger legacy
+# sentinel that discards both foreground and background unconditionally.
 #
 # Legacy monolithic sprites (the originals: player, wolfie, bigbee, attack,
 # plydie, wolack, etc.) author their key as bright yellow. Newer sprites use
@@ -84,6 +84,28 @@ def write_xp(path: str | Path, width: int, height: int, layers: list[list[tuple[
                     glyph, fg, bg = layer[y * width + x]
                     f.write(struct.pack("<I", int(glyph)))
                     f.write(bytes([fg[0], fg[1], fg[2], bg[0], bg[1], bg[2]]))
+
+
+def encode_xp(
+    width: int,
+    height: int,
+    layers: list[list[tuple[int, tuple[int, int, int], tuple[int, int, int]]]],
+) -> bytes:
+    """Encode parsed row-major XP layers to deterministic gzip bytes."""
+    payload = io.BytesIO()
+    payload.write(struct.pack("<i", -1))
+    payload.write(struct.pack("<I", len(layers)))
+    for layer in layers:
+        if len(layer) != width * height:
+            raise ValueError("layer cell count mismatch")
+        payload.write(struct.pack("<i", width))
+        payload.write(struct.pack("<i", height))
+        for x in range(width):
+            for y in range(height):
+                glyph, fg, bg = layer[y * width + x]
+                payload.write(struct.pack("<I", int(glyph)))
+                payload.write(bytes([fg[0], fg[1], fg[2], bg[0], bg[1], bg[2]]))
+    return gzip.compress(payload.getvalue(), mtime=0)
 
 
 def read_xp(path: str | Path | bytes) -> dict:

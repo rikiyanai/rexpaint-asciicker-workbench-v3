@@ -35,6 +35,7 @@ class RunConfig:
     target_cols: int | None = None
     target_rows: int | None = None
     family: str = "player"
+    assignment_mode: str = "geometric"
 
     def validate(self, request_id: str) -> None:
         if not self.source_path:
@@ -67,6 +68,11 @@ class RunConfig:
             raise ApiError("target_rows must be >= 1", "invalid_target_rows", "run", request_id, 422)
         if self.family not in ("player", "attack", "plydie"):
             raise ApiError(f"unknown family: {self.family}", "invalid_family", "run", request_id, 422)
+        if self.assignment_mode not in ("geometric", "rich"):
+            raise ApiError(
+                f"assignment_mode must be 'geometric' or 'rich'; got {self.assignment_mode!r}",
+                "invalid_assignment_mode", "run", request_id, 422,
+            )
 
     @property
     def projs(self) -> int:

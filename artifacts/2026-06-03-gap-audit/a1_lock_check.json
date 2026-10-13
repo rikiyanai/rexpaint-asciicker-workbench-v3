@@ -1,0 +1,51 @@
+{
+  "layerStateAfterImport": [
+    {
+      "index": 0,
+      "name": "Layer 0",
+      "active": false,
+      "visible": false,
+      "locked": true
+    },
+    {
+      "index": 1,
+      "name": "Layer 1",
+      "active": false,
+      "visible": false,
+      "locked": false
+    },
+    {
+      "index": 2,
+      "name": "Layer 2",
+      "active": true,
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "layerRows": [
+    {
+      "i": 0,
+      "html": "<div class=\"ws-layer-row ws-layer-hidden ws-layer-locked\"><button class=\"ws-layer-vis-btn\" title=\"Show layer\">-</button><button class=\"ws-layer-lock-btn ws-layer-locked-btn\" title=\"Unlock layer\">L</bu",
+      "visText": "-",
+      "visClasses": "ws-layer-vis-btn",
+      "lockText": "L",
+      "lockClasses": "ws-layer-lock-btn ws-layer-locked-btn"
+    },
+    {
+      "i": 1,
+      "html": "<div class=\"ws-layer-row ws-layer-hidden\"><button class=\"ws-layer-vis-btn\" title=\"Show layer\">-</button><button class=\"ws-layer-lock-btn\" title=\"Lock layer\">U</button><span class=\"ws-layer-index\">1</s",
+      "visText": "-",
+      "visClasses": "ws-layer-vis-btn",
+      "lockText": "U",
+      "lockClasses": "ws-layer-lock-btn"
+    },
+    {
+      "i": 2,
+      "html": "<div class=\"ws-layer-row ws-layer-active\"><button class=\"ws-layer-vis-btn ws-layer-visible\" title=\"Hide layer\">V</button><button class=\"ws-layer-lock-btn\" title=\"Lock layer\">U</button><span class=\"ws-",
+      "visText": "V",
+      "visClasses": "ws-layer-vis-btn ws-layer-visible",
+      "lockText": "U",
+      "lockClasses": "ws-layer-lock-btn"
+    }
+  ]
+}

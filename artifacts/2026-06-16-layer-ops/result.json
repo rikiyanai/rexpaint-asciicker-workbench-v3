@@ -1,0 +1,317 @@
+{
+  "overallPass": true,
+  "finalXpPath": "",
+  "layerCountAfterAdd": 5,
+  "results": [
+    {
+      "name": "fresh-mobile-first-screen",
+      "pass": true,
+      "error": "",
+      "data": {
+        "visible": true
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false
+      },
+      "post": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false
+      },
+      "screenshot": "artifacts/2026-06-16-layer-ops/01-fresh-mobile-first-screen.png"
+    },
+    {
+      "name": "apply-template",
+      "pass": true,
+      "error": "",
+      "data": {
+        "template": "player_native_idle_only",
+        "sessionId": "a83c7f72"
+      },
+      "pre": {
+        "sessionId": null,
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": false
+      },
+      "post": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-layer-ops/02-apply-template.png"
+    },
+    {
+      "name": "open-layers-panel",
+      "pass": true,
+      "error": "",
+      "data": {
+        "initialLayerCount": 4,
+        "addBtnVisible": true,
+        "delBtnVisible": true,
+        "layers": [
+          {
+            "index": 0,
+            "active": false,
+            "locked": true,
+            "hidden": true,
+            "lockBtnText": "L",
+            "nameTxt": "Metadata"
+          },
+          {
+            "index": 1,
+            "active": false,
+            "locked": false,
+            "hidden": true,
+            "lockBtnText": "U",
+            "nameTxt": "Layer 1"
+          },
+          {
+            "index": 2,
+            "active": true,
+            "locked": false,
+            "hidden": false,
+            "lockBtnText": "U",
+            "nameTxt": "Visual"
+          },
+          {
+            "index": 3,
+            "active": false,
+            "locked": false,
+            "hidden": true,
+            "lockBtnText": "U",
+            "nameTxt": "Layer 3"
+          }
+        ]
+      },
+      "pre": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-layer-ops/03-open-layers-panel.png"
+    },
+    {
+      "name": "lock-layer-2",
+      "pass": true,
+      "error": "",
+      "data": {
+        "lockedBefore": false,
+        "lockedAfter": true,
+        "lockBtnText": "L"
+      },
+      "pre": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-layer-ops/04-lock-layer-2.png"
+    },
+    {
+      "name": "locked-layer-rejects-draw",
+      "pass": true,
+      "error": "",
+      "data": {
+        "cellBefore": {
+          "idx": 762,
+          "glyph": 0,
+          "fg": [
+            0,
+            0,
+            0
+          ],
+          "bg": [
+            255,
+            0,
+            255
+          ]
+        },
+        "cellAfter": {
+          "idx": 762,
+          "glyph": 0,
+          "fg": [
+            0,
+            0,
+            0
+          ],
+          "bg": [
+            255,
+            0,
+            255
+          ]
+        },
+        "rejected": true,
+        "statusText": ""
+      },
+      "pre": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-layer-ops/05-locked-layer-rejects-draw.png"
+    },
+    {
+      "name": "unlock-layer-2",
+      "pass": true,
+      "error": "",
+      "data": {
+        "locked": false,
+        "lockBtnText": "U"
+      },
+      "pre": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-layer-ops/06-unlock-layer-2.png"
+    },
+    {
+      "name": "active-layer-switch",
+      "pass": true,
+      "error": "",
+      "data": {
+        "activeLayerBefore": 2,
+        "activeLayerAfter": 1,
+        "activeRowIndex": 1,
+        "switched": true
+      },
+      "pre": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-layer-ops/07-active-layer-switch.png"
+    },
+    {
+      "name": "move-layer-up",
+      "pass": true,
+      "error": "",
+      "data": {
+        "namesBefore": [
+          "Metadata",
+          "Layer 1",
+          "Visual",
+          "Layer 3"
+        ],
+        "namesAfter": [
+          "Metadata",
+          "Visual",
+          "Layer 1",
+          "Layer 3"
+        ],
+        "reordered": true
+      },
+      "pre": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-layer-ops/08-move-layer-up.png"
+    },
+    {
+      "name": "move-layer-down",
+      "pass": true,
+      "error": "",
+      "data": {
+        "namesBefore": [
+          "Metadata",
+          "Visual",
+          "Layer 1",
+          "Layer 3"
+        ],
+        "namesAfter": [
+          "Metadata",
+          "Layer 1",
+          "Visual",
+          "Layer 3"
+        ],
+        "reordered": true
+      },
+      "pre": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-layer-ops/09-move-layer-down.png"
+    },
+    {
+      "name": "add-layer-and-persist",
+      "pass": true,
+      "error": "",
+      "data": {
+        "countBefore": 4,
+        "countAfterAdd": 5,
+        "delta": 1,
+        "saved": true,
+        "sessionId": "a83c7f72"
+      },
+      "pre": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "post": {
+        "sessionId": "a83c7f72-0303-4bdf-96ce-548542f65c1d",
+        "sessionDirty": false,
+        "wsAdvanced": false,
+        "wsSessionLoaded": true
+      },
+      "screenshot": "artifacts/2026-06-16-layer-ops/10-add-layer-and-persist.png"
+    }
+  ]
+}
