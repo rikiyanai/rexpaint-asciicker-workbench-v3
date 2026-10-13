@@ -17,7 +17,7 @@ var STATIC_ASSET_PATHS = [
   'touch-gestures.mjs',
   'manifest.json',
   'rexpaint-editor/canvas.js',
-  'rexpaint-editor/adaptive-stroke-tool.js?v=20261012-slope1',
+  'rexpaint-editor/tools/adaptive-stroke-tool.js?v=20261012-slope1',
   'rexpaint-editor/cp437-font.js',
   'rexpaint-editor/editor-app.js',
   'rexpaint-editor/glyph-picker.js',

@@ -208,6 +208,10 @@ def main() -> int:
         help="directory holding Knight1_*.png (defaults to $KNIGHT_24PX_DIR, "
              "legacy $ASCIICKER_KNIGHT_DIR); required unless --skip-preprocess",
     )
+    parser.add_argument(
+        "--skip-preprocess", action="store_true",
+        help="skip composing knight sheets (use existing files)",
+    )
     args = parser.parse_args()
 
     if not args.skip_preprocess:

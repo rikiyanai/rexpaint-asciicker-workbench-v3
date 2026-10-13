@@ -30,28 +30,22 @@
   },
   "layer_definitions": {
     "player_native_idle_only:idle": {
-      "layer_definition_id": 700,
-      "rig_definition_id": null
+      "layer_definition_id": 700
     },
     "player_native_full:idle": {
-      "layer_definition_id": 700,
-      "rig_definition_id": null
+      "layer_definition_id": 700
     },
     "player_native_full:attack": {
-      "layer_definition_id": 701,
-      "rig_definition_id": null
+      "layer_definition_id": 701
     },
     "player_native_full:death": {
-      "layer_definition_id": 702,
-      "rig_definition_id": null
+      "layer_definition_id": 702
     },
     "mounted_native_full:mounted_idle": {
-      "layer_definition_id": 760,
-      "rig_definition_id": null
+      "layer_definition_id": 760
     },
     "mounted_native_full:mounted_attack": {
-      "layer_definition_id": 761,
-      "rig_definition_id": null
+      "layer_definition_id": 761
     }
   }
 }
