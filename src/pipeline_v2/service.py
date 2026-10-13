@@ -53,6 +53,7 @@ from .source_manifest import (
     validate_manifest,
 )
 from .storage import save_json, load_json
+from .runtime_contract import action_spec_for_session, validate_runtime_export
 from .xp_codec import write_xp, read_xp
 
 # Ensure the scripts directory is on sys.path so that mounted_rider_offset
@@ -4255,6 +4256,20 @@ def workbench_web_skin_payload(session_id: str, req_id: str) -> dict[str, Any]:
         export = workbench_export_xp(session_id, req_id)
         xp_path = Path(export["xp_path"]).expanduser().resolve()
         checksum = export["checksum"]
+    # A4 validate step: sessions carrying template identity (template-owned or
+    # bundle action sessions) are gate-checked against their registry action
+    # spec. Breach raises 422 here — no payload bytes escape (fail-closed, A6).
+    # Sessions without template identity (raw uploads, root blanks, pipeline
+    # jobs) have no normalized spec to validate against and skip this step.
+    action_spec = action_spec_for_session(sess, load_template_registry())
+    validation: list[dict[str, Any]] | None = None
+    if action_spec is not None:
+        gates = _run_structural_gates(str(xp_path), action_spec, req_id)
+        validation = validate_runtime_export(
+            gates,
+            context=f"session '{session_id}'",
+            req_id=req_id,
+        )
     try:
         raw = xp_path.read_bytes()
     except Exception as e:
@@ -4262,7 +4277,7 @@ def workbench_web_skin_payload(session_id: str, req_id: str) -> dict[str, Any]:
     # Mirrors the disk-based TERM++ sandbox override set; web build skin reload can use same names.
     override_names = _termpp_skin_override_names(load_template_registry())
     doc_contract = _skin_payload_doc_contract(
-        sess, family, str(xp_path), preview_normalized, checksum, req_id,
+        sess, family, str(xp_path), preview_normalized, checksum, validation, req_id,
     )
     return {
         "session_id": session_id,
@@ -4273,6 +4288,7 @@ def workbench_web_skin_payload(session_id: str, req_id: str) -> dict[str, Any]:
         "override_names": override_names,
         "reload_player_name": "player",
         "preview_normalized": preview_normalized,
+        "validation": validation,
         "doc_contract": doc_contract,
     }
 
@@ -4283,6 +4299,7 @@ def _skin_payload_doc_contract(
     xp_path: str,
     preview_normalized: bool,
     checksum: str,
+    validation: list[dict[str, Any]] | None,
     req_id: str,
 ) -> dict[str, Any]:
     """Normalized doc-kind/metadata record consumed by Test This Skin.
@@ -4323,6 +4340,7 @@ def _skin_payload_doc_contract(
         "layer0_actual": actual_l0,
         "layer0_compat": bool(expected_l0) and actual_l0 == expected_l0,
         "preview_normalized": preview_normalized,
+        "validation": validation,
         "checksum": checksum,
     }
 
@@ -4499,17 +4517,14 @@ def workbench_export_bundle(bundle_id: str, req_id: str) -> dict[str, Any]:
             continue
         export = workbench_export_xp(act_state.session_id, req_id)
 
-        # Run structural gates G7-G12
+        # Run structural gates G7-G12 (fail-closed via runtime contract adapter)
         gates = _run_structural_gates(export["xp_path"], action_spec, req_id)
-        gate_dicts = [{"gate": g.gate, "verdict": g.verdict, "details": g.details} for g in gates]
+        gate_dicts = validate_runtime_export(
+            gates,
+            context=f"action '{act_key}'",
+            req_id=req_id,
+        )
         gate_reports[act_key] = gate_dicts
-        blocked = [g for g in gates if g.verdict == THRESHOLD_BREACHED]
-        if blocked:
-            gate_names = ", ".join(g.gate for g in blocked)
-            raise ApiError(
-                f"action '{act_key}' failed structural gates: {gate_names}",
-                "structural_gate_failed", "workbench", req_id, 422,
-            )
 
         exports[act_key] = {
             "session_id": act_state.session_id,
@@ -4585,15 +4600,13 @@ def workbench_web_skin_bundle_payload(bundle_id: str, req_id: str) -> dict[str, 
         export = workbench_export_xp(act_state.session_id, req_id)
         xp_path = Path(export["xp_path"]).expanduser().resolve()
 
-        # Structural gates G7-G12
+        # Structural gates G7-G12 (fail-closed via runtime contract adapter)
         gates = _run_structural_gates(str(xp_path), action_spec, req_id)
-        blocked = [g for g in gates if g.verdict == THRESHOLD_BREACHED]
-        if blocked:
-            gate_names = ", ".join(g.gate for g in blocked)
-            raise ApiError(
-                f"action '{act_key}' failed structural gates: {gate_names}",
-                "structural_gate_failed", "workbench", req_id, 422,
-            )
+        validate_runtime_export(
+            gates,
+            context=f"action '{act_key}'",
+            req_id=req_id,
+        )
 
         raw = xp_path.read_bytes()
         ahsw_range = action_spec.get("ahsw_range", "all_16")
