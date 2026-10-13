@@ -1,12 +1,11 @@
 """Derive {family}-spatial.json from per-layer PNG alpha masks.
 
 For each verified layer in FINAL JSON with a canonical region, the
-per-layer PNG at /Users/r/Desktop/bundle_layer_audit_20260520/png_layers/
-{family}-{ahsw}_L{idx}.png carries the spatial truth: non-transparent
-cells of that PNG ARE the spatial mask for the layer's role within the
-frame. This script extracts that mask, collapses it across all frames
-in the sheet to one canonical frame, and emits per-region bboxes in
-the schema build_regions_grid() consumes.
+per-layer PNG at <PNG_ROOT>/{family}-{ahsw}_L{idx}.png carries the spatial
+truth: non-transparent cells of that PNG ARE the spatial mask for the
+layer's role within the frame. This script extracts that mask, collapses
+it across all frames in the sheet to one canonical frame, and emits
+per-region bboxes in the schema build_regions_grid() consumes.
 
 For families that already have human-painted maps via the launcher's
 xp_uv_body_viewer --anchor-review path, this file complements rather
@@ -14,11 +13,14 @@ than replaces — both are read by load_optional_semantic_bias via
 {role}-*.json globs.
 
 Run:
-  python3 pipeline-v3/scripts/derive_spatial_maps_from_layer_pngs.py
+  python3 pipeline-v3/scripts/derive_spatial_maps_from_layer_pngs.py \
+    --final-json <STATE_FINAL_JSON> --png-root <PNG_LAYERS_DIR>
 """
 from __future__ import annotations
 
+import argparse
 import json
+import os
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -31,13 +33,20 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from glyph_assignment.final_json_ingest import build_layer_regions_index
 
-FINAL_JSON = Path(
-    "/Users/r/Desktop/bundle_layer_audit_20260520/verifier_state_backups/"
-    "state_FINAL_20260521-163326.json"
-)
-PNG_ROOT = Path("/Users/r/Desktop/bundle_layer_audit_20260520/png_layers")
 XP_DIR = ROOT / "sprites"
 SEMANTIC_MAPS_DIR = ROOT / "docs" / "research" / "ascii" / "semantic_maps"
+
+
+def _resolve_required(value: str | Path | None, env_key: str, flag: str) -> Path:
+    raw = value or os.environ.get(env_key)
+    if not raw:
+        raise SystemExit(
+            f"missing required input: pass {flag} <path> or set ${env_key}"
+        )
+    path = Path(raw)
+    if not path.exists():
+        raise SystemExit(f"{flag} does not exist: {path}")
+    return path
 
 
 def _load_xp_metadata(family: str, ahsw: str) -> dict | None:
@@ -156,7 +165,9 @@ def _build_frame_regions(
     return out
 
 
-def derive_family_spatial(family: str, layer_index_entry: dict) -> dict | None:
+def derive_family_spatial(
+    family: str, layer_index_entry: dict, png_root: Path
+) -> dict | None:
     """Build {family}-spatial.json payload from per-layer PNG alpha masks."""
     # All layers within a family share the same XP metadata (frame_w/h) by
     # convention. Pick the first verified ahsw to read it from.
@@ -186,7 +197,7 @@ def derive_family_spatial(family: str, layer_index_entry: dict) -> dict | None:
         region = entry["region"]
         if region in ("unknown",):
             continue
-        png_path = PNG_ROOT / f"{family}-{ahsw}_L{layer_idx}.png"
+        png_path = png_root / f"{family}-{ahsw}_L{layer_idx}.png"
         cells = _collapse_alpha_to_frame_mask(
             png_path, frame_w, frame_h, layer_w, layer_h
         )
@@ -238,14 +249,22 @@ def derive_family_spatial(family: str, layer_index_entry: dict) -> dict | None:
     }
 
 
-def main() -> int:
-    layer_index = build_layer_regions_index(FINAL_JSON)
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--final-json", type=Path, default=None)
+    parser.add_argument("--png-root", type=Path, default=None)
+    args = parser.parse_args(argv)
+    final_json = _resolve_required(
+        args.final_json, "ASCIICKER_FINAL_JSON", "--final-json"
+    )
+    png_root = _resolve_required(args.png_root, "ASCIICKER_PNG_ROOT", "--png-root")
+    layer_index = build_layer_regions_index(final_json)
 
     SEMANTIC_MAPS_DIR.mkdir(parents=True, exist_ok=True)
     written = []
     for family in ("wolfie", "bigbee", "wolack"):
         print(f"deriving {family}-spatial.json...")
-        payload = derive_family_spatial(family, layer_index.get(family, {}))
+        payload = derive_family_spatial(family, layer_index.get(family, {}), png_root)
         if payload is None:
             print(f"  SKIP: no derivable data for {family}")
             continue

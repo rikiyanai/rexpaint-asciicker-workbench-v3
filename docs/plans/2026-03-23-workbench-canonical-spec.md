@@ -4513,15 +4513,21 @@ system or add a runtime dependency on another checkout.
 
 ### 2.16.6 Current Verdict
 
-**SUPERSEDED BY THE 2026-10-12 LOCAL IMPLEMENTATION CHECKPOINT BELOW.** At the
-time of this audit, the Browse-first shell, slope brush, Refrog presentation,
+**SUPERSEDED BY THE 2026-10-12 LOCAL IMPLEMENTATION CHECKPOINT BELOW AND THE
+2026-10-13 LANE-D EVIDENCE CHECKPOINT AT THE END OF THIS FILE.** At the time
+of this audit, the Browse-first shell, slope brush, Refrog presentation,
 control reduction, registry action selector, and mobile keyboard bridge were
-not implemented. They now exist locally at `5554f32`, but remain unaccepted and
-undeployed. Browse still lacks the selected whole-sheet preview; the end-to-end
-mobile authoring and PNG-conversion flow is incomplete; `Test This Skin` is not
-the normalized-contract CP437 runtime handoff; exact later-brush provenance is
-unrecovered; and self-containment still fails. No deployment or acceptance
-claim follows from the local checkpoint.
+not implemented. They now exist locally at `5554f32`, extended at `993bec7`
+(normalized-contract `Test This Skin` handoff, Browse selected-sheet preview,
+Open-stays-in-Edit, Layers-Edit-only, raw-XP primary path, CP437 shade
+ladder, slope hardening contracts). Stage of each slice: Implemented and
+Connected; headed verification, operator acceptance, and deployment are still
+open. The end-to-end mobile authoring and PNG-conversion flow is incomplete;
+`Test This Skin` is not yet proven on the normalized-contract CP437 runtime
+handoff against the current document; exact later-brush provenance is
+unrecovered; and self-containment still fails (38 stored CE-review JSON refs
+under `.context/`, disposition recorded in the failure log). No deployment or
+acceptance claim follows from the local checkpoint.
 
 ---
 
@@ -4544,8 +4550,8 @@ not a task plan - it is a gate list. Migration is ready when all blocking gates 
 | UQ-007 runtime identity layer landed | §Unified Queue `UQ-007` | CLOSED - `config/runtime_identity_registry.json` owns live `skin_definition_id` / `presentation_kind_id` / `layer_definition_id` values and backend/helper/export/payload surfaces emit them |
 | UQ-008 mounted-family parity for `wolfie` / `wolack` proven | §Unified Queue `UQ-008` | PROOF BLOCKED - native builders, authorable registry state, and browser/backend artifact surfaces exist; `mounted_authoring_e2e` runtime proof still must prove generated rows and no legacy fallback. Additionally blocked on `UQ-R15` — old resolver proving mounted rows is not acceptable evidence. |
 | UQ-009 current-scope Section 3 signoff + contract runners current | §Unified Queue `UQ-009` | PARTIAL |
-| UQ-010 Y9-2 wizard / launcher gateway wired to shared bundle-authoring contract | §Unified Queue `UQ-010` | OPEN |
-| UQ-011 cutover support gates ready (`§2.11`, `§2.12`) | §Unified Queue `UQ-011` | OPEN |
+| UQ-010 Y9-2 wizard / launcher gateway wired to shared bundle-authoring contract | §Unified Queue `UQ-010` | GATED OPEN OBLIGATION — converges launcher, wizard, MCP, browser, CLI on one shared headless bundle-authoring contract only after its technical prerequisites pass or the operator separately reprioritizes that gateway |
+| UQ-011 cutover support gates ready (`§2.11`, `§2.12`) | §Unified Queue `UQ-011` | PARKED — frozen-SHA public cutover, rollback, credential, deploy-path, live headed proof; starts only on explicit operator cutover authorization |
 | UQ-R15 Y9-2 runtime visual-resolution system deleted and replaced by `RenderPlanTable` | §2.15 | OPEN — §2.15.1 deletion list components still present in gameplay path; `render_plans.json` not yet emitted by compiler; no proof that one mounted crossbow attack `ServerVisualKey` renders through replacement path with no call into deleted components. FL-3861. |
 | FL-3862 Runtime Parser Gate — `verify-current` and `build-web.sh` must invoke C++ parser | §2.10 / §2.15 | OPEN — build-web.sh line 129 runs Python-only validation; C++ runtime parser never called; mandatory before any `RenderPlanTable` proof claim. |
 | FL-3863 `ActorVisualProfile` authored object — pipeline-v3 missing data structure | §2.5 | OPEN — no structure captures skin_id, variation, body/wearable/mount layer assignments; `runtime_identity_registry.json` covers IDs only. |
@@ -4558,7 +4564,7 @@ not a task plan - it is a gate list. Migration is ready when all blocking gates 
 | Wearable/item authoring surface | §2.3.6 / §2.3.7 | EXPLICITLY DEFERRED post skin-authoring signoff |
 | Proof-only color-variant family authoring surface | §2.5 misalignment ledger | PROOF-ONLY by policy (`service.py`, `workbench.js`) |
 | M2 E2E proof run (PNG→WS→export, committed headed run) | §Milestone 2 | PARTIAL |
-| UQ-013 small-screen layout and persistence | §Unified Queue `UQ-013` | OPEN |
+| UQ-013 small-screen layout and persistence | §Unified Queue `UQ-013` | ACTIVE BY OPERATOR REPRIORITIZATION — small-screen/touch layout and three-tier persistence; native OS keyboard appearance still needs real-device acceptance |
 | Whole-sheet browse-model split implementation | §1.8 / §2 boundary | DECISION FIXED - browse opens XP/root-editor documents first, layer 0 is editable in principle, and template metadata compatibility is a later wrapper concern; implementation remains intentionally sequenced after grid contrast, expanded grid presets, grid-scoped replace semantics, and their proof updates |
 | FL-3861 `render_plans.json` compiler output | §2.15 | OPEN — non-blocking only if UQ-R15 is treated as a Y9-2-first deliverable; becomes blocking once pipeline-v3 owns the compile step |
 | RenderPlan preview surface (Step 11 of content authoring flow) | §2.10 | OPEN — no surface exists to inspect ordered layer stacks before activation |
@@ -4642,3 +4648,40 @@ back to an ambient/default Y9-2 bundle. The normalized viewer is evidence and
 inspection infrastructure; runtime authority continues to come from the
 reviewed V3 registry and Y9-2 identity/runtime contract rather than a second
 viewer-owned model.
+
+## 2026-10-13 Lane-D Evidence Checkpoint (Tracking/Proof Lane)
+
+**Stage: Executed locally, not accepted or deployed.** Lane D owns only
+`tests/*`, `scripts/*` verifier/harness, and the two canon docs; it makes no
+production claims for lanes A/B/C. Status vocabulary below is one of
+Implemented / Connected / Executed / Verified / Accepted / Deployed — no row
+is collapsed to done, and UI acceptance is recorded separately from
+backend/grep/evaluate/diagnostic-only proof.
+
+1. **Register:** the consolidated register at
+   `docs/PLAYWRIGHT_FAILURE_LOG.md` stays the execution-handoff authority;
+   queue truth is `UQ-006` open/blocked, `UQ-008` proof-blocked, `UQ-009`
+   partial/support, `UQ-010` gated, `UQ-011` parked, `UQ-013` active,
+   `UQ-R15`/`FL-3861` through `FL-3864` open. Non-blocking gaps (wearable,
+   color variants, `bigbee`, M2 headed PNG-export, RenderPlan preview, export
+   artifact, Bundle Mods E2E, hash parity) stay tracked, not closed. `DR-*`
+   and `XR-*` identifiers are preserved; there is no misc-cleanup bucket.
+2. **Self-containment:** the 9 live-script absolute paths across five scripts
+   are fixed with `--final-json`/`--png-root`/`--knight-dir`/`--state-final`/`--final`
+   flags plus `$ASCIICKER_FINAL_JSON`/`$ASCIICKER_PNG_ROOT`/`$ASCIICKER_KNIGHT_DIR`/`$ASCIICKER_STATE_FINAL`
+   fallbacks and fail-closed actionable errors; missing operator-local corpus
+   exits non-zero instead of silently degrading. Audit blocking count moves
+   47 → 38. The remaining 38 are stored CE-review JSON under `.context/`
+   (historical evidence, disposition recorded in the failure log, not edited
+   and not presented as fixed).
+3. **URL proof (local only, no public deploy):** root-hosted `/healthz` 200,
+   `/workbench` 200 with `__WB_BASE_PATH = ""`; prefixed `/xpedit/healthz`
+   200, `/xpedit/workbench` 200 with `__WB_BASE_PATH = "/xpedit"` and
+   `/xpedit`-prefixed asset URLs. `rikiworld.com/xpedit` remains out of scope
+   and untouched.
+4. **Focused suites (all executed, none accepted as product proof):** npm
+   green end to end — template-gating 38/38, action-navigation 7/7, node
+   --test batch 22/22, adaptive-stroke 16/16 — plus XP-preview-playback 3/3
+   and pytest 71/71 (`test_base_path`, provenance-manifest, ledger). No
+   service-worker freshness automation exists yet — recorded as an open gap,
+   not claimed.

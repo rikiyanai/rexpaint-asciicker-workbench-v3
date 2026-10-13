@@ -44,10 +44,9 @@ DEFAULT_REQUIREMENTS = SM / "actor_visual_profile_requirements.json"
 DEFAULT_PACKET = SM / "manual_candidate_review.json"
 DEFAULT_OUT = SM / "review_provenance_manifest.json"
 # Operator-local immutable hand corpus (absent on CI / other machines by design).
-DEFAULT_FINAL = Path(
-    "/Users/r/Desktop/bundle_layer_audit_20260520/verifier_state_backups/"
-    "state_FINAL_20260521-163326.json"
-)
+# Pass --final <path> (or $ASCIICKER_STATE_FINAL) for presence-confirmation;
+# without it the manifest records file_present_on_this_machine=False.
+DEFAULT_FINAL: Path | None = None
 SCHEMA = "review_provenance_manifest/v1"
 
 
@@ -106,7 +105,7 @@ def build_manifest(
     decisions: Path = DEFAULT_DECISIONS,
     requirements: Path = DEFAULT_REQUIREMENTS,
     packet: Path = DEFAULT_PACKET,
-    final_corpus: Path = DEFAULT_FINAL,
+    final_corpus: Path | None = DEFAULT_FINAL,
 ) -> dict[str, Any]:
     distinct = _distinct_card_final_sha(cards)
     if len(distinct) != 1:
@@ -116,8 +115,12 @@ def build_manifest(
         )
     card_bound_final_sha = distinct[0]
 
-    final_present = final_corpus.is_file()
-    final_file_sha = _sha256_file(final_corpus) if final_present else None
+    final_present = bool(final_corpus is not None and final_corpus.is_file())
+    final_file_sha = (
+        _sha256_file(final_corpus)
+        if (final_present and final_corpus is not None)
+        else None
+    )
     final_mismatch = bool(final_present and final_file_sha != card_bound_final_sha)
 
     manifest = {
@@ -135,7 +138,7 @@ def build_manifest(
             "role": "immutable human hand corpus (operator-local)",
             "expected_sha256": card_bound_final_sha,
             "bound_by": "every evidence card's source_final_sha256",
-            "operator_local_path": str(final_corpus),
+            "operator_local_path": (str(final_corpus) if final_corpus else None),
             "file_present_on_this_machine": final_present,
             "file_sha256": final_file_sha,
             "file_matches_card_binding": (None if not final_present else not final_mismatch),
@@ -186,7 +189,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--decisions", type=Path, default=DEFAULT_DECISIONS)
     parser.add_argument("--requirements", type=Path, default=DEFAULT_REQUIREMENTS)
     parser.add_argument("--packet", type=Path, default=DEFAULT_PACKET)
-    parser.add_argument("--final", type=Path, default=DEFAULT_FINAL)
+    parser.add_argument(
+        "--final", type=Path,
+        default=(Path(os.environ["ASCIICKER_STATE_FINAL"])
+                 if os.environ.get("ASCIICKER_STATE_FINAL") else DEFAULT_FINAL),
+        help="operator-local state_FINAL corpus for presence-confirmation "
+             "(or $ASCIICKER_STATE_FINAL); omit when absent by design",
+    )
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--write", action="store_true")
     return parser.parse_args(argv)

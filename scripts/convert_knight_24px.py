@@ -1,6 +1,6 @@
 """Knight 24px smoke test for the FINAL-JSON-derived bias pipeline.
 
-Source: /Users/r/Downloads/24px Mini Characters copy/images/Characters/Knight1_*.png
+Source: <KNIGHT_DIR>/Knight1_*.png (pass --knight-dir or set $ASCIICKER_KNIGHT_DIR)
   - Knight1_Idle.png    208x104  (4 frames × 2 angles, 52px tile)
   - Knight1_Move.png    208x416  (4 frames × 8 angles)
   - Knight1_Attack.png  208x416  (4 frames × 8 angles)
@@ -16,12 +16,13 @@ writes them into pipeline-v3/output/24px-mini-characters/source_sheets/
 as `knight1-{family}-source.png`, then invokes the existing converter.
 
 Run:
-  python3 pipeline-v3/scripts/convert_knight_24px.py
+  python3 pipeline-v3/scripts/convert_knight_24px.py --knight-dir <dir>
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -30,7 +31,6 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-KNIGHT_DIR = Path("/Users/r/Downloads/24px Mini Characters copy/images/Characters")
 SOURCE_SHEETS = ROOT / "output" / "24px-mini-characters" / "source_sheets"
 OUT_DIR = ROOT / "output" / "24px-mini-characters-template-2x"
 
@@ -113,18 +113,39 @@ def _compose_plydie_sheet(knight_faint: Image.Image) -> Image.Image:
     return out
 
 
-def preprocess() -> dict:
+def _resolve_knight_dir(value: Path | None) -> Path:
+    raw = value or os.environ.get("ASCIICKER_KNIGHT_DIR")
+    if not raw:
+        raise SystemExit(
+            "missing knight source dir: pass --knight-dir <dir> or set "
+            "$ASCIICKER_KNIGHT_DIR (dir must contain Knight1_*.png)"
+        )
+    knight_dir = Path(raw)
+    missing = [
+        name for name in (
+            "Knight1_Attack.png", "Knight1_Move.png",
+            "Knight1_Idle.png", "Knight1_Faint.png",
+        ) if not (knight_dir / name).is_file()
+    ]
+    if missing:
+        raise SystemExit(
+            f"--knight-dir {knight_dir} is missing: {', '.join(missing)}"
+        )
+    return knight_dir
+
+
+def preprocess(knight_dir: Path) -> dict:
     knight_attack = _read_knight_strip(
-        KNIGHT_DIR / "Knight1_Attack.png", 4 * TILE_PX, ANGLES * TILE_PX
+        knight_dir / "Knight1_Attack.png", 4 * TILE_PX, ANGLES * TILE_PX
     )
     knight_move = _read_knight_strip(
-        KNIGHT_DIR / "Knight1_Move.png", 4 * TILE_PX, ANGLES * TILE_PX
+        knight_dir / "Knight1_Move.png", 4 * TILE_PX, ANGLES * TILE_PX
     )
     knight_idle = _read_knight_strip(
-        KNIGHT_DIR / "Knight1_Idle.png", 4 * TILE_PX, 2 * TILE_PX
+        knight_dir / "Knight1_Idle.png", 4 * TILE_PX, 2 * TILE_PX
     )
     knight_faint = _read_knight_strip(
-        KNIGHT_DIR / "Knight1_Faint.png", TILE_PX, TILE_PX
+        knight_dir / "Knight1_Faint.png", TILE_PX, TILE_PX
     )
 
     SOURCE_SHEETS.mkdir(parents=True, exist_ok=True)
@@ -167,14 +188,23 @@ def main() -> int:
         help="compose knight source sheets but do not run the converter",
     )
     parser.add_argument(
+        "--knight-dir", type=Path, default=None,
+        help="dir with Knight1_*.png (or $ASCIICKER_KNIGHT_DIR); required "
+             "unless --skip-preprocess",
+    )
+    parser.add_argument(
         "--skip-preprocess", action="store_true",
         help="skip composing knight sheets (use existing files)",
     )
     args = parser.parse_args()
 
+    knight_dir = (
+        _resolve_knight_dir(args.knight_dir) if not args.skip_preprocess else None
+    )
+
     if not args.skip_preprocess:
         print("preprocessing knight source sheets...")
-        composed = preprocess()
+        composed = preprocess(knight_dir)
         for family, info in composed.items():
             print(f"  knight1-{family}-source.png  {info['size'][0]}x{info['size'][1]}")
         print()
