@@ -285,6 +285,24 @@ run('slope brush revisiting a cell repaints it with the current segment glyph', 
   assert.equal(glyphAt(canvas, 1, 0), 45);
 });
 
+run('slope brush cancel and bounds stop later samples without writing outside', () => {
+  const canvas = new MemoryCanvas(3, 3);
+  const tool = new SlopeStrokeTool();
+  tool.setCanvas(canvas);
+  tool.startDrag(-1, 0);
+  assert.equal(tool.isDragging, false);
+  assert.equal(canvas.calls.length, 0);
+
+  tool.startDrag(0, 0);
+  tool.drag(1, 0);
+  tool.cancelDrag();
+  const writesAtCancel = canvas.calls.length;
+  tool.drag(2, 0);
+  assert.equal(canvas.calls.length, writesAtCancel);
+  assert.equal(tool.isDragging, false);
+  assert.ok(canvas.calls.every(([x, y]) => x >= 0 && y >= 0 && x < 3 && y < 3));
+});
+
 run('a whole slope stroke is one undoable canvas operation with stable redo', () => {
   const canvas = new MemoryCanvas();
   const tool = new SlopeStrokeTool();
@@ -299,6 +317,5 @@ run('a whole slope stroke is one undoable canvas operation with stable redo', ()
   assert.equal(glyphAt(canvas, 1, 0), 45);
   assert.equal(glyphAt(canvas, 2, 1), 124);
 });
-
 if (process.exitCode) process.exit(process.exitCode);
-process.stdout.write('15 passed, 0 failed\n');
+process.stdout.write('16 passed, 0 failed\n');
