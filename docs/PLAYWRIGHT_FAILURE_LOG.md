@@ -12774,3 +12774,42 @@ planned requirement and is missing from the current V3 implementation.** The
 operator's 2026-10-12 statement reaffirmed that requirement; it did not create
 it. The separate claim that a later implementation existed remains an active
 source-recovery task.
+
+## 2026-10-12 — REXPaint Web product correction implemented locally
+
+**Status:** VERIFIED LOCALLY / NOT ACCEPTED / NOT DEPLOYED
+
+The prior Auto-wall-only implementation did not satisfy the operator's explicit
+description of the later brush. Repository research already documented a
+separate direction-to-glyph family (`-`, `|`, `/`, `\\`). V3 now exposes that
+behavior as **Slope brush** while preserving **Auto-wall** as the distinct
+connectivity tool. Focused contracts cover horizontal, vertical, both diagonal
+directions, turns, wall corners/junctions, bounds, apply modes, cancellation,
+and single-operation undo behavior.
+
+Additional corrections in the same product slice:
+
+- visible and PWA branding changed from XPEdit / Whole-Sheet XPEdit to
+  **REXPaint Web**;
+- registry actions collapsed from a wall of buttons to one grouped selector;
+- secondary editor tools moved under `More tools`;
+- the production DOM-ID overlay is off by default and no longer injects a
+  button;
+- the mobile default hides disabled document actions, the alpha banner, and
+  classification detail while retaining the full registry truth in the
+  selector;
+- the mobile `Keyboard` action selects Text and focuses an `inputmode=text`
+  bridge, with best-effort Virtual Keyboard API activation.
+
+Headed proof used the exact current branch through the local V3 server. Desktop
+showed the renamed product, grouped action selector, collapsed tools, and active
+Slope brush. A 390×844 mobile emulation showed no horizontal overflow and the
+keyboard bridge reached Text mode with the input focused. Native Android/iOS
+keyboard appearance is not proven by desktop emulation and remains a
+real-device acceptance item. Live proof also exposed a stale service-worker
+brush module; cache versioning and the module URL were bumped before the proof
+was repeated.
+
+This closes the source-level/UI implementation gap for this slice only. It does
+not close the separate later-source provenance search, repository-wide
+self-containment failures, deployment, or operator acceptance.

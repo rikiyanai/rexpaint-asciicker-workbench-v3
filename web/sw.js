@@ -1,21 +1,23 @@
-// Minimal service worker for ASCIICKER XPEdit PWA shell (Tier C)
+// Minimal service worker for the REXPaint Web PWA shell (Tier C)
 // Cache-first for static assets, network-first for API requests.
 // NOTE: CACHE_NAME must be bumped on each deployment to evict old cached assets.
 
 // DEPLOY: bump this version string on each deployment to evict old cached assets.
 // Without a build system, this is the manual cache-bust mechanism.
-var CACHE_NAME = 'xpedit-v1-20260430';
+var CACHE_NAME = 'rexpaint-web-v2-20261012';
 
 var STATIC_ASSETS = [
   '/workbench.html',
   '/styles.css',
   '/workbench.js',
   '/workbench-template-gating.js',
+  '/workbench-action-navigation.js',
   '/whole-sheet-init.js',
   '/persistence.mjs',
   '/touch-gestures.mjs',
   '/manifest.json',
   '/rexpaint-editor/canvas.js',
+  '/rexpaint-editor/tools/adaptive-stroke-tool.js?v=20261012-slope1',
   '/rexpaint-editor/cp437-font.js',
   '/rexpaint-editor/editor-app.js',
   '/rexpaint-editor/glyph-picker.js',

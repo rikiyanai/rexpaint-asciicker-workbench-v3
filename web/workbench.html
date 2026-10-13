@@ -3,42 +3,101 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>ASCIICKER XPEdit</title>
+  <title>REXPaint Web — Asciicker</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/rexpaint-editor/styles.css">
   <link rel="manifest" href="/manifest.json">
 </head>
 <body>
-<!-- U6: Mobile top chrome bar — file ops + drawer toggles (hidden on desktop) -->
+<!-- U6: Mobile top chrome bar — editor drawers (document actions stay in the product toolbar) -->
 <div class="ws-mobile-top-bar">
-  <div class="ws-mobile-top-actions">
-    <button data-action="new" title="New">New</button>
-    <button data-action="save" title="Save">Save</button>
-    <button data-action="export" title="Export">Export</button>
-    <button data-action="open-file" title="Open File">Open</button>
-    <button data-action="save-file" title="Save to File">File</button>
-    <button data-action="share-file" title="Share/Export File">Share</button>
-  </div>
   <div class="ws-mobile-top-drawers">
     <button data-drawer-toggle="tools" title="Tools">Tools</button>
     <button data-drawer-toggle="layers" title="Layers">Layers</button>
-    <button data-drawer-toggle="browse" title="Browse">Browse</button>
-    <button data-drawer-toggle="info" title="Info">Info</button>
+    <button id="productMobileBrowseBtn" data-product-mode="browse" title="Browse documents">Browse</button>
+    <button id="mobileKeyboardBtn" type="button" title="Use the on-screen keyboard">Keyboard</button>
   </div>
 </div>
+<textarea id="mobileKeyboardInput" class="ws-mobile-keyboard-input" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="REXPaint Web mobile text input"></textarea>
 
 <div class="wrap">
+  <header id="productShell" class="panel" data-mode="browse" aria-label="REXPaint Web product shell">
+    <div id="productToolbar" class="row" role="toolbar" aria-label="Document actions">
+      <button id="productBrowseBtn" type="button" class="primary" aria-pressed="true">Browse</button>
+      <button id="productEditBtn" type="button" aria-pressed="false">Edit</button>
+      <button id="btnNewXp" class="primary" disabled>New</button>
+      <button id="btnOpenFile" disabled>Open</button>
+      <button id="btnSave" disabled>Save</button>
+      <button id="btnExport" disabled>Export</button>
+      <button id="webbuildQuickTestBtn" class="success" disabled>Test This Skin</button>
+      <button id="reportBugBtn" class="danger">Report Bug</button>
+    </div>
+    <div id="productActionNavigation" class="row" data-integration-hook="registry-action-navigation" aria-label="Contextual action navigation">
+      <div id="registryActionCatalog" class="registry-action-catalog small">Loading registry actions…</div>
+      <div id="bundleActionTabs" class="row hidden" style="gap:0; margin-top:6px;"></div>
+      <div id="bundleStatus" class="small hidden"></div>
+    </div>
+  </header>
+
   <div class="panel alpha-banner" data-panel-number="1 banner">
     <div class="row" style="justify-content:space-between; align-items:flex-start; gap:12px;">
       <div>
         <div class="alpha-banner-title">PRE-ALPHA, PLEASE REPORT ANY BUGS</div>
-        <div class="small alpha-banner-copy">Workbench and the embedded XPEdit are still under active development. Expect rough edges. If something feels confusing, slow, or broken, treat that as a bug.</div>
+        <div class="small alpha-banner-copy">REXPaint Web is still under active development. Expect rough edges. If something feels confusing, slow, or broken, treat that as a bug.</div>
       </div>
-      <button id="reportBugBtn" class="danger">Report Bug</button>
     </div>
   </div>
-  <h1>Asciicker XPEdit <span id="sessionDirtyBadge" class="small" style="margin-left:8px; font-weight:normal;">Session: idle</span></h1>
+  <h1>REXPaint Web <span id="sessionDirtyBadge" class="small" style="margin-left:8px; font-weight:normal;">Session: idle</span></h1>
 
+  <section id="productBrowsePanel" class="panel" aria-label="Browse XP documents">
+    <h3>Browse Documents</h3>
+    <div id="productBrowseSurface" data-integration-hook="root-editor-browse"></div>
+  </section>
+  <div id="productEditEmptyState" class="panel hidden">Open or create an XP document to edit it here.</div>
+  <div id="draftRestoreBanner" class="panel draft-restore-banner hidden" data-panel-number="3b draft-restore">
+    <div class="draft-restore-row">
+      <div>
+        <div class="draft-restore-title">Unsaved draft found</div>
+        <div id="draftRestoreInfo" class="small">A browser draft from a previous session is available.</div>
+      </div>
+      <div class="draft-restore-actions">
+        <button id="draftRestoreBtn" class="primary">Restore draft</button>
+        <button id="draftDismissBtn">Start fresh</button>
+      </div>
+    </div>
+  </div>
+  <div class="panel hidden" id="wholeSheetPanel" data-panel-number="10 whole-sheet">
+    <h3>REXPaint Web <span id="wholeSheetStatus" class="small" style="font-weight:normal;">not loaded</span></h3>
+    <div class="small whole-sheet-guide">This is the primary editor surface. In bundle mode: edit the active action here, then use <strong>Save</strong> to mark it ready without downloading, or <strong>Export</strong> if you also want an `.xp` artifact.</div>
+    <div id="wholeSheetMount"></div>
+  </div>
+  <div class="panel" id="webbuildDockPanel" data-panel-number="14 skin-test-dock">
+    <h3>Test This Skin</h3>
+    <div class="row"><span id="webbuildState" class="small">Webbuild not loaded</span></div>
+    <div id="webbuildHint" class="small">Tests the current whole-sheet document or ready bundle in the embedded Skin Dock/runtime.</div>
+    <iframe id="webbuildFrame" title="Asciicker Webbuild" class="hidden" style="width:100%; height:360px; border:1px solid #334; background:#000;"></iframe>
+    <details id="webbuildAdvancedDetails">
+      <summary>Advanced / Diagnostics</summary>
+      <div class="row" style="margin-top:8px;">
+        <button id="webbuildApplyInPlaceBtn" class="hidden" disabled title="Requires an active session and a ready webbuild runtime">Apply In Place</button>
+        <button id="webbuildApplyRestartBtn" class="hidden" disabled title="Requires an active session">Apply + Restart</button>
+        <button id="webbuildUploadTestBtn" title="Requires a valid flat runtime bundle">Upload Skin</button>
+        <input id="webbuildUploadTestInput" type="file" accept=".xp,application/octet-stream" class="hidden">
+        <button id="webbuildOpenBtn">Open Preview</button>
+        <button id="webbuildReloadBtn">Reload Preview</button>
+        <button id="webbuildApplySkinBtn" disabled>Apply Current XP (Advanced)</button>
+      </div>
+      <details id="webbuildDebugDetails">
+        <summary class="small">Advanced debug output</summary>
+        <pre id="webbuildOut"></pre>
+      </details>
+    </details>
+  </div>
+
+  <details id="advancedDiagnostics" class="panel" data-panel-number="advanced-diagnostics">
+    <summary>Advanced / Diagnostics</summary>
+    <div id="advancedDiagnosticSurfaces">
+      <button id="reportBugWholeSheetBtn">Report Bug (Editor)</button>
   <div id="firstStepsGuide" class="panel" data-panel-number="2 guide" style="border-left: 3px solid var(--accent);">
     <h3 style="margin-bottom:8px; color:var(--accent);">Getting Started</h3>
     <ol style="margin:0; padding-left:2ch; line-height:1.8; color:var(--fg);">
@@ -55,19 +114,6 @@
     <div id="runtimePreflightBannerText" class="small warn">Checking runtime bundle...</div>
   </div>
 
-  <div id="draftRestoreBanner" class="panel draft-restore-banner hidden" data-panel-number="3b draft-restore">
-    <div class="draft-restore-row">
-      <div>
-        <div class="draft-restore-title">Unsaved draft found</div>
-        <div id="draftRestoreInfo" class="small">A browser draft from a previous session is available.</div>
-      </div>
-      <div class="draft-restore-actions">
-        <button id="draftRestoreBtn" class="primary">Restore draft</button>
-        <button id="draftDismissBtn">Start fresh</button>
-      </div>
-    </div>
-  </div>
-
   <div class="panel" id="templatePanel" data-panel-number="4 template">
     <h3>Template</h3>
     <div class="row">
@@ -79,10 +125,6 @@
       <button id="templateApplyBtn" class="primary">Apply Template</button>
       <span id="templateStatus" class="small">Classic (single XP)</span>
     </div>
-    <div id="bundleActionTabs" class="row hidden" style="gap:0; margin-top:6px;">
-      <!-- Populated dynamically by JS -->
-    </div>
-    <div id="bundleStatus" class="small hidden"></div>
     <div id="templateGuide" class="small template-guide">
       Choose a template, then click <strong>Apply Template</strong>. Use <strong>Player Skin (Full Bundle)</strong> for the 3-action workflow: fill each action tab, <strong>Save</strong> or <strong>Export XP</strong>, then click <strong>Test Bundle Skin</strong> when all required actions are ready.
     </div>
@@ -142,16 +184,12 @@
     <h3>Session Ops</h3>
     <div class="row">
       <button id="btnLoad">Load From Job</button>
-      <button id="btnSave" disabled>Save</button>
-      <button id="btnExport" disabled>Export XP</button>
-      <button id="btnNewXp" disabled>New XP</button>
       <button id="undoBtn" disabled>Undo</button>
       <button id="redoBtn" disabled>Redo</button>
       <span style="margin-left:16px; border-left:1px solid #555; padding-left:16px;"></span>
       <input id="xpImportFile" type="file" accept=".xp">
       <button id="xpImportBtn" class="primary">Import XP</button>
       <span style="margin-left:16px; border-left:1px solid #555; padding-left:16px;"></span>
-      <button id="btnOpenFile" disabled>Open File</button>
       <button id="btnSaveFile" disabled>Save to File</button>
       <button id="btnSaveFileAs" disabled>Save File As</button>
     </div>
@@ -290,70 +328,6 @@
     </div>
   </div>
 
-  <div class="panel hidden" id="wholeSheetPanel" data-panel-number="10 whole-sheet">
-    <h3>Whole-Sheet XPEdit <span id="wholeSheetStatus" class="small" style="font-weight:normal;">not loaded</span></h3>
-    <div class="row" style="justify-content:space-between; align-items:center; gap:12px;">
-      <div class="alpha-inline-banner">PRE-ALPHA, PLEASE REPORT ANY BUGS</div>
-      <button id="reportBugWholeSheetBtn">Report Bug</button>
-    </div>
-    <div class="small whole-sheet-guide">This is the primary editor surface. In bundle mode: edit the active action here, then use <strong>Save</strong> to mark it ready without downloading, or <strong>Export XP</strong> if you also want an `.xp` artifact.</div>
-    <div id="wholeSheetMount"></div>
-  </div>
-
-  <div id="bugReportModal" class="overlay hidden">
-    <div class="overlay-card">
-      <div class="row" style="justify-content:space-between; align-items:center;">
-        <h3 style="margin:0;">Report Bug</h3>
-        <button id="bugReportCloseBtn">Close</button>
-      </div>
-      <div class="small bug-report-copy">File a structured bug report with workbench metadata. Reports are always saved locally; if GitHub delivery is configured, an issue is created automatically.</div>
-      <div>
-        <label for="bugKnownIssue">Known Issue (optional)</label>
-        <select id="bugKnownIssue" style="width:100%;">
-          <option value="">— new issue / not listed —</option>
-        </select>
-        <div id="bugKnownIssueHint" class="small" style="margin-top:2px;">Select a known bug if this matches an existing issue, or leave blank for a new report.</div>
-      </div>
-      <div class="row" style="margin-top:8px;">
-        <div><label for="bugCategory">Category</label><select id="bugCategory">
-          <option value="bundle_workflow">Bundle workflow</option>
-          <option value="whole_sheet_editor">Whole-sheet editor</option>
-          <option value="skin_dock_runtime">Skin Dock / runtime</option>
-          <option value="png_import_slicing">PNG import / slicing</option>
-          <option value="layout_rendering">Layout / rendering</option>
-          <option value="other">Other</option>
-        </select></div>
-        <div><label for="bugSeverity">Severity</label><select id="bugSeverity">
-          <option value="blocks_me">Blocks me</option>
-          <option value="major">Major bug</option>
-          <option value="minor">Minor bug</option>
-        </select></div>
-      </div>
-      <div>
-        <label for="bugDescription">What went wrong?</label>
-        <textarea id="bugDescription" rows="6" placeholder="Describe what you expected, what happened instead, and what you were doing right before it broke."></textarea>
-      </div>
-      <div class="row small" style="gap:16px; flex-wrap:wrap;">
-        <label class="inline"><input id="bugIncludeSession" type="checkbox" checked> Include session / bundle / runtime state</label>
-        <label class="inline"><input id="bugIncludeRecorder" type="checkbox" checked> Include UI recorder data if available</label>
-      </div>
-      <div style="margin-top:8px;">
-        <label for="bugDeliveryMethod">Delivery</label>
-        <select id="bugDeliveryMethod">
-          <option value="local">Save locally only</option>
-          <option value="github" disabled>GitHub Issue (not configured)</option>
-          <option value="both" disabled>Local + GitHub Issue (not configured)</option>
-        </select>
-        <div id="bugDeliveryHint" class="small" style="margin-top:2px;">Set BUG_REPORT_GITHUB_REPO and BUG_REPORT_GITHUB_TOKEN on the server to enable GitHub delivery.</div>
-      </div>
-      <div id="bugReportPreview" class="small bug-report-preview">Report will include URL, session state, bundle status, runtime status, browser info, and optional recorder data.</div>
-      <div class="row" style="justify-content:flex-end;">
-        <button id="bugReportSubmitBtn" class="primary">Send Report</button>
-      </div>
-      <div id="bugReportStatus" class="small"></div>
-    </div>
-  </div>
-
   <details id="legacyGridDetails" class="legacy-grid-debug" hidden>
     <summary>Legacy Char Grid (debug)</summary>
     <div id="grid" class="grid"></div>
@@ -435,32 +409,6 @@
       <h3>Session</h3>
       <pre id="sessionOut"></pre>
     </div>
-  </div>
-
-  <div class="panel" id="webbuildDockPanel" data-panel-number="14 skin-test-dock">
-    <h3>Skin Test Dock (Term++ Skin Equiv on asciid)</h3>
-    <div class="row">
-      <button id="webbuildQuickTestBtn" class="success" disabled>Test This Skin</button>
-      <button id="webbuildApplyInPlaceBtn" class="hidden" disabled title="Requires an active session and a ready webbuild runtime">Apply In Place</button>
-      <button id="webbuildApplyRestartBtn" class="hidden" disabled title="Requires an active session">Apply + Restart</button>
-      <button id="webbuildUploadTestBtn" title="Requires a valid flat runtime bundle">Upload Skin</button>
-      <input id="webbuildUploadTestInput" type="file" accept=".xp,application/octet-stream" class="hidden">
-      <span id="webbuildState" class="small">Webbuild not loaded</span>
-    </div>
-    <div id="webbuildHint" class="small">`Test This Skin` exports the current Workbench XP and loads it into the flat test arena. `Upload Skin` loads an external `.xp` into the same flat test arena. Both use the deterministic test path.</div>
-    <iframe id="webbuildFrame" title="Asciicker Webbuild" class="hidden" style="width:100%; height:360px; border:1px solid #334; background:#000;"></iframe>
-    <details class="hidden">
-      <summary class="small">Advanced Skin Dock Controls</summary>
-      <div class="row" style="margin-top:8px;">
-        <button id="webbuildOpenBtn">Open Preview</button>
-        <button id="webbuildReloadBtn">Reload Preview</button>
-        <button id="webbuildApplySkinBtn" disabled>Apply Current XP (Advanced)</button>
-      </div>
-    </details>
-    <details class="hidden">
-      <summary class="small">Advanced debug output</summary>
-      <pre id="webbuildOut"></pre>
-    </details>
   </div>
 
   <div class="panel hidden" id="termppNativePanel" data-panel-number="15 native-termpp">
@@ -630,6 +578,61 @@
     <canvas id="cellInspectorCanvas" width="320" height="320"></canvas>
     <div id="cellInspectorInfo" class="small"></div>
   </div>
+    </div>
+  </details>
+  <div id="bugReportModal" class="overlay hidden">
+    <div class="overlay-card">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <h3 style="margin:0;">Report Bug</h3>
+        <button id="bugReportCloseBtn">Close</button>
+      </div>
+      <div class="small bug-report-copy">File a structured bug report with workbench metadata. Reports are always saved locally; if GitHub delivery is configured, an issue is created automatically.</div>
+      <div>
+        <label for="bugKnownIssue">Known Issue (optional)</label>
+        <select id="bugKnownIssue" style="width:100%;">
+          <option value="">— new issue / not listed —</option>
+        </select>
+        <div id="bugKnownIssueHint" class="small" style="margin-top:2px;">Select a known bug if this matches an existing issue, or leave blank for a new report.</div>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <div><label for="bugCategory">Category</label><select id="bugCategory">
+          <option value="bundle_workflow">Bundle workflow</option>
+          <option value="whole_sheet_editor">Whole-sheet editor</option>
+          <option value="skin_dock_runtime">Skin Dock / runtime</option>
+          <option value="png_import_slicing">PNG import / slicing</option>
+          <option value="layout_rendering">Layout / rendering</option>
+          <option value="other">Other</option>
+        </select></div>
+        <div><label for="bugSeverity">Severity</label><select id="bugSeverity">
+          <option value="blocks_me">Blocks me</option>
+          <option value="major">Major bug</option>
+          <option value="minor">Minor bug</option>
+        </select></div>
+      </div>
+      <div>
+        <label for="bugDescription">What went wrong?</label>
+        <textarea id="bugDescription" rows="6" placeholder="Describe what you expected, what happened instead, and what you were doing right before it broke."></textarea>
+      </div>
+      <div class="row small" style="gap:16px; flex-wrap:wrap;">
+        <label class="inline"><input id="bugIncludeSession" type="checkbox" checked> Include session / bundle / runtime state</label>
+        <label class="inline"><input id="bugIncludeRecorder" type="checkbox" checked> Include UI recorder data if available</label>
+      </div>
+      <div style="margin-top:8px;">
+        <label for="bugDeliveryMethod">Delivery</label>
+        <select id="bugDeliveryMethod">
+          <option value="local">Save locally only</option>
+          <option value="github" disabled>GitHub Issue (not configured)</option>
+          <option value="both" disabled>Local + GitHub Issue (not configured)</option>
+        </select>
+        <div id="bugDeliveryHint" class="small" style="margin-top:2px;">Set BUG_REPORT_GITHUB_REPO and BUG_REPORT_GITHUB_TOKEN on the server to enable GitHub delivery.</div>
+      </div>
+      <div id="bugReportPreview" class="small bug-report-preview">Report will include URL, session state, bundle status, runtime status, browser info, and optional recorder data.</div>
+      <div class="row" style="justify-content:flex-end;">
+        <button id="bugReportSubmitBtn" class="primary">Send Report</button>
+      </div>
+      <div id="bugReportStatus" class="small"></div>
+    </div>
+  </div>
 </div>
 <!-- U3: Floating touch selection toolbar (hidden by default; shown via JS on touch) -->
 <div id="wsTouchToolbar" class="ws-touch-toolbar">
@@ -664,6 +667,7 @@
 </div>
 
 <script src="/workbench-template-gating.js"></script>
+<script src="/workbench-action-navigation.js"></script>
 <script src="/workbench.js"></script>
 <script type="module" src="/persistence.mjs"></script>
 <script type="module" src="/whole-sheet-init.js"></script>
