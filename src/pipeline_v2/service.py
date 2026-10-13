@@ -2637,7 +2637,17 @@ def _cell_from_patch(
             (t_rgb[1] + b_rgb[1]) // 2,
             (t_rgb[2] + b_rgb[2]) // 2,
         )
-        return (219, avg, (0, 0, 0))
+        # Similar halves: pick a CP437 shade by combined ink occupancy instead
+        # of always stamping full block (219), so sparse fills render as
+        # light/medium/dark shade (176/177/178) rather than blobby solids.
+        occupancy = (float(top[0]) + float(bot[0])) / 2.0
+        if occupancy >= 0.80:
+            return (219, avg, (0, 0, 0))
+        if occupancy >= 0.55:
+            return (178, avg, (0, 0, 0))
+        if occupancy >= 0.30:
+            return (177, avg, (0, 0, 0))
+        return (176, avg, (0, 0, 0))
     # Upper/lower color split inside one char cell.
     return (223, t_rgb, b_rgb)
 
@@ -4251,6 +4261,9 @@ def workbench_web_skin_payload(session_id: str, req_id: str) -> dict[str, Any]:
         raise ApiError(f"failed reading exported xp: {e}", "xp_read_failed", "workbench", req_id, 500)
     # Mirrors the disk-based TERM++ sandbox override set; web build skin reload can use same names.
     override_names = _termpp_skin_override_names(load_template_registry())
+    doc_contract = _skin_payload_doc_contract(
+        sess, family, str(xp_path), preview_normalized, checksum, req_id,
+    )
     return {
         "session_id": session_id,
         "xp_path": str(xp_path),
@@ -4260,6 +4273,57 @@ def workbench_web_skin_payload(session_id: str, req_id: str) -> dict[str, Any]:
         "override_names": override_names,
         "reload_player_name": "player",
         "preview_normalized": preview_normalized,
+        "doc_contract": doc_contract,
+    }
+
+
+def _skin_payload_doc_contract(
+    sess: dict[str, Any],
+    family: str,
+    xp_path: str,
+    preview_normalized: bool,
+    checksum: str,
+    req_id: str,
+) -> dict[str, Any]:
+    """Normalized doc-kind/metadata record consumed by Test This Skin.
+
+    Lets the Skin Dock contract viewer bind the runtime payload to the exact
+    workbench document (no ambient/default-sprite ambiguity): session kind,
+    metadata status, template identity, geometry, layer-0 compat verdict, and
+    whether the payload XP was normalized to native runtime dims.
+    """
+    expected_l0 = list(_FAMILY_L0_COL0.get(family, []))
+    actual_l0: list[str] = []
+    layer_count = 0
+    xp_dims: list[int] = [0, 0]
+    try:
+        xp = read_xp(xp_path)
+        xp_dims = [int(xp["width"]), int(xp["height"])]
+        layer_count = len(xp["cells"])
+        if xp["cells"]:
+            cols = int(xp["width"])
+            l0 = xp["cells"][0]
+            for col_idx in range(min(len(expected_l0), cols)):
+                glyph = int(l0[col_idx][0])
+                actual_l0.append(chr(glyph) if glyph >= 32 else "")
+    except Exception:
+        actual_l0 = []
+    return {
+        "session_id": str(sess.get("session_id") or ""),
+        "session_kind": _session_kind(sess),
+        "metadata_status": _metadata_status(sess),
+        "family": family,
+        "template_set_key": str(sess.get("template_set_key") or ""),
+        "action_key": str(sess.get("action_key") or ""),
+        "grid_cols": int(sess.get("grid_cols") or 0),
+        "grid_rows": int(sess.get("grid_rows") or 0),
+        "xp_dims": xp_dims,
+        "layer_count": layer_count,
+        "layer0_expected": expected_l0,
+        "layer0_actual": actual_l0,
+        "layer0_compat": bool(expected_l0) and actual_l0 == expected_l0,
+        "preview_normalized": preview_normalized,
+        "checksum": checksum,
     }
 
 

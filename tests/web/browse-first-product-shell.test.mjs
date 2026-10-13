@@ -52,9 +52,13 @@ test('the same whole-sheet surface is public in Browse/Edit, diagnostics are col
   assert.ok(wholeSheetIndex >= 0 && wholeSheetIndex < advancedStart, 'whole-sheet editor should be outside diagnostics');
 
   const advanced = html.slice(advancedStart, advancedEnd);
-  for (const id of ['uiRecorderStartBtn', 'wbUpload', 'verifyRunBtn', 'termppSkinLaunchBtn', 'cellInspectorPanel', 'reportBugWholeSheetBtn']) {
+  for (const id of ['uiRecorderStartBtn', 'verifyRunBtn', 'termppSkinLaunchBtn', 'cellInspectorPanel', 'reportBugWholeSheetBtn']) {
     assert.match(advanced, new RegExp(`id="${id}"`), `${id} should remain reachable under Advanced / Diagnostics`);
   }
+  // PNG conversion is a first-class Browse/mobile step, not buried diagnostics.
+  const convertIndex = html.indexOf('id="uploadConvertPanel"');
+  assert.ok(convertIndex >= 0 && convertIndex < advancedStart, 'Upload + Convert panel should be top-level, ahead of Advanced / Diagnostics');
+  assert.match(html.slice(convertIndex, convertIndex + 2000), /id="wbUpload"/, 'wbUpload should live in the top-level Upload + Convert panel');
   assert.equal((html.match(/id="wholeSheetPanel"/g) || []).length, 1, 'the root editor panel must have one owner');
   assert.equal((html.match(/id="bundleActionTabs"/g) || []).length, 1, 'the registry action-navigation hook must be unique');
   assert.equal((html.match(/id="bundleStatus"/g) || []).length, 1, 'the contextual readiness hook must be unique');
@@ -88,4 +92,41 @@ test('product branding and mobile keyboard belong to REXPaint Web', () => {
 test('developer ID overlay is hidden by default and adds no production button', () => {
   assert.match(workbenchJs, /let on = false;/);
   assert.doesNotMatch(workbenchJs, /toggleBtn\.id = 'wb-id-toggle-btn'/);
+});
+
+test('Browse previews the selected whole sheet and Open stays on the visible sheet', () => {
+  // Drawer owns a preview canvas + meta (whole sheet first-class, not rows only).
+  assert.match(wholeSheetJs, /previewCanvas\.id = 'wsBrowsePreview'/);
+  assert.match(wholeSheetJs, /previewMeta\.id = 'wsBrowsePreviewMeta'/);
+  // Row select triggers a read-only preview; Open switches to the Edit workspace.
+  assert.match(wholeSheetJs, /void _previewBrowseSelected\(\)/);
+  assert.match(wholeSheetJs, /async function _previewBrowseSelected\(\)/);
+  assert.match(wholeSheetJs, /function _drawBrowsePreview\(canvas, meta, item, preview\)/);
+  assert.match(workbenchJs, /async function previewSessionForBrowse\(sessionId\)/);
+  // Open leaves Browse: both the drawer and the shell switch to Edit/paint.
+  assert.match(wholeSheetJs, /\/\/ Open leaves Browse: the loaded sheet stays visible in the Edit workspace\./);
+  assert.match(workbenchJs, /\/\/ Open leaves Browse: the loaded sheet stays visible in Edit\./);
+  assert.match(workbenchJs, /setProductShellMode\("edit"\)/);
+});
+
+test('Layers stay an Edit concern: no layer chrome in Browse', () => {
+  assert.match(wholeSheetJs, /layersSection\.dataset\.modeScope = 'paint'/);
+  assert.match(wholeSheetJs, /\/\/ Browse is documents \+ previews: layer chrome stays an Edit concern\./);
+  assert.match(wholeSheetJs, /data-drawer="layers"/);
+  assert.match(wholeSheetJs, /data-drawer-toggle="layers"/);
+});
+
+test('Direct raw-XP authoring is a primary Browse path without template/bundle gate', () => {
+  assert.match(wholeSheetJs, /newRawBtn\.id = 'wsBrowseNewRaw'/);
+  assert.match(wholeSheetJs, /async function _browseNewRawSelected\(\)/);
+  assert.match(wholeSheetJs, /onBrowseNewRaw/);
+  assert.match(workbenchJs, /async function newRawXp\(\)/);
+  assert.match(workbenchJs, /onBrowseNewRaw: newRawXp/);
+  assert.match(workbenchJs, /onBrowsePreview: previewSessionForBrowse/);
+});
+
+test('Browse rows surface document kind and link to source slicing', () => {
+  assert.match(wholeSheetJs, /if \(item\.session_kind\) details\.push\(String\(item\.session_kind\)\)/);
+  assert.match(wholeSheetJs, /sliceBtn\.id = 'wsBrowseSliceSource'/);
+  assert.match(wholeSheetJs, /function _browseGotoSourceSlicing\(\)/);
 });

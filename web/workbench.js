@@ -142,6 +142,7 @@
     wholeSheetGridCustomH: 1,
     sessionKind: "",
     metadataStatus: "",
+    family: "",
     inspectorOpen: false,
     inspectorRow: 0,
     inspectorCol: 0,
@@ -194,6 +195,13 @@
       pendingAutoStartToken: "",
       uploadedXpBytes: null,
       uploadedXpName: "",
+      // Normalized-contract binding: which doc the dock runtime currently shows.
+      // Empty injectedSessionId => dock shows ambient/default Y9-2 sprites, NOT the doc.
+      injectedSessionId: "",
+      injectedChecksum: "",
+      injectedAt: "",
+      injectedDocKind: "",
+      flatmapName: "",
       runtimePreflight: {
         checked: false,
         ok: false,
@@ -794,6 +802,7 @@
         checked_at: String(j?.checked_at || ""),
         error: "",
       };
+      syncWebbuildFlatmapFromPreflight();
     } catch (e) {
       state.webbuild.runtimePreflight = {
         checked: true,
@@ -806,7 +815,131 @@
     }
     updateRuntimePreflightBanner(state.webbuild.runtimePreflight);
     updateWebbuildUI();
+    renderDocContractPanel(null, null);
     return currentRuntimePreflight();
+  }
+  // Skin Dock self-containment: point the iframe flatmap at a map the
+  // runtime preflight proves exists, instead of a hard-coded name that may
+  // be missing where the server actually serves the runtime bundle.
+  // Precedence: ?flatmap page param (if preflight found it) > first
+  // maps_found entry > built-in default.
+  function syncWebbuildFlatmapFromPreflight() {
+    const pre = currentRuntimePreflight();
+    const found = Array.isArray(pre?.maps_found) ? pre.maps_found : [];
+    const baseOf = (rel) => String(rel || "").split("/").pop();
+    const pageParam = (() => {
+      try { return String(new URLSearchParams(window.location.search).get("flatmap") || "").trim(); }
+      catch (_e) { return ""; }
+    })();
+    let want = "";
+    if (pageParam && found.some((rel) => baseOf(rel) === pageParam || String(rel) === pageParam)) {
+      want = pageParam;
+    } else if (found.length) {
+      want = baseOf(found[0]);
+    }
+    if (!want) return;
+    state.webbuild.flatmapName = want;
+    try {
+      const u = new URL(String(state.webbuild.src || ""), window.location.origin);
+      if (u.searchParams.get("flatmap") !== want) {
+        u.searchParams.set("flatmap", want);
+        state.webbuild.src = `${u.pathname}${u.search}`;
+      }
+    } catch (_e) { /* keep base src on unparsable URL */ }
+  }
+  // Sibling normalized-viewer bridge (read-only terminal viewers over the
+  // reviewed upstream contract — NOT embeddable, NOT doc editors).
+  // Maps the current doc family to the exact viewer invocation for the
+  // reviewed upstream stem of that family. Only player→player-1100 is
+  // verified; other families open the viewer for manual navigation.
+  // Paths are sibling-repo-relative on purpose (no absolute paths).
+  function viewerBridgeForFamily(family) {
+    const fam = String(family || "").trim() || "player";
+    const stem = fam === "player" ? "player-1100" : "";
+    return {
+      normalized_xp_sprite_inspector: {
+        repo: "AsciickerY92-normalized-xp-sprite-inspector",
+        run: "./run-viewer.sh --once",
+        note: "read-only upstream layer notes + body-region UV map",
+      },
+      source_layer_contract_viewer: {
+        repo: "AsciickerY92-source-layer-contract-viewer",
+        run: stem ? `./run-viewer.sh --once ${stem}` : "./run-viewer.sh --once",
+        stem: stem || `(navigate to a ${fam} stem inside the viewer)`,
+        note: "read-only raw layers incl. engine-metadata L0/L1 + composed preview",
+      },
+    };
+  }
+  // ── Normalized-contract viewer (Test This Skin doc binding) ─────────────
+  // Primary Test surface reads the current workbench document through this
+  // contract: doc kind, metadata status, geometry, layer-0 compat actuals,
+  // and — after a Test run — the server payload verdict plus which doc the
+  // dock runtime actually shows. An empty dockSessionId means the iframe (if
+  // visible) shows ambient/default Y9-2 sprites, not the current document.
+  function docL0Row0Glyphs(limit = 8) {
+    const out = [];
+    try {
+      const l0 = Array.isArray(state.layers) && state.layers.length ? state.layers[0] : null;
+      const cols = Math.max(1, Number(state.gridCols || 0));
+      if (!Array.isArray(l0) || !cols) return out;
+      for (let cx = 0; cx < Math.min(limit, cols); cx++) {
+        const cell = l0[cx] || {};
+        const g = Number(cell.glyph || 0);
+        out.push(g >= 32 && g < 127 ? String.fromCharCode(g) : `g${g}`);
+      }
+    } catch (_e) { /* contract best-effort */ }
+    return out;
+  }
+
+  function currentDocContract() {
+    const sid = state.sessionId ? String(state.sessionId) : "";
+    return {
+      session_id: sid,
+      session_short: sid ? `${sid.slice(0, 8)}...` : "(no document)",
+      session_kind: String(state.sessionKind || "(unknown)"),
+      metadata_status: String(state.metadataStatus || "(unknown)"),
+      family: String(state.family || ""),
+      bundle_mode: isBundleMode(),
+      bundle_id: state.bundleId ? String(state.bundleId) : "",
+      template_set_key: String(state.templateSetKey || ""),
+      action_key: String(state.activeActionKey || ""),
+      grid_cols: Number(state.gridCols || 0),
+      grid_rows: Number(state.gridRows || 0),
+      angles: Number(state.angles || 0),
+      anims: Array.isArray(state.anims) ? [...state.anims] : [],
+      layer_count: Array.isArray(state.layers) ? state.layers.length : 0,
+      layer_names: Array.isArray(state.layerNames) ? [...state.layerNames] : [],
+      layer0_actual: docL0Row0Glyphs(),
+      flatmap: String(state.webbuild.flatmapName || "(preflight pending)"),
+    };
+  }
+
+  function renderDocContractPanel(serverContract, inject) {
+    const doc = currentDocContract();
+    const setText = (id, v) => { const el = $(id); if (el) el.textContent = String(v); };
+    setText("docContractKind", `doc: ${doc.session_short} kind=${doc.session_kind} meta=${doc.metadata_status} family=${doc.family || "(unknown)"}`);
+    setText("docContractGeom",
+      `geom: ${doc.grid_cols}x${doc.grid_rows} angles=${doc.angles} anims=[${doc.anims.join(",")}] layers=${doc.layer_count} flatmap=${doc.flatmap}`);
+    const l0srv = serverContract && typeof serverContract === "object" ? serverContract : null;
+    const l0verdict = l0srv
+      ? `l0: actual=[${(l0srv.layer0_actual || []).join(",")}] expected=[${(l0srv.layer0_expected || []).join(",")}] compat=${l0srv.layer0_compat ? "PASS" : "FAIL"}`
+      : `l0: actual=[${doc.layer0_actual.join(",")}] (run Test This Skin for server compat verdict)`;
+    setText("docContractL0", l0verdict);
+    const dockSid = String(state.webbuild.injectedSessionId || "");
+    const dockKind = String(state.webbuild.injectedDocKind || "");
+    const dockLine = dockKind === "external_upload"
+      ? `dock skin: external upload (${String((inject && inject.external_upload) || "") || "file"} — not the current document)`
+      : (!dockSid
+        ? "dock skin: none (ambient/default Y9-2 sprites — not the document)"
+        : (dockSid === doc.session_id && doc.session_id
+          ? `dock skin: ${dockSid.slice(0, 8)}... CHECKSUM=${String(state.webbuild.injectedChecksum || "").slice(0, 12)} (tracks current document)`
+          : `dock skin: ${dockSid.slice(0, 8)}... STALE (document is ${doc.session_short})`));
+    setText("docContractDock", dockLine);
+    const out = $("docContractOut");
+    if (out) {
+      out.textContent = JSON.stringify(
+        { document: doc, payload_contract: l0srv, inject: inject || null, viewer_bridge: viewerBridgeForFamily((l0srv && l0srv.family) || doc.family || "") }, null, 2);
+    }
   }
 
   async function ensureRuntimePreflight(opts = {}) {
@@ -1507,17 +1640,33 @@
         const payloadSummary = useBundlePayload
           ? { actions: Object.fromEntries(Object.entries(j.actions || {}).map(([k, v]) => [k, { files: (v.override_names || []).length, bytes: v.xp_size_bytes }])), unmapped: j.unmapped_families }
           : { override_names: await normalizeWebbuildOverrideNames(j.override_names), xp_b64: `(<${(j.xp_b64 || "").length} base64 chars>)` };
+        // Normalized-contract binding: the dock now shows THIS document, not
+        // ambient/default sprites. Record identity where Test consumes it.
+        const docContract = (!useBundlePayload && j.doc_contract && typeof j.doc_contract === "object")
+          ? j.doc_contract
+          : null;
+        if (!useBundlePayload && inject && !inject.error) {
+          state.webbuild.injectedSessionId = state.sessionId ? String(state.sessionId) : "";
+          state.webbuild.injectedChecksum = String((docContract && docContract.checksum) || j.checksum || "");
+          state.webbuild.injectedAt = new Date().toISOString();
+          state.webbuild.injectedDocKind = String((docContract && docContract.session_kind) || state.sessionKind || "");
+        }
+        renderDocContractPanel(docContract, { inject, bundle_mode: useBundlePayload });
         $("webbuildOut").textContent = JSON.stringify({
           timings,
           prep,
           payload: payloadSummary,
+          doc_contract: docContract,
+          dock_session_id: String(state.webbuild.injectedSessionId || ""),
+          dock_checksum: String(state.webbuild.injectedChecksum || ""),
+          viewer_bridge: viewerBridgeForFamily((docContract && docContract.family) || state.family || ""),
           inject,
-          bundle_mode: useBundlePayload,
         }, null, 2);
         state.webbuild.ready = true;
         updateWebbuildUI();
         const modeLabel = useBundlePayload ? "bundle skin" : "web skin";
-        status(`Applied ${modeLabel} (${Math.round(timings.total_ms || 0)}ms)`, "ok");
+        const kindLabel = docContract && docContract.session_kind ? ` [${docContract.session_kind}]` : "";
+        status(`Applied ${modeLabel}${kindLabel} (${Math.round(timings.total_ms || 0)}ms)`, "ok");
         setWebbuildState(`Webbuild ready (${modeLabel} applied)`, "ok");
       } catch (e) {
         try {
@@ -1606,6 +1755,13 @@
       try {
         state.webbuild.uploadedXpBytes = xpBytes;
         state.webbuild.uploadedXpName = fileName || "upload.xp";
+        // External upload is not the current document: clear doc tracking so
+        // the contract viewer cannot mislabel it as the loaded doc.
+        state.webbuild.injectedSessionId = "";
+        state.webbuild.injectedChecksum = "";
+        state.webbuild.injectedAt = "";
+        state.webbuild.injectedDocKind = "external_upload";
+        renderDocContractPanel(null, { external_upload: state.webbuild.uploadedXpName, inject });
         $("webbuildOut").textContent = JSON.stringify({
           mode: "upload_test_skin",
           override_mode: OVERRIDE_MODE,
@@ -4282,6 +4438,14 @@
     renderSourceCanvas();
     const row = state.selectedRow === null ? 0 : state.selectedRow;
     renderPreviewFrame(Math.max(0, Math.min(state.angles - 1, row)), 0);
+    // XP animation/metadata preview binding: label which document the preview
+    // renders so a doc switch (or no doc) can never masquerade as another sprite.
+    const previewLabel = $("previewDocLabel");
+    if (previewLabel) {
+      previewLabel.textContent = state.sessionId
+        ? `preview: ${String(state.sessionId).slice(0, 8)}... [${String(state.sessionKind || "unknown")}]`
+        : "preview: no document loaded";
+    }
     renderInspector();
     updateSessionDirtyBadge();
   }
@@ -4320,6 +4484,7 @@
       state.cellHChars = Number(j.cell_h || 1);
       state.sessionKind = String(j.session_kind || "");
       state.metadataStatus = String(j.metadata_status || "");
+      state.family = String(j.family || "");
       applyLoadedSessionOwnership(j, opts);
       state.layerNames = Array.isArray(j.layer_names) && j.layer_names.length ? [...j.layer_names] : [...DEFAULT_LAYER_NAMES];
       state.wholeSheetCanvasZoom = Number.isFinite(Number(j.whole_sheet_canvas_zoom)) ? Number(j.whole_sheet_canvas_zoom) : 0;
@@ -4389,7 +4554,15 @@
         syncLayersFromSessionCells();
       }
       status(`Session active: ${state.sessionId.slice(0, 8)}...`, "ok");
+      stopPreview();
       renderAll();
+      // Doc switch invalidates any previously injected dock skin: the dock no
+      // longer tracks a document until Test This Skin injects the new one.
+      state.webbuild.injectedSessionId = "";
+      state.webbuild.injectedChecksum = "";
+      state.webbuild.injectedAt = "";
+      state.webbuild.injectedDocKind = "";
+      renderDocContractPanel(null, null);
       hydrateWholeSheetEditor();
       // Avoid an expensive immediate full-session save (and background webbuild boot) right after convert/load.
       // Large sprite sheets can make the UI feel frozen here; defer both until the user edits or runs skin test.
@@ -4500,14 +4673,43 @@
     }
   }
 
+  // Read-only session fetch for Browse whole-sheet previews. Unlike
+  // loadSession it never hydrates workbench state or switches documents.
+  async function previewSessionForBrowse(sessionId) {
+    const sid = String(sessionId || "").trim();
+    if (!sid) throw new Error("missing session_id");
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 20000);
+    try {
+      const r = await fetch(bp("/api/workbench/load-session"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sid }),
+        signal: ctl.signal,
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "preview load failed");
+      return j;
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
   async function browseOpenSession(sessionId) {
     const sid = String(sessionId || "").trim();
-    if (!sid || sid === String(state.sessionId || "")) return true;
+    if (!sid) return false;
+    if (sid === String(state.sessionId || "")) {
+      // Already open: stay on the visible sheet in the Edit workspace.
+      setProductShellMode("edit");
+      return true;
+    }
     await ensureSessionSavedBeforeBrowseOpen(sid);
     const ok = await loadSession(sid, { reason: `Opening session ${sid.slice(0, 8)}...` });
     if (!ok) {
       throw new Error(`session open failed: ${sid}`);
     }
+    // Open leaves Browse: the loaded sheet stays visible in Edit.
+    setProductShellMode("edit");
     return true;
   }
 
@@ -4593,6 +4795,39 @@
     } finally {
       clearTimeout(t);
     }
+  }
+
+  // Direct raw-XP authoring: primary path that never requires template or
+  // bundle selection. Clears template/bundle context, creates a blank root
+  // session, loads it, and stays on the visible sheet in the Edit workspace.
+  async function newRawXp() {
+    if (state.sessionDirty && state.sessionId) {
+      await flushPendingWholeSheetDrawSaveTimer();
+      const saveRes = await saveSessionState("pre-new-raw-xp", { wait_for_idle: true, timeout_ms: 15000 });
+      if (!saveRes || !saveRes.ok) {
+        status("New raw XP blocked: session save failed/timed out", "err");
+        throw new Error("new raw xp blocked: current session save failed/timed out");
+      }
+    }
+    let geometry = {};
+    try {
+      geometry = readClassicGeometryInputs();
+    } catch (e) {
+      // Classic inputs invalid or unavailable: backend falls back to its
+      // default root blank geometry.
+      geometry = {};
+    }
+    status("Creating new raw XP...", "warn");
+    state.bundleId = null;
+    state.actionStates = {};
+    state.templateSetKey = "";
+    state.activeActionKey = "idle";
+    const j = await createBlankRootSession(geometry);
+    const ok = await loadSession(j.session_id, { reason: "New blank raw XP session..." });
+    if (!ok) throw new Error("new raw xp failed: session load failed");
+    setProductShellMode("edit");
+    status(`New raw XP ready: ${j.grid_cols}x${j.grid_rows}`, "ok");
+    return j;
   }
 
   async function newXp() {
@@ -6786,6 +7021,8 @@
       onBrowseRename: browseRenameSession,
       onBrowseDuplicate: browseDuplicateSession,
       onBrowseDelete: browseDeleteSession,
+      onBrowsePreview: previewSessionForBrowse,
+      onBrowseNewRaw: newRawXp,
     }).then(() => {
       if (wsStatus) {
         const st = wsEditor.getState();
@@ -7268,6 +7505,22 @@
       $("gridContextMenu").classList.add("hidden");
       hideSourceContextMenu();
     });
+  }
+
+  // First-class PNG import entry point (Browse panel + mobile Import button).
+  // Opens the file chooser directly; falls back to scrolling the
+  // Upload + Convert panel into view when no file is chosen yet.
+  function focusPngImport() {
+    const panel = $("uploadConvertPanel");
+    if (panel && typeof panel.scrollIntoView === "function") {
+      panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    const fileInput = $("wbFile");
+    if (fileInput && typeof fileInput.click === "function") {
+      fileInput.click();
+    } else {
+      status("Use Upload PNG in the Upload + Convert panel", "warn");
+    }
   }
 
   async function wbUpload() {
@@ -8495,6 +8748,8 @@
       onBrowseRename: browseRenameSession,
       onBrowseDuplicate: browseDuplicateSession,
       onBrowseDelete: browseDeleteSession,
+      onBrowsePreview: previewSessionForBrowse,
+      onBrowseNewRaw: newRawXp,
     });
     if (typeof editor.setMode === "function") editor.setMode(productMode === "browse" ? "browse" : "paint");
     syncProductShellMode(productMode);
@@ -8601,6 +8856,9 @@
     $("createProfileBtn")?.addEventListener("click", createActorVisualProfile);
     $("wbUpload").addEventListener("click", wbUpload);
     $("wbRun").addEventListener("click", wbRun);
+    // First-class PNG import entry: Browse/mobile Import goes straight to the
+    // file chooser; the panel scrolls into view so Upload/Convert stay visible.
+    $("browseImportPngBtn")?.addEventListener("click", focusPngImport);
     $("classicGeomAutoPlanBtn")?.addEventListener("click", applyClassicGeometryAutoPlan);
     ["classicGeomAngles", "classicGeomFrames", "classicGeomSourceProjs", "classicGeomCellW", "classicGeomCellH"].forEach((id) => {
       $(id)?.addEventListener("input", updateClassicGeometryHint);
@@ -9796,6 +10054,9 @@
         case 'share-file':
           shareXpFileLocal();
           break;
+        case 'import-png':
+          focusPngImport();
+          break;
       }
     });
   });
@@ -9814,7 +10075,8 @@
     // Tool indicator
     if (wsState && wsState.activeTool) {
       var toolNames = {
-        cell: 'Cell', eyedropper: 'Dropper', erase: 'Erase', line: 'Line',
+        cell: 'Cell', slope: 'Slope', adaptive: 'Auto-wall',
+        eyedropper: 'Dropper', erase: 'Erase', line: 'Line',
         rect: 'Rect', oval: 'Oval', fill: 'Fill', text: 'Text', select: 'Select'
       };
       toolEl.textContent = toolNames[wsState.activeTool] || wsState.activeTool;
@@ -9894,10 +10156,11 @@
             break;
           case 'inspect':
             // Inspect is handled by tap-hold on the whole-sheet canvas (U3).
-            // From toolbar: switch tool to dropper/inspect for next tap.
-            if (wsEditor && typeof wsEditor.getState === 'function') {
-              // Toggle to cell tool for inspect-like behavior
-              var toolBtn = document.querySelector('.ws-tool-btn[data-tool="cell"]');
+            // From toolbar: switch to the eyedropper for next-tap sampling.
+            if (wsEditor && typeof wsEditor.setTool === 'function') {
+              wsEditor.setTool('eyedropper');
+            } else {
+              var toolBtn = document.getElementById('wsToolEyedropper');
               if (toolBtn) toolBtn.click();
             }
             break;
