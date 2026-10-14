@@ -57,7 +57,7 @@
       </div>
     </div>
     <div class="ws-first-screen-footer">
-      <button id="fsAdvancedBtn" class="ws-first-screen-btn ws-first-screen-secondary">Open Workbench (Advanced)</button>
+      <button id="fsAdvancedBtn" class="ws-first-screen-btn ws-first-screen-secondary">OPEN REXPAINT MOBILE</button>
     </div>
   </div>
 </div>
@@ -86,12 +86,12 @@
     <button data-drawer-toggle="preview" title="XP Preview + Session" aria-expanded="false">Preview</button>
     <button data-drawer-toggle="test" title="Test Skin" aria-expanded="false">Test</button>
     <button data-drawer-toggle="export" title="Export" aria-expanded="false">Export</button>
-    <button data-drawer-toggle="browse" title="Browse" aria-expanded="false">Browse</button>
+    <button data-drawer-toggle="browse" title="Browse drawer" aria-expanded="false">Browse</button>
     <button data-drawer-toggle="info" title="Info" aria-expanded="false">Info</button>
     <button id="productMobileBrowseBtn" data-product-mode="browse" title="Browse documents">Browse</button>
     <button data-action="import-png" title="Import a PNG for conversion">Import</button>
     <button id="mobileKeyboardBtn" type="button" title="Use the on-screen keyboard">Keyboard</button>
-    <button data-action="toggle-advanced" title="Open Workbench (Advanced)">Advanced</button>
+    <button data-action="toggle-advanced" title="OPEN REXPAINT MOBILE">Advanced</button>
   </div>
 </div>
 <textarea id="mobileKeyboardInput" class="ws-mobile-keyboard-input" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="REXPaint Web mobile text input"></textarea>
@@ -568,9 +568,9 @@
       <button id="webbuildApplyRestartBtn" class="hidden" disabled title="Requires an active session">Apply + Restart</button>
       <button id="webbuildUploadTestBtn" title="Requires a valid flat runtime bundle">Upload Skin</button>
       <input id="webbuildUploadTestInput" type="file" accept=".xp,application/octet-stream" class="hidden">
-      <span id="webbuildState" class="small">Webbuild not loaded</span>
+      <span id="webbuildState" class="small">No test running — open a document, then press Test This Skin.</span>
     </div>
-    <div id="webbuildHint" class="small">`Test This Skin` exports the current Workbench XP and loads it into the flat test arena. `Upload Skin` loads an external `.xp` into the same flat test arena. Both use the deterministic test path.</div>
+    <div id="webbuildHint" class="small">`Test This Skin` exports the current REXPaint XP and loads it into the flat test arena. `Upload Skin` loads an external `.xp` into the same flat test arena. Both use the deterministic test path.</div>
     <iframe id="webbuildFrame" title="Asciicker Webbuild" class="hidden" style="width:100%; height:360px; border:1px solid #334; background:#000;"></iframe>
     <details class="hidden">
       <summary class="small">Advanced Skin Dock Controls</summary>
@@ -597,7 +597,7 @@
       <button id="termppSkinCmdBtn" disabled>Preview TERM++ Skin Launch</button>
       <button id="termppSkinLaunchBtn" class="success" disabled>Launch TERM++ SKIN</button>
     </div>
-    <div id="termppSkinHint" class="small">Launches a real Asciicker game instance using a sandboxed runtime rooted from the legacy repo. Workbench exports current XP, stages it into sandbox `sprites/` skin filenames, and launches TERM++ without modifying original legacy assets.</div>
+    <div id="termppSkinHint" class="small">Launches a real Asciicker game instance using a sandboxed runtime rooted from the legacy repo. REXPaint exports current XP, stages it into sandbox `sprites/` skin filenames, and launches TERM++ without modifying original legacy assets.</div>
     <div class="row">
       <label>Embed Region</label>
       <input id="termppStreamX" type="number" value="0" min="0" style="width:70px" title="X">

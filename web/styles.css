@@ -1525,7 +1525,7 @@ label.inline {
     padding: 6px 10px;
     min-height: 32px;
     background: #0f1420;
-    color: var(--fg, #ffffff);
+    color: #ffffff;
     border: 1px solid #2a3345;
     border-radius: 0;
     cursor: pointer;
@@ -1813,7 +1813,7 @@ body.wb-viewport-mobile .ws-mobile-top-bar button {
   padding: 6px 10px;
   min-height: 32px;
   background: #0f1420;
-  color: var(--fg, #ffffff);
+  color: #ffffff;
   border: 1px solid #2a3345;
   border-radius: 0;
   cursor: pointer;
