@@ -4369,7 +4369,7 @@
       renderBundleActionTabs();
       updateBundleUI();
       updateWebbuildUI();
-      setWebbuildState("Webbuild not loaded", "");
+      setWebbuildState("No test running — open a document, then press Test This Skin.", "");
   }
 
   async function loadFromJob(opts = {}) {

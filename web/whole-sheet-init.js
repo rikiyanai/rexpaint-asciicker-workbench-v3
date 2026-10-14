@@ -439,7 +439,10 @@ function _fitCanvasZoom() {
   const viewW = Math.max(1, scrollWrap.clientWidth);
   const viewH = Math.max(1, scrollWrap.clientHeight);
   const fit = Math.min(viewW / baseW, viewH / baseH);
-  return Math.max(0.05, Math.min(1, Number.isFinite(fit) ? fit : 1));
+  // Paintable floor: Fit never shrinks below CANVAS_ZOOM_MIN (0.5x). A 126x80
+  // sheet in a 390px viewport used to land at ~0.22x — a tiny strip that
+  // cannot be painted. Below the floor the scroll wrap pans instead.
+  return Math.max(CANVAS_ZOOM_MIN, Math.min(1, Number.isFinite(fit) ? fit : 1));
 }
 
 function _resolvedCanvasZoom() {
@@ -466,6 +469,12 @@ function _applyCanvasZoom({ preserveCenter = false } = {}) {
   canvasEl.style.height = `${Math.max(1, Math.round(canvasEl.height * nextZoom))}px`;
   canvasEl.style.margin = '0 auto';
   editorState.appliedCanvasZoom = nextZoom;
+  // Small-screen hook (styles owned elsewhere): flag when the sheet exceeds
+  // the viewport so pan chrome can surface without JS restyle here.
+  try {
+    scrollWrap.dataset.overflowX = String(canvasEl.width * nextZoom > scrollWrap.clientWidth + 1);
+    scrollWrap.dataset.overflowY = String(canvasEl.height * nextZoom > scrollWrap.clientHeight + 1);
+  } catch (_e) { /* dataset best-effort only */ }
 
   const input = document.getElementById('wsCanvasZoomInput');
   if (input) input.value = String(editorState.canvasZoom);
@@ -2660,7 +2669,8 @@ function _buildBrowseDrawer() {
   const openBtn = document.createElement('button');
   openBtn.id = 'wsBrowseOpen';
   openBtn.className = 'ws-tool-btn';
-  openBtn.textContent = 'Open';
+  openBtn.textContent = 'Open selected';
+  openBtn.title = 'Open the selected document in the Edit workspace (same as double-clicking its row)';
   openBtn.addEventListener('click', () => { void _browseOpenSelected(); });
   browsePrimary.appendChild(openBtn);
 
@@ -3737,11 +3747,23 @@ let browsePreviewCache = new Map();
 let browsePreviewPendingId = '';
 
 function _browsePreviewCell(cell) {
-  if (!cell) return { glyph: 0, fg: [0, 0, 0], bg: [255, 0, 255] };
+  if (!cell) return { glyph: 0, fg: [0, 0, 0], bg: [0, 0, 0] };
   const glyph = Number(cell.glyph ?? cell[0] ?? 0) || 0;
   const fg = Array.isArray(cell.fg) ? cell.fg.map(Number) : (Array.isArray(cell[1]) ? cell[1].map(Number) : [255, 255, 255]);
   const bg = Array.isArray(cell.bg) ? cell.bg.map(Number) : (Array.isArray(cell[2]) ? cell[2].map(Number) : [0, 0, 0]);
   return { glyph, fg, bg };
+}
+
+// Transparent keys see through to whatever is beneath. A flattened single-
+// layer preview has nothing beneath, so they flatten to the canvas default
+// (black — same as Canvas.clear and the composite empty fallback), never
+// literal magenta. Otherwise every blank document previews as a magenta
+// sheet even though the keys mean "empty/see-through".
+function _browseFlattenTransparentBg(bg) {
+  const b = Array.isArray(bg) ? bg : [0, 0, 0];
+  const isMag = b[0] === 255 && b[1] === 0 && b[2] === 255;
+  const isYel = b[0] === 255 && b[1] === 255 && b[2] === 0;
+  return (isMag || isYel) ? [0, 0, 0] : b;
 }
 
 function _normalizeBrowsePreview(data) {
@@ -3763,35 +3785,161 @@ function _normalizeBrowsePreview(data) {
   return { cols, rows, cells: Array.isArray(layer) ? layer : [] };
 }
 
-function _drawBrowsePreview(canvas, meta, item, preview) {
-  const label = String(item?.label || item?.session_id || 'session');
+// Browse previews share the editor CP437 bitmap font when it is ready. Before
+// the editor mounts (or if the font fails), previews fall back to color
+// blocks and re-render with glyphs once the font arrives.
+let _browseFont = null;
+let _browseFontLoading = false;
+
+function _browseGlyphFont() {
+  if (editorState.cp437Font && editorState.cp437Font.spriteSheet) return editorState.cp437Font;
+  if (_browseFont && _browseFont.spriteSheet) return _browseFont;
+  if (!_browseFontLoading) {
+    _browseFontLoading = true;
+    try {
+      const f = new CP437Font(FONT_URL, CELL_SIZE, CELL_SIZE);
+      f.load().then(() => { _browseFont = f; _redrawBrowsePreviews(); }).catch(() => {});
+    } catch (_e) { /* block fallback stays */ }
+  }
+  return null;
+}
+
+function _redrawBrowsePreviews() {
+  try {
+    const canvas = document.getElementById('wsBrowsePreview');
+    const meta = document.getElementById('wsBrowsePreviewMeta');
+    const selected = _selectedBrowseItem();
+    if (canvas && selected) {
+      const cached = browsePreviewCache.get(String(selected.session_id || ''));
+      if (cached) _drawBrowsePreview(canvas, meta, selected, cached);
+    }
+    for (const item of editorState.browseItems) {
+      const sid = String(item.session_id || '');
+      const cached = browsePreviewCache.get(sid);
+      if (!cached) continue;
+      const thumbs = document.querySelectorAll(`canvas[data-browse-thumb-for="${sid}"]`);
+      for (const thumb of thumbs) _drawSheetThumb(thumb, cached);
+    }
+  } catch (_e) { /* redraw best-effort only */ }
+}
+
+function _drawBrowsePreviewCell(ctx, preview, x, y, cellPx, font) {
+  const cols = Math.max(1, preview.cols | 0);
+  const { glyph, fg, bg } = _browsePreviewCell(preview.cells[y * cols + x]);
+  const flatBg = _browseFlattenTransparentBg(bg);
+  const px = x * cellPx;
+  const py = y * cellPx;
+  const css = (c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
+  if (font && (glyph & 0xFF) !== 0) {
+    // Legible path: real CP437 glyphs in cell fg over cell bg.
+    font.drawGlyph(ctx, glyph & 0xFF, px, py, fg, flatBg);
+    return;
+  }
+  if (glyph === 223) {
+    ctx.fillStyle = css(fg); ctx.fillRect(px, py, cellPx, Math.ceil(cellPx / 2));
+    ctx.fillStyle = css(flatBg); ctx.fillRect(px, py + Math.ceil(cellPx / 2), cellPx, Math.floor(cellPx / 2));
+  } else if (glyph === 220) {
+    ctx.fillStyle = css(flatBg); ctx.fillRect(px, py, cellPx, Math.ceil(cellPx / 2));
+    ctx.fillStyle = css(fg); ctx.fillRect(px, py + Math.ceil(cellPx / 2), cellPx, Math.floor(cellPx / 2));
+  } else {
+    ctx.fillStyle = css(glyph > 32 ? fg : flatBg); ctx.fillRect(px, py, cellPx, cellPx);
+  }
+}
+
+// Shared sheet renderer: glyph path draws every cell at the native 12px
+// font stride into an offscreen canvas, then scales the whole sheet into
+// the target box (smooth downscale, crisp integer-neutral upscale). Block
+// path (font not yet loaded) draws directly at whole-cell stride. Either
+// way the target keeps the sheet aspect and fits within maxW/maxH.
+function _renderSheetToCanvas(canvas, preview, maxW, maxH) {
   const cols = Math.max(1, preview.cols | 0);
   const rows = Math.max(1, preview.rows | 0);
-  const scale = Math.max(1, Math.floor(Math.min(220 / cols, 140 / rows)));
-  canvas.width = cols * scale;
-  canvas.height = rows * scale;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
-  const css = (c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      const { glyph, fg, bg } = _browsePreviewCell(preview.cells[y * cols + x]);
-      const px = x * scale;
-      const py = y * scale;
-      if (glyph === 223) {
-        ctx.fillStyle = css(fg); ctx.fillRect(px, py, scale, Math.ceil(scale / 2));
-        ctx.fillStyle = css(bg); ctx.fillRect(px, py + Math.ceil(scale / 2), scale, Math.floor(scale / 2));
-      } else if (glyph === 220) {
-        ctx.fillStyle = css(bg); ctx.fillRect(px, py, scale, Math.ceil(scale / 2));
-        ctx.fillStyle = css(fg); ctx.fillRect(px, py + Math.ceil(scale / 2), scale, Math.floor(scale / 2));
-      } else {
-        ctx.fillStyle = css(glyph > 32 ? fg : bg); ctx.fillRect(px, py, scale, scale);
+  const font = _browseGlyphFont();
+  if (font) {
+    const off = document.createElement('canvas');
+    off.width = cols * CELL_SIZE;
+    off.height = rows * CELL_SIZE;
+    const octx = off.getContext('2d');
+    if (!octx) return;
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const { glyph, fg, bg } = _browsePreviewCell(preview.cells[y * cols + x]);
+        font.drawGlyph(octx, glyph & 0xFF, x * CELL_SIZE, y * CELL_SIZE, fg, _browseFlattenTransparentBg(bg));
       }
     }
+    const s = Math.min(maxW / off.width, maxH / off.height);
+    canvas.width = Math.max(1, Math.round(off.width * s));
+    canvas.height = Math.max(1, Math.round(off.height * s));
+    ctx.imageSmoothingEnabled = s < 1;
+    ctx.drawImage(off, 0, 0, off.width, off.height, 0, 0, canvas.width, canvas.height);
+    return;
   }
+  const cellPx = Math.max(1, Math.floor(Math.min(maxW / cols, maxH / rows)));
+  canvas.width = cols * cellPx;
+  canvas.height = rows * cellPx;
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      _drawBrowsePreviewCell(ctx, preview, x, y, cellPx, null);
+    }
+  }
+}
+
+function _drawBrowsePreview(canvas, meta, item, preview) {
+  const cols = Math.max(1, preview.cols | 0);
+  const rows = Math.max(1, preview.rows | 0);
+  // Useful-size cap: fit within 560x360 backing px (a 126x80 sheet lands at
+  // ~560x355 — legible, not postage-stamp).
+  _renderSheetToCanvas(canvas, preview, 560, 360);
   if (meta) {
     const kind = item?.session_kind ? ` · ${item.session_kind}` : '';
-    meta.textContent = `${label} · ${cols}\u00d7${rows}${kind}`;
+    meta.textContent = `${_browseDisplayLabel(item)} · ${cols}\u00d7${rows}${kind}`;
+  }
+}
+
+// Per-row thumbnail: same glyph renderer at a small box (backing sized to
+// the sheet aspect, CSS constrains display). Shares browsePreviewCache.
+function _drawSheetThumb(canvas, preview) {
+  _renderSheetToCanvas(canvas, preview, 144, 96);
+}
+
+// In-flight thumbnail fetches, keyed by session id (no duplicate fetches).
+// Bounded queue: full-session preview loads are heavy, so at most
+// BROWSE_THUMB_CONCURRENCY run at once; the rest wait their turn.
+const BROWSE_THUMB_CONCURRENCY = 3;
+let _browseThumbActive = 0;
+const _browseThumbQueue = [];
+const _browseThumbQueued = new Set();
+
+function _ensureBrowseThumb(item) {
+  const sid = String(item?.session_id || '');
+  if (!sid || browsePreviewCache.has(sid) || _browseThumbQueued.has(sid)) return;
+  if (typeof editorState.onBrowsePreview !== 'function') return;
+  _browseThumbQueued.add(sid);
+  _browseThumbQueue.push(sid);
+  void _pumpBrowseThumbs();
+}
+
+async function _pumpBrowseThumbs() {
+  if (_browseThumbActive >= BROWSE_THUMB_CONCURRENCY) return;
+  const sid = _browseThumbQueue.shift();
+  if (!sid) return;
+  _browseThumbActive++;
+  try {
+    const data = await editorState.onBrowsePreview(sid);
+    browsePreviewCache.set(sid, _normalizeBrowsePreview(data));
+    try {
+      const thumbs = document.querySelectorAll(`canvas[data-browse-thumb-for="${sid}"]`);
+      const cached = browsePreviewCache.get(sid);
+      for (const thumb of thumbs) _drawSheetThumb(thumb, cached);
+    } catch (_e) { /* draw best-effort only */ }
+    if (String(editorState.browseSelectedId || '') === sid) void _previewBrowseSelected();
+  } catch (_e) { /* row keeps its empty thumb box; selection retry covers */ }
+  finally {
+    _browseThumbActive--;
+    _browseThumbQueued.delete(sid);
+    void _pumpBrowseThumbs();
   }
 }
 
@@ -3811,9 +3959,25 @@ async function _previewBrowseSelected() {
     if (meta) meta.textContent = 'Preview unavailable';
     return;
   }
+  // A thumbnail fetch for this row may already be in flight (queued by list
+  // render): join it instead of issuing a duplicate full-session load.
+  if (_browseThumbQueued.has(sid)) {
+    if (meta) meta.textContent = `Loading preview: ${_browseDisplayLabel(selected)}…`;
+    const t0 = Date.now();
+    while (!browsePreviewCache.has(sid) && Date.now() - t0 < 20000) {
+      await new Promise((r) => setTimeout(r, 60));
+      if (String(editorState.browseSelectedId || '') !== sid) return;
+    }
+    const joined = browsePreviewCache.get(sid);
+    if (joined && String(editorState.browseSelectedId || '') === sid) {
+      _drawBrowsePreview(canvas, meta, selected, joined);
+      return;
+    }
+    // Thumbnail fetch failed or timed out: fall through to a direct fetch.
+  }
   if (browsePreviewPendingId === sid) return;
   browsePreviewPendingId = sid;
-  if (meta) meta.textContent = `Loading preview: ${selected.label || sid.slice(0, 8)}…`;
+  if (meta) meta.textContent = `Loading preview: ${_browseDisplayLabel(selected)}…`;
   try {
     const data = await editorState.onBrowsePreview(sid);
     browsePreviewCache.set(sid, _normalizeBrowsePreview(data));
@@ -3895,6 +4059,33 @@ function _updateBrowseControls() {
   if (reloadBtn) reloadBtn.disabled = busy;
 }
 
+// Unique fallback labels: named documents keep their name; everything else
+// renders kind + geometry + short id + saved time so rows never collapse
+// into N identical labels (e.g. ten `player 126x80 root_blank` rows).
+function _browseShortTime(item) {
+  const epoch = Number(item?.updated_at_epoch);
+  if (Number.isFinite(epoch) && epoch > 0) {
+    const d = new Date(epoch * 1000);
+    if (!Number.isNaN(d.getTime())) {
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+  }
+  const iso = String(item?.updated_at || '').trim();
+  return iso ? iso.slice(0, 16).replace('T', ' ') : '';
+}
+
+function _browseDisplayLabel(item) {
+  const named = String(item?.name || '').trim();
+  if (named) return String(item?.label || named);
+  const kind = String(item?.session_kind || 'doc');
+  const sid = String(item?.session_id || '');
+  const short = sid ? sid.slice(0, 8) : 'unknown';
+  const geom = (item?.grid_cols && item?.grid_rows) ? ` ${item.grid_cols}x${item.grid_rows}` : '';
+  const when = _browseShortTime(item);
+  return `${kind}${geom} ${short}${when ? ` · ${when}` : ''}`;
+}
+
 function _renderBrowseList() {
   const listEl = document.getElementById('wsBrowseList');
   if (!listEl) return;
@@ -3910,15 +4101,35 @@ function _renderBrowseList() {
   }
 
   for (const item of editorState.browseItems) {
+    const sid = String(item.session_id || '');
     const row = document.createElement('button');
     row.type = 'button';
     row.className = 'ws-browse-item';
-    if (String(item.session_id || '') === String(editorState.browseSelectedId || '')) row.classList.add('ws-browse-item-selected');
-    if (String(item.session_id || '') === String(editorState.currentSessionId || '')) row.classList.add('ws-browse-item-current');
+    if (sid === String(editorState.browseSelectedId || '')) row.classList.add('ws-browse-item-selected');
+    if (sid === String(editorState.currentSessionId || '')) row.classList.add('ws-browse-item-current');
+
+    const thumb = document.createElement('canvas');
+    thumb.className = 'ws-browse-thumb';
+    thumb.setAttribute('data-browse-thumb-for', sid);
+    // Functional-minimum layout (styles owned elsewhere): fixed box, keep
+    // sheet aspect, pixelated upscale.
+    thumb.style.cssText = 'width:72px;height:48px;flex:none;image-rendering:pixelated;object-fit:contain;background:#000;';
+    thumb.width = 72;
+    thumb.height = 48;
+    const cachedThumb = browsePreviewCache.get(sid);
+    if (cachedThumb) {
+      _drawSheetThumb(thumb, cachedThumb);
+    } else {
+      _ensureBrowseThumb(item);
+    }
+
+    const textWrap = document.createElement('span');
+    textWrap.className = 'ws-browse-item-text';
+    textWrap.style.cssText = 'display:flex;flex-direction:column;min-width:0;flex:1;';
 
     const title = document.createElement('span');
     title.className = 'ws-browse-item-title';
-    title.textContent = String(item.label || item.session_id || 'session');
+    title.textContent = _browseDisplayLabel(item);
 
     const details = [];
     if (item.grid_cols && item.grid_rows) details.push(`${item.grid_cols}x${item.grid_rows}`);
@@ -3931,16 +4142,25 @@ function _renderBrowseList() {
 
     const meta = document.createElement('span');
     meta.className = 'ws-browse-item-meta';
-    meta.textContent = details.join(' · ') || String(item.session_id || '');
+    meta.textContent = details.join(' · ') || sid;
 
-    row.appendChild(title);
-    row.appendChild(meta);
+    textWrap.appendChild(title);
+    textWrap.appendChild(meta);
+    row.appendChild(thumb);
+    row.appendChild(textWrap);
     row.addEventListener('click', () => {
-      editorState.browseSelectedId = String(item.session_id || '');
+      editorState.browseSelectedId = sid;
       _renderBrowseList();
       void _previewBrowseSelected();
     });
-    row.addEventListener('dblclick', () => { void _browseOpenSelected(); });
+    // Single row-open path: double-click delegates to the Open selected
+    // button so both share one handler (_browseOpenSelected via click).
+    row.addEventListener('dblclick', () => {
+      editorState.browseSelectedId = sid;
+      const openBtn = document.getElementById('wsBrowseOpen');
+      if (openBtn && !openBtn.disabled) openBtn.click();
+      else void _browseOpenSelected();
+    });
     listEl.appendChild(row);
   }
 
@@ -4024,7 +4244,7 @@ async function _browseOpenSelected() {
     editorState.currentSessionId = String(selected.session_id || '');
     // Open leaves Browse: the loaded sheet stays visible in the Edit workspace.
     _setMode('paint');
-    _setBrowseStatus(`Editing ${selected.label || selected.session_id || 'session'}`);
+    _setBrowseStatus(`Editing ${_browseDisplayLabel(selected)}`);
     void _refreshBrowseItems({ preserveSelection: true });
   } catch (err) {
     _setBrowseStatus(`Open failed: ${String(err)}`);

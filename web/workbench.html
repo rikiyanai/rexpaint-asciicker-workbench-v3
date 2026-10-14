@@ -102,7 +102,7 @@
       <button id="productBrowseBtn" type="button" class="primary" aria-pressed="true">Browse</button>
       <button id="productEditBtn" type="button" aria-pressed="false">Edit</button>
       <button id="btnNewXp" class="primary" disabled>New</button>
-      <button id="btnOpenFile" disabled>Open</button>
+      <button id="btnOpenFile" disabled title="Open a local .xp file from disk (local-file intake; ignores the Browse selection — use Open selected in Browse for listed documents)">Open file</button>
       <button id="btnSave" disabled>Save</button>
       <button id="btnExport" disabled>Export</button>
       <button id="webbuildQuickTestBtn" class="success" disabled>Test This Skin</button>
@@ -131,7 +131,7 @@
     <div id="productBrowseSurface" data-integration-hook="root-editor-browse"></div>
     <div class="row" style="margin-top:8px; align-items:center;">
       <button id="browseImportPngBtn" class="primary" title="Import a PNG sprite sheet, then Convert it to XP">Import PNG</button>
-      <span class="small">New / Open / Import PNG &rarr; Convert &rarr; Edit &rarr; Save / Export &rarr; Test This Skin. Drafts auto-save in the browser (Tier A); Open / Save to File use local files (Tier B).</span>
+      <span class="small">New / Open file / Open selected / Import PNG &rarr; Convert &rarr; Edit &rarr; Save / Export &rarr; Test This Skin. Drafts auto-save in the browser (Tier A); Open file / Save to File use local files (Tier B); Open selected opens the highlighted Browse document.</span>
     </div>
   </section>
   <div class="panel" id="uploadConvertPanel" data-panel-number="7 upload-convert">
@@ -175,8 +175,8 @@
   </div>
   <div class="panel" id="webbuildDockPanel" data-panel-number="14 skin-test-dock">
     <h3>Test This Skin</h3>
-    <div class="row"><span id="webbuildState" class="small">Webbuild not loaded</span></div>
-    <div id="webbuildHint" class="small">Tests the current whole-sheet document or ready bundle in the embedded Skin Dock/runtime.</div>
+    <div class="row"><span id="webbuildState" class="small">No test running — open a document, then press Test This Skin.</span></div>
+    <div id="webbuildHint" class="small">Next step: open or select a document in Browse above (or New / Import PNG), edit it, then press Test This Skin to run the current whole-sheet document or ready bundle in the embedded Skin Dock/runtime.</div>
     <iframe id="webbuildFrame" title="Asciicker Webbuild" class="hidden" style="width:100%; height:360px; border:1px solid #334; background:#000;"></iframe>
     <div id="docContractPanel" class="small" aria-label="Normalized document contract">
       <div id="docContractKind">doc: (no document)</div>
