@@ -46,7 +46,9 @@ import shutil
 import sys
 from pathlib import Path
 
-V3 = Path("/Users/r/Downloads/asciicker-pipeline-v3")
+V3 = Path(os.environ.get("ASCIICKER_V3_ROOT") or Path(__file__).resolve().parent.parent)
+if not (V3 / "scripts").is_dir():
+    raise SystemExit(f"V3 scripts dir missing under {V3}; set ASCIICKER_V3_ROOT to a checkout containing scripts/")
 sys.path.insert(0, str(V3 / "scripts"))
 from xp_core import XPFile  # noqa: E402
 

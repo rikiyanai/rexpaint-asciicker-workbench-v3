@@ -17407,3 +17407,14 @@ calls + 3 load→Edit transitions. Headed click proof (`/tmp/proof-new-edit.py`,
 system Chrome, fresh profile per base): start=browse → toolbar New →
 mode=edit, session loaded, new row selected, empty-state hidden — PASS at
 both `/` and `/xpedit`.
+
+### 2026-10-14 Self-containment 42→38: adhoc live paths fixed
+
+Replaced hardcoded `V3 = Path("/Users/r/Downloads/asciicker-pipeline-v3")`
+in `adhoc/repair.py`, `adhoc/gromit_head.py`, `adhoc/subcell.py`,
+`adhoc/wallace2.py` with `ASCIICKER_V3_ROOT` env override defaulting to the
+enclosing checkout (`Path(__file__).parent.parent`) plus a fail-closed
+`SystemExit` naming the missing scripts dir and the env var. `py_compile`
+clean on all four. Audit now reports `errors: 38`, all retained
+`.context/compound-engineering/ce-review/*` JSON under retain-and-record.
+Self-containment still NOT claimed.
