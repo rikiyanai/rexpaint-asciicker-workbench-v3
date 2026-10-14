@@ -113,9 +113,10 @@ test('kind badges and metadata status surface without layer pollution', () => {
   assert.match(wholeSheetJs, /layersSection\.dataset\.modeScope = 'paint'/);
 });
 
-test('New refreshes and selects in Browse without leaving Edit', () => {
+test('New creates, lands in Edit, and refreshes+selects in Browse', () => {
   assert.match(wholeSheetJs, /async function refreshBrowseList\(selectSessionId\)/, 'editor exposes refresh+select API');
   assert.match(wholeSheetJs, /refreshBrowseList,/, 'refresh API exported on the editor handle');
   assert.equal((workbenchJs.match(/await _refreshBrowseAfterNew\(j\.session_id\)/g) || []).length, 3, 'all three New success paths refresh Browse');
-  assert.match(workbenchJs, /never changes shell mode, never pulls out of Edit/, 'refresh stays mode-neutral by contract');
+  // Browse → New → Edit is the required flow: every New success path lands in Edit.
+  assert.equal((workbenchJs.match(/await loadSession\(j\.session_id[\s\S]{0,160}?setProductShellMode\("edit"\)/g) || []).length, 3, 'all three New success paths switch to Edit after load');
 });

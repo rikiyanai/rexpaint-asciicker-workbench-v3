@@ -4659,6 +4659,7 @@
         const geometry = readClassicGeometryInputs();
         const j = await createBlankRootSession(geometry);
         await loadSession(j.session_id, { reason: "New blank root session..." });
+        setProductShellMode("edit");
         await _refreshBrowseAfterNew(j.session_id);
         status(`New XP ready: ${j.grid_cols}x${j.grid_rows}`, "ok");
       } catch (e) {
@@ -4675,6 +4676,7 @@
         state.actionStates[actionKey].status = "blank";
       }
       await loadSession(j.session_id, { reason: `New blank ${actionKey} session...` });
+      setProductShellMode("edit");
       await _refreshBrowseAfterNew(j.session_id);
       status(`New XP ready for ${actionKey}`, "ok");
     } catch (e) {

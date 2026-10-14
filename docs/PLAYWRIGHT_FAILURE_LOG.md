@@ -17374,3 +17374,36 @@ proof-blocked, `UQ-009` partial/support, `UQ-010` gated open obligation,
 `UQ-011` parked, `UQ-013` active, `UQ-R15`/`FL-3861`–`FL-3864` open;
 slope-brush source recovery open; deploy stays on hold — no cutover, no
 public proof; frozen-SHA gate in force.
+
+### 2026-10-14 SW old→new rotation proof + Browse→New→Edit closure (headed Chromium)
+
+Worker update reproduced old-version → new-version at `/` (:5071) and
+`/xpedit` (:5072, `PIPELINE_BASE_PATH=/xpedit`), headed system Chrome via
+Playwright, fresh profile per base, **zero `unregister()` calls** in any
+proof script (verified by inspection of `/tmp/sw-update-proof2.py`).
+
+- Old worker: `sw.js` with `CACHE_NAME='rexpaint-web-v2-20261012'`,
+  cache-first document + `rexpaint-editor/adaptive-stroke-tool.js`
+  (wrong path — `tools/` missing), so `cache.addAll` rejected and no
+  worker ever installed (root cause of the stale-shell reports).
+- New worker (this commit): `CACHE_NAME='rexpaint-web-v2-20261014'`,
+  corrected precache path, network-first navigations, network-first `?v=`
+  boot-nonce assets, cache-first only for unversioned extras; page
+  reloads once on controller change (skipped on first install).
+- Simulated deploy: bump name 20261012→`rexpaint-web-v2-PROOFUPDATE` +
+  red-outline marker rule in `styles.css` on live disk, single manual
+  reload, then hands off. Result per base: caches exactly
+  `['rexpaint-web-v2-PROOFUPDATE']` (old evicted), marker painted,
+  3 main-frame navigations (goto + manual reload + one auto-reload).
+  Reverted after proof; committed `CACHE_NAME` is `...-20261014`.
+- Residual risk recorded: `?v=` entries accumulate within one
+  `CACHE_NAME` and are wiped only by the per-deploy name bump.
+
+Browse→New→Edit: toolbar `newXp()` (blank + template paths) previously
+stayed in Browse; all three New success paths now call
+`setProductShellMode("edit")` after load plus mode-neutral
+`_refreshBrowseAfterNew`. `browse-viewport-toggle` asserts 3 refresh
+calls + 3 load→Edit transitions. Headed click proof (`/tmp/proof-new-edit.py`,
+system Chrome, fresh profile per base): start=browse → toolbar New →
+mode=edit, session loaded, new row selected, empty-state hidden — PASS at
+both `/` and `/xpedit`.
