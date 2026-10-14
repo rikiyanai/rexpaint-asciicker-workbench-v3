@@ -2739,6 +2739,7 @@ body > span[style*="line-height:11px"] {
   color: #333;
   border-top: 1px solid #000;
   padding-top: 4px;
+}
 /* ── UQ-013 / FL-MOB-03: Tools panel always visible in landscape mobile ──────
    On landscape tablet (coarse pointer + landscape), restore the whole-sheet
    editor sidebar as a permanent fixed left panel instead of collapsing it to

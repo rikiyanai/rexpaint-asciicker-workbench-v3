@@ -4203,6 +4203,16 @@ async function _refreshBrowseItems({ preserveSelection = true } = {}) {
     _updateBrowseControls();
   }
 }
+// Public: refresh the Browse list and select a session without leaving the
+// current mode. Used after New so the created document appears selected.
+async function refreshBrowseList(selectSessionId) {
+  const items = await _refreshBrowseItems({ preserveSelection: true });
+  if (selectSessionId && items.some((item) => String(item.session_id || '') === String(selectSessionId))) {
+    editorState.browseSelectedId = String(selectSessionId);
+    _renderBrowseList();
+  }
+  return items;
+}
 
 function mountBrowseApp({ container, currentSessionId, onBrowseList, onBrowseOpen, onBrowseRename, onBrowseDuplicate, onBrowseDelete, onBrowsePreview, onBrowseNewRaw } = {}) {
   if (!container) return false;
@@ -5339,6 +5349,7 @@ window.__wholeSheetEditor = {
   pasteClipboard: _enterPasteMode,
   deleteSelection: _deleteSelection,
   setTool: _switchTool,
+  refreshBrowseList,
   openMobileKeyboard,
 };
 window.dispatchEvent(new Event('whole-sheet-editor-ready'));

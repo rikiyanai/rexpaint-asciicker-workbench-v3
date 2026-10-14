@@ -77,6 +77,20 @@ def _assert_precache_covers(sw_source: str) -> str:
     return cache_name
 
 
+def _assert_versioned_network_first(sw_source: str) -> None:
+    # ?v= boot-nonce URLs are network-first: the nonce changes every boot so
+    # a cache hit could never serve the current boot's bytes.
+    assert "searchParams.has('v')" in sw_source, (
+        "fetch handler must special-case ?v= versioned assets network-first"
+    )
+
+def _assert_document_network_first(sw_source: str) -> None:
+    # Navigations are network-first so the shell can never be stranded behind
+    # a cache-first document (the observed stale-HTML trap).
+    assert "mode === 'navigate'" in sw_source, (
+        "fetch handler must special-case navigations network-first"
+    )
+
 def _assert_stale_cache_resolves(sw_source: str, cache_name: str) -> None:
     # Install path: skipWaiting + precache everything, so the new worker
     # takes over immediately with fresh assets.
@@ -100,6 +114,8 @@ def test_sw_freshness_cutover_gate(client):
     sw_source = _sw_source(client)
     cache_name = _assert_precache_covers(sw_source)
     _assert_stale_cache_resolves(sw_source, cache_name)
+    _assert_document_network_first(sw_source)
+    _assert_versioned_network_first(sw_source)
     assert nonce  # token observed; freshness anchored to this boot
 
 
@@ -110,6 +126,8 @@ def test_sw_freshness_cutover_gate_under_configured_prefix(hosted_client):
     sw_source = _sw_source(client, prefix)
     cache_name = _assert_precache_covers(sw_source)
     _assert_stale_cache_resolves(sw_source, cache_name)
+    _assert_document_network_first(sw_source)
+    _assert_versioned_network_first(sw_source)
 
 
 def test_stale_cache_name_cannot_match_current(client):

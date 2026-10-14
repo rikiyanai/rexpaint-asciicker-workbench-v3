@@ -40,7 +40,7 @@
 <!-- UQ-013: Mobile first screen — task-rooted entry (hidden on desktop, shown on mobile before session loads) -->
 <div id="mobileFirstScreen" class="ws-first-screen" role="dialog" aria-modal="true" aria-label="Open or continue an XP session">
   <div class="ws-first-screen-inner">
-    <h2 class="ws-first-screen-title">XPEdit</h2>
+    <h2 class="ws-first-screen-title">REXPaint Web</h2>
     <div class="ws-first-screen-actions">
       <button id="fsOpenXpBtn" class="ws-first-screen-btn primary">Open XP</button>
       <div class="ws-first-screen-draft-wrap">
@@ -57,7 +57,7 @@
       </div>
     </div>
     <div class="ws-first-screen-footer">
-      <button id="fsAdvancedBtn" class="ws-first-screen-btn ws-first-screen-secondary">OPEN REXPAINT MOBILE</button>
+      <button id="fsAdvancedBtn" class="ws-first-screen-btn ws-first-screen-secondary">Open full dashboard</button>
     </div>
   </div>
 </div>
@@ -75,23 +75,18 @@
     <button data-action="share-file" title="Share/Export File">Share</button>
   </div>
   <div class="ws-mobile-top-drawers">
-    <button data-drawer-toggle="tools" title="Tools" aria-expanded="false">Tools</button>
     <button data-drawer-toggle="frames" title="Frames" aria-expanded="false">Frames</button>
-    <button data-drawer-toggle="layers" title="Layers" aria-expanded="false">Layers</button>
     <button data-drawer-toggle="files" title="Files / Session" aria-expanded="false">Files</button>
     <button data-drawer-toggle="source" title="Source / Slice" aria-expanded="false">Source</button>
-    <button data-drawer-toggle="import" title="Import PNG" aria-expanded="false">Import</button>
     <button data-drawer-toggle="template" title="Template / Bundle" aria-expanded="false">Template</button>
     <button data-drawer-toggle="anim" title="Animation + Metadata" aria-expanded="false">Anim</button>
     <button data-drawer-toggle="preview" title="XP Preview + Session" aria-expanded="false">Preview</button>
     <button data-drawer-toggle="test" title="Test Skin" aria-expanded="false">Test</button>
     <button data-drawer-toggle="export" title="Export" aria-expanded="false">Export</button>
-    <button data-drawer-toggle="browse" title="Browse drawer" aria-expanded="false">Browse</button>
-    <button data-drawer-toggle="info" title="Info" aria-expanded="false">Info</button>
     <button id="productMobileBrowseBtn" data-product-mode="browse" title="Browse documents">Browse</button>
     <button data-action="import-png" title="Import a PNG for conversion">Import</button>
     <button id="mobileKeyboardBtn" type="button" title="Use the on-screen keyboard">Keyboard</button>
-    <button data-action="toggle-advanced" title="OPEN REXPAINT MOBILE">Advanced</button>
+    <button data-action="toggle-advanced" title="Toggle full dashboard">Advanced</button>
   </div>
 </div>
 <textarea id="mobileKeyboardInput" class="ws-mobile-keyboard-input" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="REXPaint Web mobile text input"></textarea>
@@ -144,6 +139,13 @@
     </div>
     <div class="row">
       <div><label>Name</label><input id="wbName" value="wb_sprite"></div>
+      <div>
+        <label>Glyph Mode</label>
+        <select id="wbAssignmentMode">
+          <option value="geometric">Geometric (fast, half-blocks)</option>
+          <option value="rich">Rich (CP437 font-mask matching)</option>
+        </select>
+      </div>
       <div style="min-width:280px;">
         <label>Auto Plan</label>
         <div id="wbAutoPlan" class="small muted">Derived automatically from the uploaded PNG at convert time.</div>
@@ -364,35 +366,6 @@
     <div id="uiRecorderSummary" class="small">0 events</div>
   </details>
 
-  <div class="ws-drawer" data-drawer="import">
-  <div class="panel" data-panel-number="7 upload-convert">
-    <h3>Upload + Convert (<span id="uploadPanelLabel">REXPaint Web Clone</span>)</h3>
-    <div class="row">
-      <input id="wbFile" type="file" accept=".png">
-      <button id="wbUpload" class="primary">Upload PNG</button>
-      <button id="wbRun" class="success" disabled>Convert to XP</button>
-    </div>
-    <div class="row">
-      <div><label>Name</label><input id="wbName" value="wb_sprite"></div>
-      <div>
-        <label>Glyph Mode</label>
-        <select id="wbAssignmentMode">
-          <option value="geometric">Geometric (fast, half-blocks)</option>
-          <option value="rich">Rich (CP437 font-mask matching)</option>
-        </select>
-      </div>
-      <div style="min-width:280px;">
-        <label>Auto Plan</label>
-        <div id="wbAutoPlan" class="small muted">Derived automatically from the uploaded PNG at convert time.</div>
-      </div>
-    </div>
-    <div id="wbRunOutShell" class="subpanel-shell output-shell" data-panel-number="7A" data-panel-tag="convert-json">
-      <div id="wbRunOutViewport" class="output-viewport">
-        <pre id="wbRunOut"></pre>
-      </div>
-    </div>
-  </div>
-  </div><!-- /ws-drawer import -->
 
   <div class="two-col" id="sourceFramesRow">
     <div class="ws-drawer" data-drawer="source">
@@ -851,7 +824,17 @@
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register((window.__WB_BASE_PATH || '') + '/sw.js').catch(function() {});
+    // A new worker (skipWaiting + claim) takes over silently; reload once so
+    // the open page picks up fresh HTML/CSS/JS without manual unregistering.
+    // Skipped on first install (no previous controller): nothing stale yet.
+    (function() {
+      var hadController = !!(navigator.serviceWorker.controller);
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (hadController) window.location.reload();
+        hadController = true;
+      });
+    })();
   }
-</script>
+  </script>
 </body>
 </html>

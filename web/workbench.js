@@ -4602,6 +4602,16 @@
   // Direct raw-XP authoring: primary path that never requires template or
   // bundle selection. Clears template/bundle context, creates a blank root
   // session, loads it, and stays on the visible sheet in the Edit workspace.
+  // After New creates+loads a session, refresh Browse and select the new
+  // document. List-only: never changes shell mode, never pulls out of Edit.
+  async function _refreshBrowseAfterNew(sessionId) {
+    try {
+      const editor = window.__wholeSheetEditor;
+      if (editor && typeof editor.refreshBrowseList === 'function') {
+        await editor.refreshBrowseList(sessionId);
+      }
+    } catch (e) { /* Browse refresh is best-effort; session is already loaded */ }
+  }
   async function newRawXp() {
     if (state.sessionDirty && state.sessionId) {
       await flushPendingWholeSheetDrawSaveTimer();
@@ -4628,6 +4638,7 @@
     const ok = await loadSession(j.session_id, { reason: "New blank raw XP session..." });
     if (!ok) throw new Error("new raw xp failed: session load failed");
     setProductShellMode("edit");
+    await _refreshBrowseAfterNew(j.session_id);
     status(`New raw XP ready: ${j.grid_cols}x${j.grid_rows}`, "ok");
     return j;
   }
@@ -4648,6 +4659,7 @@
         const geometry = readClassicGeometryInputs();
         const j = await createBlankRootSession(geometry);
         await loadSession(j.session_id, { reason: "New blank root session..." });
+        await _refreshBrowseAfterNew(j.session_id);
         status(`New XP ready: ${j.grid_cols}x${j.grid_rows}`, "ok");
       } catch (e) {
         status(`New XP failed: ${e}`, "err");
@@ -4663,6 +4675,7 @@
         state.actionStates[actionKey].status = "blank";
       }
       await loadSession(j.session_id, { reason: `New blank ${actionKey} session...` });
+      await _refreshBrowseAfterNew(j.session_id);
       status(`New XP ready for ${actionKey}`, "ok");
     } catch (e) {
       status(`New XP failed: ${e}`, "err");

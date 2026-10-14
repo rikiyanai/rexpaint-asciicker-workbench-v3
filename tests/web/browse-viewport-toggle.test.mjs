@@ -51,7 +51,7 @@ test('viewport toggle flips layout and persists as a Tier C UI preference', () =
 test('390px is clean: panels stack, fixed canvases stay contained', () => {
   assert.match(css, /@media \(max-width: 600px\)[\s\S]*?\.two-col \{\s*grid-template-columns: 1fr;/);
   assert.match(css, /\.two-col > \* \{\s*min-width: 0;/);
-  assert.match(css, /body\.wb-viewport-mobile \.wrap \{\s*max-width: 390px;/);
+  assert.match(css, /body\.wb-viewport-mobile \.wrap \{\s*max-width: 100%;/, 'toggle composes full-bleed, not a centered column');
   assert.match(css, /body\.wb-viewport-mobile \.ws-mobile-top-bar \{\s*display: flex;/);
   assert.match(css, /body\.wb-viewport-mobile \.ws-mobile-bottom-bar \{\s*display: flex;/);
   assert.match(css, /body\.wb-viewport-mobile \.ws-drawer \{/);
@@ -59,9 +59,12 @@ test('390px is clean: panels stack, fixed canvases stay contained', () => {
   assert.match(css, /grid-template-columns: none !important;/);
 });
 
-test('mobile controls cover select/import/tools/glyph/undo/save/export/test', () => {
-  for (const toggle of ['tools', 'layers', 'info']) {
-    assert.match(html, new RegExp(`data-drawer-toggle="${toggle}"`), `${toggle} drawer reachable from mobile chrome`);
+test('mobile controls cover select/import/browse/glyph/undo/save/export/test', () => {
+  // Dead drawer toggles (tools/layers/info/browse) were removed: no matching
+  // data-drawer exists, so they only closed drawers. Tools live in the tool
+  // buttons, layers in the Edit panel, Browse in the mode buttons below.
+  for (const toggle of ['tools', 'layers', 'info', 'browse']) {
+    assert.doesNotMatch(html, new RegExp(`data-drawer-toggle="${toggle}"`), `dead ${toggle} toggle stays removed`);
   }
   assert.match(html, /id="productMobileBrowseBtn"/, 'Browse reachable from mobile chrome');
   assert.match(html, /data-action="import-png"/, 'Import reachable from mobile chrome');
@@ -108,4 +111,11 @@ test('kind badges and metadata status surface without layer pollution', () => {
   assert.match(wholeSheetJs, /if \(item\.session_kind\) details\.push\(String\(item\.session_kind\)\)/);
   assert.match(workbenchJs, /doc: \$\{doc\.session_short\} kind=\$\{doc\.session_kind\} meta=\$\{doc\.metadata_status\}/);
   assert.match(wholeSheetJs, /layersSection\.dataset\.modeScope = 'paint'/);
+});
+
+test('New refreshes and selects in Browse without leaving Edit', () => {
+  assert.match(wholeSheetJs, /async function refreshBrowseList\(selectSessionId\)/, 'editor exposes refresh+select API');
+  assert.match(wholeSheetJs, /refreshBrowseList,/, 'refresh API exported on the editor handle');
+  assert.equal((workbenchJs.match(/await _refreshBrowseAfterNew\(j\.session_id\)/g) || []).length, 3, 'all three New success paths refresh Browse');
+  assert.match(workbenchJs, /never changes shell mode, never pulls out of Edit/, 'refresh stays mode-neutral by contract');
 });

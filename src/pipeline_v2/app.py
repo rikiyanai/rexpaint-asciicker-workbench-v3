@@ -152,6 +152,7 @@ def _serve_web_html(file_name: str):
     html = html.replace('href="/rexpaint-editor/styles.css"', f'href="{_v(BASE_PATH + "/rexpaint-editor/styles.css")}"')
     html = html.replace('href="/manifest.json"', f'href="{_v(BASE_PATH + "/manifest.json")}"')
     html = html.replace('src="/workbench-template-gating.js"', f'src="{_v(BASE_PATH + "/workbench-template-gating.js")}"')
+    html = html.replace('src="/workbench-action-navigation.js"', f'src="{_v(BASE_PATH + "/workbench-action-navigation.js")}"')
     html = html.replace('src="/workbench.js"', f'src="{_v(BASE_PATH + "/workbench.js")}"')
     html = html.replace('src="/wizard.js"', f'src="{_v(BASE_PATH + "/wizard.js")}"')
     html = html.replace('src="/whole-sheet-init.js"', f'src="{_v(BASE_PATH + "/whole-sheet-init.js")}"')

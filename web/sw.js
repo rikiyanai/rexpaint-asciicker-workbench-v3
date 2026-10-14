@@ -17,7 +17,7 @@ var STATIC_ASSET_PATHS = [
   'touch-gestures.mjs',
   'manifest.json',
   'rexpaint-editor/canvas.js',
-  'rexpaint-editor/adaptive-stroke-tool.js?v=20261012-slope1',
+  'rexpaint-editor/tools/adaptive-stroke-tool.js?v=20261012-slope1',
   'rexpaint-editor/cp437-font.js',
   'rexpaint-editor/editor-app.js',
   'rexpaint-editor/glyph-picker.js',
@@ -77,12 +77,48 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // Skip cross-origin requests
-  if (url.origin !== self.location.origin) {
+  // Navigations (the workbench document at / or /xpedit prefixes) are
+  // network-first: the shell must be fresh without manual unregistering.
+  // Cache-first here is what stranded old HTML/CSS/JS behind the old cache.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).then(function(response) {
+        if (response.ok && event.request.method === 'GET') {
+          var responseClone = response.clone();
+          caches.open(CACHE_NAME).then(function(cache) {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return response;
+      }).catch(function() {
+        return caches.match(event.request);
+      })
+    );
     return;
   }
-
-  // Cache-first for same-origin static assets
+  // Version-busted assets (?v= boot nonce) are network-first: the nonce
+  // changes every server boot, so the URL itself is the version and a cache
+  // hit can never serve a newer boot's bytes. Repeat loads within a boot are
+  // still cheap via the HTTP immutable cache. Stale-?v entries accumulate
+  // within one CACHE_NAME and are wiped by the per-deploy name bump.
+  if (url.searchParams.has('v') && event.request.method === 'GET') {
+    event.respondWith(
+      fetch(event.request).then(function(response) {
+        if (response.ok) {
+          var responseClone = response.clone();
+          caches.open(CACHE_NAME).then(function(cache) {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return response;
+      }).catch(function() {
+        return caches.match(event.request);
+      })
+    );
+    return;
+  }
+  // Cache-first for the remaining same-origin static assets (unversioned
+  // extras fetched at runtime; precached cores refresh via CACHE_NAME bumps).
   event.respondWith(
     caches.match(event.request).then(function(cached) {
       return cached || fetch(event.request).then(function(response) {
