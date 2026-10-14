@@ -17276,6 +17276,18 @@ file outside that ownership was edited; no row below is closed.
   38 are stored CE-review JSON under `.context/` (historical evidence):
   disposition is retain-and-record, not edited and not presented as fixed.
   A truthful self-contained or product-push-ready claim is still blocked.
+- 2026-10-14 GatesLane rerun: blocking count is now 42, reconciled as
+  42 = 38 + 4. The 38 are the retained CE-review JSON findings above
+  (unchanged disposition: retain-and-record). The other 4 are live external
+  absolute paths in tracked `adhoc/*.py` (ownership sits elsewhere — NOT
+  fixed here, recorded as live-path fixes owed, self-containment still NOT
+  claimed):
+  - `adhoc/repair.py:49` — `V3 = Path("/Users/r/Downloads/asciicker-pipeline-v3")`
+  - `adhoc/gromit_head.py:46` — `V3 = Path("/Users/r/Downloads/asciicker-pipeline-v3")`
+  - `adhoc/subcell.py:36` — `V3 = Path("/Users/r/Downloads/asciicker-pipeline-v3")`
+  - `adhoc/wallace2.py:46` — `V3 = Path("/Users/r/Downloads/asciicker-pipeline-v3")`
+  (`/private/tmp/claude-501/...` companions in the same files are env
+  scratch, non-blocking per audit classification.)
 
 ### URL proof (local only, no public deploy)
 
@@ -17319,3 +17331,46 @@ thumbnails, below fold; preview postage-stamp magenta; editor lands at Fit
 Next slice: mobile-first Browse (one Open, thumbnails, distinct labels) +
 paintable-zoom editor. `rikiworld.com/xpedit` deploy explicitly deferred by
 operator. Merging fast-forward into `main`; `fl4306-*` branches to delete.
+
+### 2026-10-14 GatesLane: SW freshness cutover gate + audit 42=38+4 + headed / + /xpedit loops
+
+Cutover gate (required before any cutover, NEW — closes the §"no
+service-worker freshness automation" gap): `tests/test_sw_freshness_cutover_gate.py`
+green 4/4 (root + `/xpedit` hosted-client params + stale-name test). Gate
+asserts: served `/workbench` emits `window.__WB_SERVER_BOOT_NONCE` with all
+`?v=` asset tokens equal to it; `/sw.js` served `no-store` with a non-empty
+`CACHE_NAME` whose precache list covers `workbench.js`, `styles.css`,
+`whole-sheet-init.js`, `manifest.json`; install uses `skipWaiting` +
+`cache.addAll`; activate deletes every non-current cache then claims clients —
+so a stale cache resolves to fresh assets on update.
+
+Headed user-sim (local Flask :5073 root + :5074 `PIPELINE_BASE_PATH=/xpedit`,
+headed system Chrome, desktop 1365x900 + mobile 390x844 iPhone-UA): all four
+lanes ran load -> Browse -> New -> Edit -> paint -> Save -> Export -> Test
+with viewport screenshots + doc/runtime state per stop (captures
+`/tmp/gates-accept/shots/<lane>-<stop>.png`, states
+`/tmp/gates-accept/acceptance.json` + `acceptance-mobile2.json`).
+Desktop `/` (nonce `1792010036970`) and `/xpedit` (nonce `1792010002417`):
+New minted sessions (`20dcf28a…`, `2a054ee0…`, `kind=root_blank
+meta=generated family=player`, geom 126x80 angles-8 anims-[9] layers-4);
+Edit/Save/Export/Test clicks dispatched; Test dock reads "Webbuild ready
+(on_foot,no_equipment)", dock skin `CHECKSUM=601474b692c79 (tracks current
+document)". Mobile (iPhone UA, first-screen dismissed via `#fsAdvancedBtn`):
+`df82c94f…` (/), `0aa0853b…` (/xpedit), same contract shape, Test dock ready
+and tracking. Observation CLOSED on evidence for loop mechanics.
+Known gaps (open, not acceptance): paint step could not resolve an editor
+canvas via `#productBrowseSurface canvas, canvas` (0x0 on desktop, tap
+dispatched to a 326px-wide canvas on mobile without verifying a mark);
+Browse showed 0 rows (fresh server `data/` — select+preview path from the
+prior sim still stands, not re-proven here); `#bundleStatus` DOM text was
+empty at capture (verdict read visually from screenshots instead).
+Emulation note: mobile emulation with a desktop UA trips the app's "Request
+Desktop Site" force-desktop path (`_isMobileLike()` False, first-screen
+buttons unwired but CSS-visible) — a dead end in emulation only; iPhone UA
+proceeds normally. No product code touched by this lane.
+
+Canonical statuses restated, unchanged: `UQ-006` open/blocked, `UQ-008`
+proof-blocked, `UQ-009` partial/support, `UQ-010` gated open obligation,
+`UQ-011` parked, `UQ-013` active, `UQ-R15`/`FL-3861`–`FL-3864` open;
+slope-brush source recovery open; deploy stays on hold — no cutover, no
+public proof; frozen-SHA gate in force.
