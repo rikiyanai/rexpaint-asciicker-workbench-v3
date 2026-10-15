@@ -52,9 +52,13 @@ if not (V3 / "scripts").is_dir():
 sys.path.insert(0, str(V3 / "scripts"))
 from xp_core import XPFile  # noqa: E402
 
-OUTDIR = Path("/private/tmp/claude-501/-Users-r-Downloads-asciicker-pipeline-v3/"
-              "aa11f89f-6d79-4b4c-9dfa-9c01e91de39e/scratchpad/repaired")
-OUTDIR.mkdir(parents=True, exist_ok=True)
+def _adhoc_out_root() -> Path:
+    env = os.environ.get("ASCIICKER_ADHOC_OUT")
+    if env:
+        return Path(env)
+    return Path(__file__).resolve().parent / "out"
+
+OUTDIR = _adhoc_out_root() / "repaired"
 
 # Vertical-flip glyph map.
 #
@@ -174,6 +178,7 @@ def selftest():
 def repair(name, src, fix_l0):
     """Copy one sheet and apply repairs to the copy."""
     dst = OUTDIR / f"{name}-repaired.xp"
+    OUTDIR.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, dst)
 
     xp = XPFile()

@@ -175,10 +175,10 @@ def sheet(path, label, rows, cols, out):
 
 
 if __name__ == "__main__":
-    RP = Path("/private/tmp/claude-501/-Users-r-Downloads-asciicker-pipeline-v3/"
-              "aa11f89f-6d79-4b4c-9dfa-9c01e91de39e/scratchpad")
+    env = os.environ.get("ASCIICKER_ADHOC_OUT")
+    RP = Path(env) if env else Path(__file__).resolve().parent / "out"
     outdir = RP / "review"
-    outdir.mkdir(exist_ok=True)
+    outdir.mkdir(parents=True, exist_ok=True)
 
     for name, path in (
         ("gromit-repaired", RP / "repaired/gromit-repaired.xp"),

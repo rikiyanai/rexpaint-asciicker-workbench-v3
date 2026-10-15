@@ -157,6 +157,16 @@ NON_BLOCKING_PREFIXES = (
 )
 
 
+# Session-scoped scratchpads (agent session dirs, run UUIDs) under temp
+# prefixes are machine-specific inputs/outputs, not harmless temp use:
+# they break on any other machine or user when read from or imported.
+SESSION_TMP_RE = re.compile(
+    r"/(?:private/tmp|tmp|var/folders)/"
+    r"(?:[^\s\"'`<>()\[\]{}]*?/)?"
+    r"(?:claude-\d+|[0-9a-f]{8}-[0-9a-f]{4}|scratchpad)"
+    r"(?:/|[_\-]|$)"
+)
+
 def is_non_blocking_path(raw: str) -> bool:
     return any(raw == prefix.rstrip("/") or raw.startswith(prefix) for prefix in NON_BLOCKING_PREFIXES)
 
@@ -301,6 +311,15 @@ def scan_text_files(strict_docs: bool) -> list[Finding]:
                         severity="warning",
                         path=rel,
                         detail=f"references external absolute path: {raw}",
+                    )
+                )
+            elif SESSION_TMP_RE.search(raw):
+                findings.append(
+                    Finding(
+                        kind="external_path_live",
+                        severity="error",
+                        path=rel,
+                        detail=f"references session-scoped scratchpad: {raw}",
                     )
                 )
             elif is_non_blocking_path(raw):

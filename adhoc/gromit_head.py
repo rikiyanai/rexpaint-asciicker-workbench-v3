@@ -50,9 +50,15 @@ if not (V3 / "scripts").is_dir():
 sys.path.insert(0, str(V3 / "scripts"))
 from xp_core import XPFile  # noqa: E402
 
-SP = Path("/private/tmp/claude-501/-Users-r-Downloads-asciicker-pipeline-v3/"
-          "aa11f89f-6d79-4b4c-9dfa-9c01e91de39e/scratchpad")
-sys.path.insert(0, str(SP))
+def _adhoc_out_root() -> Path:
+    env = os.environ.get("ASCIICKER_ADHOC_OUT")
+    if env:
+        return Path(env)
+    return Path(__file__).resolve().parent / "out"
+
+SP = _adhoc_out_root()
+# Sibling import: repair.py lives beside this file, never in a scratchpad.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from repair import rebuild_reflection, geom  # noqa: E402
 
 OUTDIR = SP / "repaired"
@@ -415,6 +421,7 @@ def connected_objects(layer, r, c, cw, ch, key):
 
 def main():
     dst = OUTDIR / "gromit-rederived.xp"
+    OUTDIR.mkdir(parents=True, exist_ok=True)
     shutil.copy2(V3 / "sprites/wolfie.xp", dst)
     xp = XPFile()
     xp.load(str(dst))

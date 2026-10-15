@@ -17418,3 +17418,23 @@ enclosing checkout (`Path(__file__).parent.parent`) plus a fail-closed
 clean on all four. Audit now reports `errors: 38`, all retained
 `.context/compound-engineering/ce-review/*` JSON under retain-and-record.
 Self-containment still NOT claimed.
+
+### 2026-10-14 Correction: adhoc scratchpads + audit blind spot (review-driven)
+
+The `617d1e4` entry overclaimed: only the `V3` root was fixed; all four
+scripts still read/wrote/imported from a dead `/private/tmp/claude-501/…`
+scratchpad, and the audit exempted every `/tmp` path. Corrected now:
+
+- `OUTDIR`/`SP`/`RP` resolve from `ASCIICKER_ADHOC_OUT`, default
+  `adhoc/out/` (gitignored). Sibling `from repair import` via the adhoc
+  dir on `sys.path`, never the scratchpad. All `mkdir` moved from import
+  time into `repair()`/`main()` — imports create nothing.
+- Audit `SESSION_TMP_RE` flags `claude-<n>`/UUID/`scratchpad` segments
+  under temp prefixes as blocking errors (plain `/tmp` stays a warning).
+  Verified: fires on the dead scratchpad, silent on `/tmp/foo/bar.txt`.
+- Manually executed: `repair.py` exit 0 (selftest + gromit/wallace
+  repairs into `adhoc/out/repaired/`), `subcell.py` exit 0 (review
+  texts), `wallace2.py` exit 0, `gromit_head.py` exit 0,
+  `ASCIICKER_ADHOC_OUT` override exit 0 with outputs under the override.
+- Audit: `errors: 38`, zero `adhoc/` or audit-script hits; the 38 are the
+  retained CE-review JSON. Self-containment still NOT claimed.
