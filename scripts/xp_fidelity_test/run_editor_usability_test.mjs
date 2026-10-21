@@ -39,7 +39,7 @@ try {
   for (const profile of profiles.filter((p) => !process.argv.includes('--profile') || p.name === arg('--profile'))) {
     const context = await browser.newContext(profile.options);
     const page = await context.newPage();
-    page.setDefaultTimeout(8000);
+    page.setDefaultTimeout(30000);
     const result = {name: profile.name, errors: [], assertions: []};
     const check = (condition, name) => { assert.ok(condition, name); result.assertions.push(name); };
     const shot = async (name) => page.screenshot({path: path.join(outDir, `${profile.name}-${name}.png`), fullPage: false});
@@ -136,7 +136,13 @@ try {
       await shot('paint');
 
       const sessionId = await page.evaluate(() => window.__wb_debug.getState().sessionId);
-      const savedResponse = page.waitForResponse((r) => r.url() === api('save-session') && r.request().method() === 'POST' && r.ok());
+      // A layer-visibility autosave can still be in flight. Wait for the
+      // response that actually carries this painted document revision.
+      const savedResponse = page.waitForResponse((r) => {
+        if (r.url() !== api('save-session') || r.request().method() !== 'POST' || !r.ok()) return false;
+        const payload = r.request().postDataJSON();
+        return payload.session_id === sessionId && payload.layers?.[2]?.[y * state.gridCols + x]?.glyph === 219;
+      });
       await page.locator('#btnSave').click();
       await savedResponse;
       const loaded = await context.request.post(api('load-session'), {data: {session_id: sessionId}});

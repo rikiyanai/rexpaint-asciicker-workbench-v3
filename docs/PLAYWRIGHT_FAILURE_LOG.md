@@ -17658,3 +17658,65 @@ returned success after the scoped regex correction. The isolated unittest
 route avoids the legacy pytest fixture's deletion of repository `data/`.
 The deployment workflow will run its normal Python selection in a fresh CI
 checkout. Production user-facing acceptance remains pending deployment.
+
+**Release.** Commit `48e7af7625c3f9e06e9997e9e80812f835fb16e4` was pushed to
+`main` and deployed by
+[`39637812959`](https://github.com/rikiyanai/rexpaint-asciicker-workbench-v3/actions/runs/39637812959).
+All three jobs succeeded, including the existing five-check origin smoke test.
+Ready revision `asciicker-xpedit-00016-fwd` receives 100% traffic. Its image
+digest matches Artifact Registry tag `48e7af7`:
+`sha256:74c0c0b037e6129f3f5b6bed9ed8d478eca90f048953aa0ea945f1a5bdbe1ed8`.
+The complete vendored XP set was also decoded locally: 287/287, zero errors.
+
+**Expanded local template acceptance.**
+`artifacts/2026-10-21-editor-usability/local-5-desktop/receipt.json` records
+successful warning acceptance, unchanged raw artwork before Apply, correct
+selected template after Apply, and preservation of the saved original raw
+document. The earlier four-profile paint/save/export checks also remain true.
+
+**Live provenance.** Public `workbench.js`, `whole-sheet-init.js`, `styles.css`,
+`rexpaint-editor/canvas.js`, and `sw.js` match release source byte-for-byte.
+The live Browse API returns exactly the manifest's 287 upstream IDs and hashes,
+with source commit `52d008f`. The real public-URL editing verifier is running;
+its result, not the workflow smoke check alone, will determine closure.
+
+**First live-suite boundary.** The desktop case passed all 20 assertions,
+including accepted template application and preservation of the saved raw
+document. Mobile-toggle showed visible paint but its immediate backend read
+did not see the glyph after the verifier matched an arbitrary save response.
+Phone/tablet open waits exceeded the verifier's 8-second timeout; screenshots
+show the library/selected upstream sprite rather than an editor. No Cloud Run
+error/memory/exception records were returned by the bounded error-log query.
+Do not call this a full live pass. Distinguish a stale autosave response from
+the paint-bearing Save request by inspecting request cells, and use the normal
+30-second UI timeout for the public network path. Preserve the first live
+receipt/images under `artifacts/2026-10-21-editor-usability/live/`.
+
+**Final public acceptance.** The correlated rerun exited 0 with all four
+profiles successful (71 assertions total):
+`artifacts/2026-10-21-editor-usability/live-2/receipt.json`. Desktop passed 20;
+mobile-toggle, phone-touch, and tablet-landscape-touch each passed 17. The
+paint-bearing Save response was matched by session ID and glyph content;
+backend reload and downloaded XP both contained glyph 219. Thus the first
+suite's save observation was an insufficiently correlated verifier response,
+not reproduced data loss. The longer UI wait resolved the public open-path
+timeouts without changing deployed application code.
+
+Directly opened the final public screenshots `desktop-upstream-browse.png`,
+`phone-touch-paint.png`, `tablet-landscape-touch-paint.png`, and
+`mobile-toggle-paint.png`. Visible paint agrees with backing-pixel changes,
+saved cells, exported XPs, source hashes, deployment run, and ready revision.
+The Browse capture precedes asynchronous preview completion; it establishes
+the filtered library controls, not a fully loaded preview by itself. API
+preview tests and the earlier loaded-preview capture provide that evidence.
+
+**Deliverables and boundary.** Stage: Verified on live `48e7af7` for the
+reported desktop paint path, mobile controls under Chrome viewport/touch
+emulation, all 287 pinned upstream XP entries, raw/current template selection
+and layer-0 warning, collapsed disclosures, both subheaders, and red/bold
+pre-alpha text. Original raw files and upstream assets are not rewritten by
+template selection or editable-copy open. Actual physical iOS Safari was not
+tested. All attempt receipts, screenshots, and exported test XPs are preserved
+under the artifact directory. The follow-up commit changes only the verifier
+and evidence/log, not deployed product code. `.planning` and the unrelated
+`artifacts/wb-skin-run-3s/` remain outside this task's commits.

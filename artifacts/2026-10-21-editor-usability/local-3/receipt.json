@@ -1,0 +1,114 @@
+{
+  "url": "http://127.0.0.1:5073/xpedit/workbench",
+  "scope": "Headed Chrome; touch/viewport emulation is not physical iOS Safari",
+  "cases": [
+    {
+      "name": "desktop",
+      "errors": [],
+      "assertions": [
+        "Skin/action collapsed by default",
+        "Convert JSON collapsed by default",
+        "both sprite-editing subheaders exist",
+        "pre-alpha banner is red and bold",
+        "upstream copy opens in editable paint mode",
+        "template selection warns about layer 0 before mutation",
+        "cancelled template selection preserves raw layer 0",
+        "New selects art layer 2",
+        "glyph control reachable",
+        "palette control reachable",
+        "pointer stroke visibly changes canvas under transparent upper layer",
+        "red glyph pixels are visible",
+        "pointer stroke changes the active layer cell",
+        "Save persists painted cell to backend",
+        "Exported XP contains painted glyph",
+        "no horizontal page overflow",
+        "no page exceptions"
+      ],
+      "paint": {
+        "x": 3,
+        "y": 3,
+        "beforePixelSha256": "e6ec90f789fd044ecb78ca05bfcbf2bbb57839066f140eada8acc467fd920a5e",
+        "afterPixelSha256": "a0d38d22ecd745445556b4d15273acb1f55250144eb5d9610e35fb15bbb45552"
+      },
+      "passed": true
+    },
+    {
+      "name": "mobile-toggle",
+      "errors": [],
+      "assertions": [
+        "Skin/action collapsed by default",
+        "Convert JSON collapsed by default",
+        "both sprite-editing subheaders exist",
+        "pre-alpha banner is red and bold",
+        "upstream copy opens in editable paint mode",
+        "template selection warns about layer 0 before mutation",
+        "cancelled template selection preserves raw layer 0",
+        "New selects art layer 2",
+        "glyph control reachable",
+        "palette control reachable"
+      ],
+      "passed": false,
+      "failure": "AssertionError [ERR_ASSERTION]: pointer stroke visibly changes canvas under transparent upper layer\n    at check (file:///Users/r/Projects/asciicker-Y9-2/pipeline-v3/scripts/xp_fidelity_test/run_editor_usability_test.mjs:44:49)\n    at file:///Users/r/Projects/asciicker-Y9-2/pipeline-v3/scripts/xp_fidelity_test/run_editor_usability_test.mjs:130:7"
+    },
+    {
+      "name": "phone-touch",
+      "errors": [],
+      "assertions": [
+        "Skin/action collapsed by default",
+        "Convert JSON collapsed by default",
+        "both sprite-editing subheaders exist",
+        "pre-alpha banner is red and bold",
+        "upstream copy opens in editable paint mode",
+        "template selection warns about layer 0 before mutation",
+        "cancelled template selection preserves raw layer 0",
+        "New selects art layer 2",
+        "glyph control reachable",
+        "palette control reachable",
+        "pointer stroke visibly changes canvas under transparent upper layer",
+        "red glyph pixels are visible",
+        "pointer stroke changes the active layer cell",
+        "Save persists painted cell to backend",
+        "Exported XP contains painted glyph",
+        "no horizontal page overflow",
+        "no page exceptions"
+      ],
+      "paint": {
+        "x": 3,
+        "y": 3,
+        "beforePixelSha256": "e6ec90f789fd044ecb78ca05bfcbf2bbb57839066f140eada8acc467fd920a5e",
+        "afterPixelSha256": "a0d38d22ecd745445556b4d15273acb1f55250144eb5d9610e35fb15bbb45552"
+      },
+      "passed": true
+    },
+    {
+      "name": "tablet-landscape-touch",
+      "errors": [],
+      "assertions": [
+        "Skin/action collapsed by default",
+        "Convert JSON collapsed by default",
+        "both sprite-editing subheaders exist",
+        "pre-alpha banner is red and bold",
+        "upstream copy opens in editable paint mode",
+        "template selection warns about layer 0 before mutation",
+        "cancelled template selection preserves raw layer 0",
+        "New selects art layer 2",
+        "glyph control reachable",
+        "palette control reachable",
+        "pointer stroke visibly changes canvas under transparent upper layer",
+        "red glyph pixels are visible",
+        "pointer stroke changes the active layer cell",
+        "Save persists painted cell to backend",
+        "Exported XP contains painted glyph",
+        "no horizontal page overflow",
+        "no page exceptions"
+      ],
+      "paint": {
+        "x": 3,
+        "y": 3,
+        "beforePixelSha256": "e6ec90f789fd044ecb78ca05bfcbf2bbb57839066f140eada8acc467fd920a5e",
+        "afterPixelSha256": "a0d38d22ecd745445556b4d15273acb1f55250144eb5d9610e35fb15bbb45552"
+      },
+      "passed": true
+    }
+  ]
+}
