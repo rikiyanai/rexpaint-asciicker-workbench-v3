@@ -25,6 +25,31 @@ Open:
 - Local (default): `http://127.0.0.1:5071/` (redirects to `/workbench`)
 - Local (direct): `http://127.0.0.1:5071/workbench`
 
+## Production deployment
+
+The live editor runs on Google Cloud Run service `asciicker-xpedit` in
+`yuzu-agent` / `us-central1`. A Cloudflare Worker routes
+[`rikiworld.com/xpedit`](https://rikiworld.com/xpedit) to that service.
+The editor is not deployed by GitHub Pages.
+
+Push changes to `main`, then manually run **Deploy to Cloud Run**. A push alone
+does not deploy the endpoint. Deploy an exact commit with:
+
+```bash
+gh workflow run deploy-cloudrun.yml \
+  --repo rikiyanai/rexpaint-asciicker-workbench-v3 \
+  --ref main -f target_ref="$(git rev-parse HEAD)"
+```
+
+The workflow runs tests, builds a commit-tagged container, deploys it, and runs
+health and upload checks. The repository requires a
+`GCP_WORKLOAD_IDENTITY_PROVIDER` Actions secret and Google Cloud trust for this
+repository; secrets and trust from `rikiyanai/asciicker-xpedit` do not transfer
+automatically. See [deployment setup and verification](deploy/README.md).
+
+Cloud Run storage is ephemeral: a deployment or restart discards uploaded files
+and editor sessions. Export work before deploying.
+
 ## Required Inputs
 
 - `image_file` (`.png`)
@@ -79,4 +104,4 @@ PYTHONPATH=src python3 -m pytest
 ## Docs
 
 - Reference spec (pipeline-v3 subproject scope only): `docs/plans/2026-03-23-workbench-canonical-spec.md`
-- Failure log: `PLAYWRIGHT_FAILURE_LOG.md`
+- Failure log: [docs/PLAYWRIGHT_FAILURE_LOG.md](docs/PLAYWRIGHT_FAILURE_LOG.md)

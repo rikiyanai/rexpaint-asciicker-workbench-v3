@@ -17438,3 +17438,60 @@ scratchpad, and the audit exempted every `/tmp` path. Corrected now:
   `ASCIICKER_ADHOC_OUT` override exit 0 with outputs under the override.
 - Audit: `errors: 38`, zero `adhoc/` or audit-script hits; the 38 are the
   retained CE-review JSON. Self-containment still NOT claimed.
+
+### 2026-10-21 Main push and endpoint deployment takeover
+
+**Target.** Publish the README on `main` and deploy that source to
+`https://rikiworld.com/xpedit`. Preserve `.planning` and
+`artifacts/wb-skin-run-3s/` as unrelated untracked work.
+
+**Observed starting state.** Local and remote `main` both pointed to
+`ea925ce2101fcac9841d39ab09f487cdfce670cf`. Commit `6c95b15`, including the
+README demo GIF and workflow `main` defaults, was already in that history.
+GitHub listed only the main-integrity and main-only rulesets; the reported
+attribution-check push blocker no longer existed.
+
+**Deployment failure.** GitHub Actions run
+[`39610665213`](https://github.com/rikiyanai/rexpaint-asciicker-workbench-v3/actions/runs/39610665213)
+failed at `Authenticate to Google Cloud`, after pre-deploy tests. Its log
+reported that exactly one of `workload_identity_provider` or `credentials_json`
+was required. `gh secret list` returned no secrets in the current repository.
+The old `rikiyanai/asciicker-xpedit` repository still held its provider secret.
+
+**Independent infrastructure evidence.** Read-only inspection with
+`gcloud ... --account=yanairiki@gmail.com` found the existing `github-oidc`
+provider admitting only `rikiyanai/asciicker-xpedit`, and the deploy service
+account granting impersonation only to that old repository principal. Cloud
+Run reported ready revision `asciicker-xpedit-00014-qcw` serving 100% traffic.
+The public origin matches `deploy/cloudflare-worker/wrangler.toml`.
+
+**Attempt and boundary.** Creating a separate main-only OIDC provider failed
+with `iam.workloadIdentityPoolProviders.create` denied. Adding the new
+repository principal failed with `iam.serviceAccounts.setIamPolicy` denied.
+No Google Cloud IAM change succeeded. A provider secret written in the same
+command batch was removed because its provider had not been created. The
+project policy identifies `info@yuuz.co` as owner and `yanairiki@gmail.com`
+as viewer (plus VM/IAP roles). The owner's cached credentials fail refresh
+with `Reauthentication failed`; recovery requires
+`gcloud auth login info@yuuz.co` before configuring trust and dispatching a
+new deployment. No workflow was dispatched against the missing provider.
+
+**Documentation intervention.** README and deployment README now describe the
+actual Cloud Run path, exact-SHA manual dispatch, repository-specific OIDC
+prerequisites, public-route smoke verification, and ephemeral session loss.
+The root README failure-log link now resolves to this file.
+
+**Stage.** Documentation implemented; new endpoint deployment remains blocked
+on project-owner reauthentication. Existing revision metadata is not proof
+that the requested source is deployed. Subsequent receipts belong here.
+
+**Verification before the documentation push.** `git diff --check` returned 0.
+The demo GIF, corrected failure-log link, deployment archive, workflow, and
+Worker link targets exist. Against both the public endpoint and Cloud Run
+origin, curl returned 200 for health, workbench, templates, and runtime HTML.
+In-memory multipart PNG uploads returned 201 with upload IDs
+`2a8f2c34-58d0-428d-8ecc-8beadf225048` (public) and
+`d9bfe2e7-16de-437e-9e61-2a86215d7044` (origin). Python urllib's first health
+request returned 403; curl independently reached the same route with 200.
+These checks establish the existing endpoint's smoke surface only. They do
+not establish a new deployment or visual/interactive acceptance.

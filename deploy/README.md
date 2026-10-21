@@ -2,9 +2,55 @@
 
 Production deployment configs for the asciicker XP editor workbench.
 
-See `docs/WORKBENCH_DOCS_ARCHIVE.md#mvp-deployment` for the canonical deployment posture and constraints.
+See [the deployment plan archive](../docs/WORKBENCH_DOCS_ARCHIVE.md#2026-03-24-mvp-deploy-cloud-run)
+for the deployment posture and constraints.
 
-## Quick start
+## Production: Cloud Run
+
+- Public endpoint: <https://rikiworld.com/xpedit>
+- Origin: <https://asciicker-xpedit-6abo3pnlfa-uc.a.run.app/xpedit>
+- Google Cloud project / region: `yuzu-agent` / `us-central1`
+- Service / Artifact Registry repository: `asciicker-xpedit`
+- Workflow: [Deploy to Cloud Run](../.github/workflows/deploy-cloudrun.yml)
+- Routing: [Cloudflare Worker](cloudflare-worker/xpedit-router.js)
+
+The workflow is manual. Push the intended commit to `main`, then dispatch the
+workflow from `main` with that exact commit as `target_ref`:
+
+```sh
+gh workflow run deploy-cloudrun.yml \
+  --repo rikiyanai/rexpaint-asciicker-workbench-v3 \
+  --ref main -f target_ref="$(git rev-parse HEAD)"
+```
+
+### Authentication prerequisites
+
+The workflow uses GitHub OIDC, not a service-account key. Set the repository's
+`GCP_WORKLOAD_IDENTITY_PROVIDER` Actions secret to an existing provider resource
+name. That provider must admit this repository's `main` workflow. The service
+account `github-deploy@yuzu-agent.iam.gserviceaccount.com` must grant
+`roles/iam.workloadIdentityUser` to the corresponding repository principal.
+
+The old repository `rikiyanai/asciicker-xpedit` has separate Actions secrets and
+repository-scoped Google Cloud trust. Neither automatically applies to
+`rikiyanai/rexpaint-asciicker-workbench-v3`. An empty provider input fails the
+authentication step before any container build or deployment.
+
+### Verification and storage warning
+
+Require all three jobs to succeed: `build-and-push`, `deploy`, and `smoke-test`.
+Also test the public route, because the workflow smoke test checks the origin:
+
+```sh
+./scripts/deploy/smoke_test.sh https://rikiworld.com /xpedit
+```
+
+The smoke test checks health, workbench HTML, templates, runtime HTML, and a
+stateful PNG upload. It does not establish visual or interactive acceptance.
+The service uses a single instance with ephemeral filesystem storage. Export
+active work before a deployment or restart; uploads and sessions will be lost.
+
+## Alternative: self-hosted quick start
 
 ```sh
 # 1. Clone and install
