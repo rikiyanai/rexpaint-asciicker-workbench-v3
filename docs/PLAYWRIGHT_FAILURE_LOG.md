@@ -17495,3 +17495,53 @@ In-memory multipart PNG uploads returned 201 with upload IDs
 request returned 403; curl independently reached the same route with 200.
 These checks establish the existing endpoint's smoke surface only. They do
 not establish a new deployment or visual/interactive acceptance.
+
+**Owner-authenticated continuation.** After the operator restored
+`info@yuuz.co` credentials, provider creation and the service-account policy
+update succeeded. Provider
+`projects/1035941900626/locations/global/workloadIdentityPools/github-actions/providers/rexpaint-v3-main`
+is ACTIVE. Its condition requires repository
+`rikiyanai/rexpaint-asciicker-workbench-v3`, repository ID `1219642407`, owner
+ID `33168192`, and ref `refs/heads/main`. The existing old-repository provider
+and impersonation binding remain unchanged. The new repository principal now
+has `roles/iam.workloadIdentityUser` on the existing deploy service account.
+The current repository's `GCP_WORKLOAD_IDENTITY_PROVIDER` Actions secret was
+set to the new provider resource. This uses OIDC; no service-account key or
+personal Gmail ownership change was introduced.
+
+**Dispatch.** Manual workflow run
+[`39622836390`](https://github.com/rikiyanai/rexpaint-asciicker-workbench-v3/actions/runs/39622836390)
+targets exact source commit `17fed00c82ebae59fcfa5b71c1c36fa3f431e646` from
+`main`. Before dispatch verification, Cloud Run still reported revision
+`asciicker-xpedit-00014-qcw` at 100% traffic. Workflow completion, deployed
+image identity, and post-deployment public smoke checks remain to be measured.
+
+**Deployment result.** Run `39622836390` concluded SUCCESS for all three jobs
+(`build-and-push`, `deploy`, `smoke-test`), targeting `17fed00`. Cloud Run
+revision `asciicker-xpedit-00015-2sd` is Ready and serves 100% of traffic.
+Artifact Registry tag `xpedit:17fed00` and the deployed revision resolve to
+the same digest:
+`sha256:afc833eac2c854edfe6222c066d1320072f757db1042d2ab442d72edabd2e557`.
+
+**Post-deployment independent checks.** Both the public `/xpedit` route and
+Cloud Run origin returned 200 for health, workbench, templates, and runtime
+HTML. PNG uploads returned 201 with IDs
+`2c06ff7c-0e82-460b-8f19-a9bf2f8c77e8` (public) and
+`226bbb4c-9a06-48fe-b1ee-da2042b3b80e` (origin). Public and origin assets
+matched `git show 17fed00:web/<file>` byte-for-byte using a commit-qualified
+query string:
+
+| Asset | SHA-256 (both endpoints and source) |
+| --- | --- |
+| `workbench.js` | `7f80f431380a95adf1f266be162fd9f1a8f20cc953bd2309e02ef8a5835bb0b9` |
+| `styles.css` | `ff9c59b633384567c88d500c0d190aaf4e5b2b22e59065f113627b8dea61b0b1` |
+| `sw.js` | `435997e1d331fe17668bfef4a2ed9103546d717885aa1eb7361674a6d0783416` |
+
+**Closure scope.** Stage: Verified for exact-source endpoint deployment and
+the health/static/upload smoke surface. README publication is established by
+remote `main` at `17fed00`; this continuation changes only documentation.
+Visual/interactive application acceptance was not tested or claimed. Routine
+manual workflow deployments now use OIDC independently of local owner login.
+The owner's reauthentication was needed for the one-time trust administration,
+not as a new prerequisite for every deploy. Unrelated untracked work remains
+untouched.

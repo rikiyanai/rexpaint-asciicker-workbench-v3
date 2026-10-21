@@ -36,6 +36,14 @@ repository-scoped Google Cloud trust. Neither automatically applies to
 `rikiyanai/rexpaint-asciicker-workbench-v3`. An empty provider input fails the
 authentication step before any container build or deployment.
 
+The current repository uses provider
+`projects/1035941900626/locations/global/workloadIdentityPools/github-actions/providers/rexpaint-v3-main`.
+Its condition pins repository ID `1219642407`, owner ID `33168192`, repository
+name, and `refs/heads/main`. Run deployments from `main`. GitHub Actions obtains
+short-lived credentials through OIDC; routine workflow deployments do not
+depend on a local `gcloud auth login` session. Project-owner authentication is
+needed to administer this trust, not for each deployment.
+
 ### Verification and storage warning
 
 Require all three jobs to succeed: `build-and-push`, `deploy`, and `smoke-test`.
