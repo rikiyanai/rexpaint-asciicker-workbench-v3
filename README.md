@@ -2,6 +2,14 @@
 
 Greenfield rebuild of main sprite-sheet pipeline features currently still broken in the main Asciicker-Y9-2 Fork. This repo is intentionally independent of the main Asciicker and Asciicker-Y9-2 Fork codebase. This is a browser-based XP sprite editor and functional alternative to the Windows-only REXPaint Editor, adapted specifically for the Asciicker Game Engine. Features include: convert PNG sprite sheets to `.xp` files, edit cells in a whole-sheet editor with true REXPaint parity, and test skins live in the game engine. More features to come, please report any bugs or complaints.
 
+## Demo
+
+Upload PNG sprite sheet → Convert/slice → XP Preview animation → Test This Skin running in the game world:
+
+![Knight skin full workflow: upload, slice, preview, world run](docs/demo-skin-run.gif)
+
+Recorded end-to-end with `scripts/wb-full-skin-run.mjs` (Playwright + CDP screencast). Source MP4 and step screenshots: `artifacts/wb-skin-run-3s/` (untracked build output).
+
 ## Run
 
 ```bash
@@ -16,7 +24,6 @@ Open:
 - Live: `https://rikiworld.com/xpedit`
 - Local (default): `http://127.0.0.1:5071/` (redirects to `/workbench`)
 - Local (direct): `http://127.0.0.1:5071/workbench`
-
 
 ## Required Inputs
 
@@ -57,7 +64,6 @@ All failures return:
   "request_id": "uuid"
 }
 ```
-
 
 ## Tests
 

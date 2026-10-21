@@ -9,7 +9,7 @@ on:
       target_ref:
         description: "Git ref to package (branch, tag, or SHA)"
         required: false
-        default: "master"
+        default: "main"
 
 jobs:
   build-and-package:

@@ -6,7 +6,7 @@ on:
       target_ref:
         description: "Git ref to deploy (branch, tag, or SHA)"
         required: false
-        default: "master"
+        default: "main"
 
 env:
   GCP_PROJECT_ID: yuzu-agent
@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.target_ref || 'master' }}
+          ref: ${{ github.event.inputs.target_ref || 'main' }}
           submodules: false  # Y9-2 is private; deploy runtime does not need it (FL-2026-06-03)
 
       - name: Set up Python 3.11
@@ -158,7 +158,7 @@ jobs:
         if: always()
         run: |
           echo "## Deploy Summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Ref:** ${{ github.event.inputs.target_ref || 'master' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Ref:** ${{ github.event.inputs.target_ref || 'main' }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Image:** \`${{ needs.build-and-push.outputs.image_url }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Cloud Run URL:** ${{ steps.svc.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Service:** ${{ env.SERVICE_NAME }}" >> "$GITHUB_STEP_SUMMARY"
