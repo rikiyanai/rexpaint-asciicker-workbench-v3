@@ -2308,6 +2308,10 @@ function _updateToolUI() {
 
 function _onKeyDown(e) {
   if (!editorState.mounted) return;
+  // Form controls own their keyboard input, including ordinary Tab traversal.
+  // Handling Tab as a canvas shortcut first silently disabled painting.
+  const focusedTag = e.target?.tagName;
+  if (focusedTag === 'INPUT' || focusedTag === 'TEXTAREA' || focusedTag === 'SELECT' || e.target?.isContentEditable) return;
   if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key === 'Tab') {
     _setMode(editorState.mode === 'paint' ? 'browse' : 'paint');
     e.preventDefault();
@@ -2730,6 +2734,27 @@ function _buildBrowseDrawer() {
   browseStatus.className = 'ws-placeholder';
   browseStatus.textContent = 'Loading documents...';
   browseSection.appendChild(browseStatus);
+
+  const filters = document.createElement('div');
+  filters.className = 'row ws-browse-filters';
+  const search = document.createElement('input');
+  search.id = 'wsBrowseSearch';
+  search.type = 'search';
+  search.placeholder = 'Search XP filenames';
+  search.setAttribute('aria-label', 'Search XP filenames');
+  search.addEventListener('input', _renderBrowseList);
+  const source = document.createElement('select');
+  source.id = 'wsBrowseSource';
+  source.setAttribute('aria-label', 'Document source');
+  for (const [value, label] of [['all', 'All documents'], ['upstream', 'Asciicker-Y9-2 sprites'], ['saved', 'My documents']]) {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    source.appendChild(option);
+  }
+  source.addEventListener('change', _renderBrowseList);
+  filters.append(search, source);
+  browseSection.appendChild(filters);
 
   const previewWrap = document.createElement('div');
   previewWrap.id = 'wsBrowsePreviewWrap';
@@ -4036,6 +4061,7 @@ function _updateBrowseControls() {
   const busy = !!editorState.browseLoading;
   const isCurrent = !!(selected && String(selected.session_id || '') === String(editorState.currentSessionId || ''));
   const bundleOwner = selected && selected.bundle_owner ? selected.bundle_owner : null;
+  const upstream = selected?.document_source === 'upstream';
 
   const openBtn = document.getElementById('wsBrowseOpen');
   const renameBtn = document.getElementById('wsBrowseRename');
@@ -4043,12 +4069,17 @@ function _updateBrowseControls() {
   const deleteBtn = document.getElementById('wsBrowseDelete');
   const reloadBtn = document.getElementById('wsBrowseReload');
 
-  if (openBtn) openBtn.disabled = busy || !selected || isCurrent;
-  if (renameBtn) renameBtn.disabled = busy || !selected;
-  if (duplicateBtn) duplicateBtn.disabled = busy || !selected;
+  if (openBtn) {
+    openBtn.disabled = busy || !selected || isCurrent;
+    openBtn.textContent = upstream ? 'Open editable copy' : 'Open selected';
+  }
+  if (renameBtn) renameBtn.disabled = busy || !selected || upstream;
+  if (duplicateBtn) duplicateBtn.disabled = busy || !selected || upstream;
   if (deleteBtn) {
-    deleteBtn.disabled = busy || !selected || !!bundleOwner || isCurrent;
-    if (bundleOwner) {
+    deleteBtn.disabled = busy || !selected || !!bundleOwner || isCurrent || upstream;
+    if (upstream) {
+      deleteBtn.title = 'Upstream snapshot is read-only; open an editable copy';
+    } else if (bundleOwner) {
       deleteBtn.title = `Delete blocked: bundle ${bundleOwner.bundle_id} owns this session`;
     } else if (isCurrent) {
       deleteBtn.title = 'Open another document before deleting the active document';
@@ -4086,21 +4117,49 @@ function _browseDisplayLabel(item) {
   return `${kind}${geom} ${short}${when ? ` · ${when}` : ''}`;
 }
 
+let browseThumbObserver = null;
+function _filteredBrowseItems() {
+  const query = (document.getElementById('wsBrowseSearch')?.value || '').trim().toLowerCase();
+  const source = document.getElementById('wsBrowseSource')?.value || 'all';
+  return editorState.browseItems.filter((item) => {
+    const upstream = item.document_source === 'upstream';
+    return (source === 'all' || (source === 'upstream' ? upstream : !upstream))
+      && (!query || String(item.name || item.label || '').toLowerCase().includes(query));
+  });
+}
+
 function _renderBrowseList() {
   const listEl = document.getElementById('wsBrowseList');
   if (!listEl) return;
   listEl.innerHTML = '';
+  browseThumbObserver?.disconnect();
+  // Do not fetch hundreds of full-sheet previews on every library refresh.
+  if (typeof IntersectionObserver !== 'undefined') {
+    browseThumbObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const sid = entry.target.dataset.browseThumbFor;
+        const item = editorState.browseItems.find((candidate) => candidate.session_id === sid);
+        if (item && Number(item.grid_cols) * Number(item.grid_rows) < 100000) _ensureBrowseThumb(item);
+        browseThumbObserver.unobserve(entry.target);
+      }
+    }, { root: listEl, rootMargin: '48px' });
+  }
+  const items = _filteredBrowseItems();
+  if (!items.some((item) => item.session_id === editorState.browseSelectedId)) {
+    editorState.browseSelectedId = items[0]?.session_id || '';
+  }
 
-  if (!editorState.browseItems.length) {
+  if (!items.length) {
     const empty = document.createElement('div');
     empty.className = 'ws-placeholder';
-    empty.textContent = editorState.browseLoading ? 'Loading documents...' : 'No documents';
+    empty.textContent = editorState.browseLoading ? 'Loading documents...' : 'No matching documents';
     listEl.appendChild(empty);
     _updateBrowseControls();
     return;
   }
 
-  for (const item of editorState.browseItems) {
+  for (const item of items) {
     const sid = String(item.session_id || '');
     const row = document.createElement('button');
     row.type = 'button';
@@ -4120,7 +4179,7 @@ function _renderBrowseList() {
     if (cachedThumb) {
       _drawSheetThumb(thumb, cachedThumb);
     } else {
-      _ensureBrowseThumb(item);
+      browseThumbObserver?.observe(thumb);
     }
 
     const textWrap = document.createElement('span');
@@ -4134,6 +4193,7 @@ function _renderBrowseList() {
     const details = [];
     if (item.grid_cols && item.grid_rows) details.push(`${item.grid_cols}x${item.grid_rows}`);
     if (item.session_kind) details.push(String(item.session_kind));
+    if (item.document_source === 'upstream') details.push(`Y9-2 ${item.source_commit.slice(0, 7)} · read-only source`);
     if (item.action_key) details.push(String(item.action_key));
     else if (item.family) details.push(String(item.family));
     if (item.bundle_owner && item.bundle_owner.bundle_id) {
@@ -4189,7 +4249,9 @@ async function _refreshBrowseItems({ preserveSelection = true } = {}) {
       const current = items.find((item) => String(item.session_id || '') === String(editorState.currentSessionId || ''));
       editorState.browseSelectedId = String((current || items[0] || {}).session_id || '');
     }
-    _setBrowseStatus(`${items.length} document${items.length === 1 ? '' : 's'}`);
+    _setBrowseStatus(payload.upstream_count != null
+      ? `${payload.saved_count} saved documents · ${payload.upstream_count} upstream XP sprites · Y9-2 ${payload.upstream_commit.slice(0, 7)}`
+      : `${items.length} document${items.length === 1 ? '' : 's'}`);
     _renderBrowseList();
     return items;
   } catch (err) {
@@ -4238,7 +4300,7 @@ function mountBrowseApp({ container, currentSessionId, onBrowseList, onBrowseOpe
 
 function _moveBrowseSelection(delta) {
   if (!editorState.browseItems.length) return;
-  const ids = editorState.browseItems.map((item) => String(item.session_id || ''));
+  const ids = _filteredBrowseItems().map((item) => String(item.session_id || ''));
   let idx = ids.indexOf(String(editorState.browseSelectedId || ''));
   if (idx < 0) idx = 0;
   idx = Math.max(0, Math.min(ids.length - 1, idx + delta));
@@ -4250,8 +4312,8 @@ async function _browseOpenSelected() {
   const selected = _selectedBrowseItem();
   if (!selected || typeof editorState.onBrowseOpen !== 'function') return;
   try {
-    await editorState.onBrowseOpen(String(selected.session_id || ''));
-    editorState.currentSessionId = String(selected.session_id || '');
+    const opened = await editorState.onBrowseOpen(String(selected.session_id || ''));
+    editorState.currentSessionId = String(opened?.session_id || selected.session_id || '');
     // Open leaves Browse: the loaded sheet stays visible in the Edit workspace.
     _setMode('paint');
     _setBrowseStatus(`Editing ${_browseDisplayLabel(selected)}`);
@@ -5055,6 +5117,8 @@ function unmount() {
     drawGlyph: editorState.drawGlyph,
     drawFg: editorState.drawFg,
     drawBg: editorState.drawBg,
+    recentFg: editorState.recentFg,
+    recentBg: editorState.recentBg,
     applyGlyph: editorState.applyGlyph,
     applyFg: editorState.applyFg,
     applyBg: editorState.applyBg,

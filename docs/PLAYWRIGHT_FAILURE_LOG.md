@@ -17545,3 +17545,116 @@ manual workflow deployments now use OIDC independently of local owner login.
 The owner's reauthentication was needed for the one-time trust administration,
 not as a new prerequisite for every deploy. Unrelated untracked work remains
 untouched.
+
+### 2026-10-21 Editor usability: upstream Browse, mobile, and invisible paint
+
+**Operator acceptance surface.** Desktop and narrow/touch users can browse
+the upstream Y9-2 XP library, open an editable copy, and visibly paint. Convert
+JSON and Skin/action disclosures start collapsed. Both conversion and
+Skin/action carry the Asciicker-Y9-2 sprite-editing subheader. Raw documents
+show an explicit no-template selection. Selecting a template warns about
+layer-0 insertion/rewriting. The pre-alpha warning is red and bold.
+
+**Starting evidence at `500161e`.** Headed system-Chrome observation of the
+public endpoint found no page exceptions, but Browse contained only saved
+sessions. `workbench_list_sessions` enumerates `data/sessions`, not sprite
+assets. The upstream Git tree at `52d008f583d22f22884245c698b8e1e0f47f785a`
+contains 287 tracked XP files under `assets/sprites` (8,648,732 bytes total;
+largest 819,621 bytes). The new repository's deployment has no upstream clone.
+
+**Paint diagnosis.** Through the live New button and a real canvas click,
+history advanced 0→1 and sessionDirty became true, but the initial selected
+layer was 0 with all four layers visible. Root-blank defaults select metadata
+instead of the visual layer. This is an invisible-edit/compositing defect,
+not evidence that pointer events never arrive. Preserve all layers; repair
+the initial editing state rather than deleting content.
+
+**Mobile diagnosis.** The legacy editor-first media rule hides `productShell`
+and `productBrowsePanel` after session load. Its sidebar display and fixed
+landscape offset predate the current root editor. The current mobile button
+exists, but that CSS can remove the path back to it.
+
+**Intervention in progress.** Extend the existing Browse owner with a pinned,
+read-only upstream asset catalog and open-to-copy action. Keep upstream source
+files immutable. Correct root-blank layer defaults and responsive layout.
+Use actual pointer input, exported/reloaded cells, screenshots, catalog hashes,
+and disclosure/selection checks as acceptance evidence. No mobile-device
+claim will be made from desktop viewport emulation alone.
+
+**Causal refinement before repair.** `Canvas._drawCellToContext` fills every
+background, including magenta transparent-key cells. Thus empty upper layers
+actually paint opaque magenta over lower-layer strokes. An existing canvas
+test already expects glyph-zero magenta cells to leave offscreens transparent,
+but that file is not in the normal npm test selection. Repair the compositor
+and its composite read path; correcting layer defaults alone would conceal
+the defect. The root editor still creates real tools/layers/info drawers,
+despite a newer static test claiming their toggles were dead. Restore the
+toggles against those actual drawer owners, not a second tool implementation.
+
+**First repair checks.** Four isolated-storage catalog/API unittests passed,
+including all 287 hashes, immutable-source editable-copy roundtrip, traversal
+rejection, and new-document layer defaults. A headed local desktop and 390px
+probe observed real pointer strokes change canvas pixels and create history;
+the product toolbar remained visible at both widths without body overflow.
+The portrait Tools toggle opened its real drawer. The expanded npm selection
+found one overbroad pre-existing source-regex assertion: it counted the newly
+added upstream-copy load-to-Edit path as a fourth New path. Scope that assertion
+to the New functions, then rerun. No acceptance claim rests on that source
+regex or the still-running probe's final process status.
+
+**Multi-document falsifier.** The acceptance script's first desktop case
+reached raw upstream open and cancelled the layer-0 warning correctly. New
+after that open produced `wholeSheetStatus: mount failed`; the Tools palette
+was absent (`local-1/desktop-failure.png`, opened directly). This invalidates
+any general painting claim from the earlier first-document-only probe.
+Inspection found `unmount()` resets `editorState` without the `recentFg` and
+`recentBg` collections required by sidebar reconstruction. Preserve those
+UI preferences across document replacement, and explicitly synchronize paint
+mode after the new asynchronous mount settles. Extend error capture to
+console-level mount failures, not only uncaught page exceptions.
+
+**Second-case falsifier.** After preserving recent colors, the mount exception
+was gone, but the palette vanished after entering a glyph and pressing Tab
+(`local-2/desktop-failure.png`, opened directly). `_onKeyDown` handles the
+global Tab Browse/Paint shortcut before its form-input guard. Normal keyboard
+focus traversal therefore switches the entire editor to Browse. Move that
+shortcut behind the focused-input guard; do not weaken the test by replacing
+normal Tab navigation with a synthetic change event.
+
+**Local acceptance round 3.** Desktop, phone-touch emulation, and tablet
+landscape-touch emulation passed the full sequence: upstream copy → raw
+template warning/cancel → New → layer/glyph/palette controls → visible paint
+under a transparent upper layer → Save → exported XP glyph. Desktop mobile
+toggle failed the immediate paint assertion. Directly opened its failure
+screenshot: the closing Tools drawer was still mid-transition over the
+canvas, and the attempted click selected glyph 243 in that moving drawer.
+The verifier had waited only for backdrop removal, not drawer animation
+completion. Wait for the actual closing animation before pointer acceptance;
+retain the failed image and receipt. This does not establish the toggle pass
+until that rerun succeeds.
+
+**Local evidence convergence.** The mobile-toggle rerun passed all assertions
+after awaiting drawer animation completion. The final product source is the
+same as round 3 (only verifier timing changed). Directly inspected screenshots:
+`artifacts/2026-10-21-editor-usability/local-3/desktop-paint.png`,
+`local-3/phone-touch-tools.png`, `local-3/tablet-landscape-touch-paint.png`, and
+`local-4-toggle/mobile-toggle-paint.png`. Visible red glyphs, reachable tools,
+and non-overlapping tablet sidebar agree with the backing-pixel checks and
+exported glyph 219 in each profile. Receipts are in those run directories;
+earlier failed rounds remain preserved. This is headed system Chrome with
+touch/device emulation, not physical-device Safari acceptance.
+
+**Library provenance.** Remote `rikiyanai/asciicker-Y9-2` `main` was checked
+directly and equals the pinned `52d008f` source. The sync command reads Git
+blobs, not the upstream dirty worktree. All 287 XPs and their SHA-256 manifest
+are vendored through ordinary Git, within the existing Docker `sprites/` and
+`config/` inputs. Read-only previews do not create sessions; Open creates a
+lossless raw-XP copy. Search/source filters and viewport-lazy thumbnails keep
+the catalog inside the existing Browse owner.
+
+**Verification gates.** `git diff --check`, Python syntax parsing, four
+isolated-storage API/catalog unittests, and the expanded npm test selection
+returned success after the scoped regex correction. The isolated unittest
+route avoids the legacy pytest fixture's deletion of repository `data/`.
+The deployment workflow will run its normal Python selection in a fresh CI
+checkout. Production user-facing acceptance remains pending deployment.

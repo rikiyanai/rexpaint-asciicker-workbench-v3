@@ -42,6 +42,8 @@
   <div class="ws-first-screen-inner">
     <h2 class="ws-first-screen-title">REXPaint Web</h2>
     <div class="ws-first-screen-actions">
+      <button id="fsBrowseBtn" class="ws-first-screen-btn primary">Browse sprites &amp; documents</button>
+      <button id="fsNewRawBtn" class="ws-first-screen-btn">New raw XP (no template)</button>
       <button id="fsOpenXpBtn" class="ws-first-screen-btn primary">Open XP</button>
       <div class="ws-first-screen-draft-wrap">
         <button id="fsContinueDraftBtn" class="ws-first-screen-btn">Continue Draft</button>
@@ -75,6 +77,9 @@
     <button data-action="share-file" title="Share/Export File">Share</button>
   </div>
   <div class="ws-mobile-top-drawers">
+    <button data-drawer-toggle="tools" title="Glyphs, colors and drawing tools" aria-expanded="false">Tools</button>
+    <button data-drawer-toggle="layers" title="Edit layers" aria-expanded="false">Layers</button>
+    <button data-drawer-toggle="info" title="Drawing state" aria-expanded="false">Info</button>
     <button data-drawer-toggle="frames" title="Frames" aria-expanded="false">Frames</button>
     <button data-drawer-toggle="files" title="Files / Session" aria-expanded="false">Files</button>
     <button data-drawer-toggle="source" title="Source / Slice" aria-expanded="false">Source</button>
@@ -101,14 +106,17 @@
       <button id="btnSave" disabled>Save</button>
       <button id="btnExport" disabled>Export</button>
       <button id="webbuildQuickTestBtn" class="success" disabled>Test This Skin</button>
-      <button id="viewportToggleBtn" type="button" aria-pressed="false" title="Preview the 390px mobile layout on this device. Preference persists in this browser.">Mobile view</button>
+      <button id="viewportToggleBtn" type="button" aria-pressed="false" title="Switch to the mobile editor controls on this device. Preference persists in this browser.">Mobile view</button>
       <button id="reportBugBtn" class="danger">Report Bug</button>
     </div>
-    <div id="productActionNavigation" class="row" data-integration-hook="registry-action-navigation" aria-label="Contextual action navigation">
+    <details id="productActionNavigation" data-integration-hook="registry-action-navigation" aria-label="Contextual action navigation">
+      <summary>Skin / action</summary>
+      <h4 class="sprite-editing-subheader">ASCIICKER-Y9-2 SPRITE EDITING</h4>
       <div id="registryActionCatalog" class="registry-action-catalog small">Loading registry actions…</div>
+      <button id="registryTemplateApplyBtn" type="button">Apply selected template</button>
       <div id="bundleActionTabs" class="row hidden" style="gap:0; margin-top:6px;"></div>
       <div id="bundleStatus" class="small hidden"></div>
-    </div>
+    </details>
   </header>
 
   <div class="panel alpha-banner" data-panel-number="1 banner">
@@ -130,6 +138,7 @@
     </div>
   </section>
   <div class="panel" id="uploadConvertPanel" data-panel-number="7 upload-convert">
+    <h4 class="sprite-editing-subheader">ASCIICKER-Y9-2 SPRITE EDITING</h4>
     <h3>Upload + Convert (<span id="uploadPanelLabel">REXPaint Web Clone</span>)</h3>
     <div class="small">Import a PNG sprite sheet, <strong>Upload PNG</strong>, then <strong>Convert to XP</strong> — then Edit, Save / Export, and Test This Skin below.</div>
     <div class="row">
@@ -151,11 +160,12 @@
         <div id="wbAutoPlan" class="small muted">Derived automatically from the uploaded PNG at convert time.</div>
       </div>
     </div>
-    <div id="wbRunOutShell" class="subpanel-shell output-shell" data-panel-number="7A" data-panel-tag="convert-json">
+    <details id="wbRunOutShell" class="subpanel-shell output-shell" data-panel-number="7A" data-panel-tag="convert-json">
+      <summary>Convert JSON</summary>
       <div id="wbRunOutViewport" class="output-viewport">
         <pre id="wbRunOut"></pre>
       </div>
-    </div>
+    </details>
   </div>
   <div id="productEditEmptyState" class="panel hidden">Open or create an XP document to edit it here.</div>
   <div id="draftRestoreBanner" class="panel draft-restore-banner hidden" data-panel-number="3b draft-restore">
@@ -247,6 +257,7 @@
     <div class="row">
       <label for="templateSelect">Template</label>
       <select id="templateSelect">
+        <option value="">Raw XP / no template</option>
         <option value="player_native_idle_only">Player Skin (Idle Only)</option>
         <option value="player_native_full">Player Skin (Full Bundle)</option>
       </select>

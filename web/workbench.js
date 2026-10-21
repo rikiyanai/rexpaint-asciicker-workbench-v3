@@ -4469,6 +4469,12 @@
   async function previewSessionForBrowse(sessionId) {
     const sid = String(sessionId || "").trim();
     if (!sid) throw new Error("missing session_id");
+    if (sid.startsWith("upstream:")) {
+      const r = await fetch(bp("/api/workbench/sprites/preview?asset_id=" + encodeURIComponent(sid.slice(9))));
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "sprite preview failed");
+      return j;
+    }
     const ctl = new AbortController();
     const t = setTimeout(() => ctl.abort(), 20000);
     try {
@@ -4495,6 +4501,18 @@
       return true;
     }
     await ensureSessionSavedBeforeBrowseOpen(sid);
+    if (sid.startsWith("upstream:")) {
+      const r = await fetch(bp("/api/workbench/sprites/open"), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ asset_id: sid.slice(9) }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "sprite open failed");
+      const loaded = await loadSession(j.session_id, { reason: "Opening editable upstream sprite copy..." });
+      if (!loaded) throw new Error("sprite session load failed");
+      setProductShellMode("edit");
+      return j;
+    }
     const ok = await loadSession(sid, { reason: `Opening session ${sid.slice(0, 8)}...` });
     if (!ok) {
       throw new Error(`session open failed: ${sid}`);
@@ -6867,6 +6885,7 @@
           : `${st.gridCols}\u00d7${st.gridRows}, ${st.layerCount} layers (font fallback)`;
       }
       updateUndoRedoButtons();
+      wsEditor.setMode(productMode === "browse" ? "browse" : "paint");
       syncProductShellMode(productMode);
     }).catch((err) => {
       console.error("[whole-sheet] mount failed:", err);
@@ -7631,8 +7650,13 @@
   function populateTemplateSelectFromRegistry(model) {
     const select = $("templateSelect");
     if (!select || !model?.valid) return;
-    const selected = select.value;
+    const selected = state.templateSetKey || "";
     select.replaceChildren();
+    const rawOption = document.createElement("option");
+    rawOption.value = "";
+    rawOption.textContent = "Raw XP / no template";
+    rawOption.disabled = !!state.templateSetKey;
+    select.appendChild(rawOption);
     for (const templateSet of model.templateSets) {
       const option = document.createElement("option");
       option.value = templateSet.templateSetKey;
@@ -7640,6 +7664,21 @@
       select.appendChild(option);
     }
     if ([...select.options].some((option) => option.value === selected)) select.value = selected;
+  }
+
+  let warnedTemplateSelection = "";
+  function confirmTemplateSelection(key) {
+    if (!key || state.templateSetKey) return true;
+    const identity = `${state.sessionId || "new"}:${key}`;
+    if (warnedTemplateSelection === identity) return true;
+    if (!window.confirm(
+      "Applying this template inserts or rewrites layer 0 (Asciicker metadata).\n\n" +
+      "Apply Template creates a new template document and replaces the editor view; " +
+      "it does not overwrite your original raw XP file or carry its artwork into the new document.\n\n" +
+      "Continue selecting this template?"
+    )) return false;
+    warnedTemplateSelection = identity;
+    return true;
   }
 
   function renderRegistryActionNavigation() {
@@ -7668,6 +7707,11 @@
     const actionSelect = document.createElement("select");
     actionSelect.id = "registryActionSelect";
     actionSelect.className = "registry-action-picker";
+    const rawOption = document.createElement("option");
+    rawOption.value = "";
+    rawOption.textContent = "Raw XP / no template (currently selected)";
+    rawOption.disabled = !!state.templateSetKey;
+    actionSelect.appendChild(rawOption);
     for (const templateSet of authorableSets) {
       const group = document.createElement("optgroup");
       group.label = templateSet.label;
@@ -7688,7 +7732,15 @@
       const actionKey = option?.dataset.actionKey;
       const templateSet = authorableSets.find((entry) => entry.templateSetKey === templateSetKey);
       const action = templateSet?.actions.find((entry) => entry.actionKey === actionKey);
-      if (!templateSet || !action) return;
+      if (!templateSet || !action) {
+        const select = $("templateSelect");
+        if (select) select.value = "";
+        return;
+      }
+      if (!confirmTemplateSelection(templateSetKey)) {
+        actionSelect.value = state.templateSetKey ? `${state.templateSetKey}:${state.activeActionKey}` : "";
+        return;
+      }
       if (state.bundleId && state.templateSetKey === templateSetKey && state.actionStates[actionKey]) {
         void switchBundleAction(actionKey);
         return;
@@ -7699,6 +7751,8 @@
     });
     catalog.appendChild(label);
     catalog.appendChild(actionSelect);
+    if (!state.templateSetKey) actionSelect.value = "";
+    else rawOption.textContent = "Raw XP / no template";
 
     const unavailable = [];
     for (const family of model.families) {
@@ -7939,6 +7993,7 @@
   }
 
   function updateBundleUI() {
+    renderRegistryActionNavigation();
     const bundleStatus = $("bundleStatus");
     const templateStatus = $("templateStatus");
     const templateGuide = $("templateGuide");
@@ -7976,6 +8031,13 @@
   }
 
   async function applyTemplate() {
+    const key = $("templateSelect")?.value || "";
+    const requestedAction = $("registryActionSelect")?.selectedOptions[0]?.dataset.actionKey;
+    if (!key) {
+      status("Raw XP / no template selected — layer 0 is unchanged", "ok");
+      return false;
+    }
+    if (!confirmTemplateSelection(key)) return false;
     // PB-03 guard: session-boundary dirty check before destructive template apply.
     // loadSession() → hydrateLoadedSession() clears history (by design); warn user.
     const wsHistory = getWholeSheetHistoryState();
@@ -7994,7 +8056,6 @@
         await saveSessionState("pre-template-apply", { wait_for_idle: true, timeout_ms: 15000 });
       }
     }
-    const key = $("templateSelect")?.value || "player_native_idle_only";
     state.templateSetKey = key;
     const reg = await fetchTemplateRegistry();
     if (!reg) {
@@ -8042,7 +8103,7 @@
         return false;
       }
       state.bundleId = j.bundle_id;
-      state.activeActionKey = actionKeys[0];
+      state.activeActionKey = actionKeys.includes(requestedAction) ? requestedAction : actionKeys[0];
       state.actionStates = {};
       for (const ak of actionKeys) {
         const act = j.actions?.[ak] || {};
@@ -8622,6 +8683,7 @@
   function setViewportMode(mode) {
     const next = mode === "mobile" ? "mobile" : "desktop";
     const mobile = next === "mobile";
+    if (mobile) document.documentElement.classList.remove("ws-force-desktop");
     document.body.classList.toggle("wb-viewport-mobile", mobile);
     const btn = $("viewportToggleBtn");
     if (btn) {
@@ -8756,6 +8818,11 @@
     $("redoBtn").addEventListener("click", redo);
 
     $("templateApplyBtn")?.addEventListener("click", applyTemplate);
+    $("registryTemplateApplyBtn")?.addEventListener("click", applyTemplate);
+    $("templateSelect")?.addEventListener("change", () => {
+      const select = $("templateSelect");
+      if (!confirmTemplateSelection(select.value)) select.value = state.templateSetKey || "";
+    });
     $("createProfileBtn")?.addEventListener("click", createActorVisualProfile);
     $("wbUpload").addEventListener("click", wbUpload);
     $("wbRun").addEventListener("click", wbRun);
@@ -10247,6 +10314,7 @@
   // a coarse pointer (touch) qualifies regardless of width. Mirrors the CSS
   // condition `@media (pointer: coarse), (max-width: 1024px)`.
   function _isMobileLike() {
+    if (document.body.classList.contains('wb-viewport-mobile')) return true;
     // "Request Desktop Site" forces desktop layout — never treat as mobile.
     if (document.documentElement.classList.contains('ws-force-desktop')) return false;
     try {
@@ -10265,6 +10333,13 @@
 
     var screen = document.getElementById('mobileFirstScreen');
     if (!screen) return;
+    document.getElementById('fsBrowseBtn')?.addEventListener('click', () => {
+      _dismissFirstScreen();
+      setProductShellMode('browse');
+    });
+    document.getElementById('fsNewRawBtn')?.addEventListener('click', async () => {
+      try { await newRawXp(); } catch (e) { status(String(e), 'err'); }
+    });
 
     // Open XP — await success before dismissing; re-enable button on cancel/error
     var fsOpenBtn = document.getElementById('fsOpenXpBtn');

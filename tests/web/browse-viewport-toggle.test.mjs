@@ -60,12 +60,13 @@ test('390px is clean: panels stack, fixed canvases stay contained', () => {
 });
 
 test('mobile controls cover select/import/browse/glyph/undo/save/export/test', () => {
-  // Dead drawer toggles (tools/layers/info/browse) were removed: no matching
-  // data-drawer exists, so they only closed drawers. Tools live in the tool
-  // buttons, layers in the Edit panel, Browse in the mode buttons below.
-  for (const toggle of ['tools', 'layers', 'info', 'browse']) {
-    assert.doesNotMatch(html, new RegExp(`data-drawer-toggle="${toggle}"`), `dead ${toggle} toggle stays removed`);
+  // The root editor creates these drawers dynamically. Portrait users need
+  // real toggles; removing them strands glyph/color/layer controls offscreen.
+  for (const toggle of ['tools', 'layers', 'info']) {
+    assert.match(html, new RegExp(`data-drawer-toggle="${toggle}"`));
+    assert.match(wholeSheetJs, new RegExp(`dataset.drawer = '${toggle}'`));
   }
+  assert.doesNotMatch(html, /data-drawer-toggle="browse"/, 'Browse uses product mode, not a phantom drawer');
   assert.match(html, /id="productMobileBrowseBtn"/, 'Browse reachable from mobile chrome');
   assert.match(html, /data-action="import-png"/, 'Import reachable from mobile chrome');
   assert.match(html, /id="mobileKeyboardBtn"/, 'Keyboard reachable from mobile chrome');
@@ -118,5 +119,6 @@ test('New creates, lands in Edit, and refreshes+selects in Browse', () => {
   assert.match(wholeSheetJs, /refreshBrowseList,/, 'refresh API exported on the editor handle');
   assert.equal((workbenchJs.match(/await _refreshBrowseAfterNew\(j\.session_id\)/g) || []).length, 3, 'all three New success paths refresh Browse');
   // Browse → New → Edit is the required flow: every New success path lands in Edit.
-  assert.equal((workbenchJs.match(/await loadSession\(j\.session_id[\s\S]{0,160}?setProductShellMode\("edit"\)/g) || []).length, 3, 'all three New success paths switch to Edit after load');
+  const newFunctions = workbenchJs.slice(workbenchJs.indexOf('async function newRawXp()'), workbenchJs.indexOf('async function newXp()') + 2300);
+  assert.equal((newFunctions.match(/await loadSession\(j\.session_id[\s\S]{0,160}?setProductShellMode\("edit"\)/g) || []).length, 3, 'all three New success paths switch to Edit after load');
 });

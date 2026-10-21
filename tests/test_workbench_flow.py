@@ -322,7 +322,8 @@ def test_root_blank_session_defaults(client):
     assert payload["metadata_status"] == "generated"
     assert payload["template_set_key"] == ""
     assert payload["action_key"] == ""
-    assert payload["visible_layers"] == [0, 1, 2, 3]
+    assert payload["active_layer"] == 2
+    assert payload["visible_layers"] == [2]
     assert payload["locked_layers"] == []
 
 

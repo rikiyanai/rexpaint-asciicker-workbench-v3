@@ -1051,7 +1051,12 @@ label.inline {
   flex-direction: column;
   gap: 4px;
   margin-top: 6px;
+  max-height: 420px;
+  overflow-y: auto;
 }
+
+.ws-browse-filters input { flex: 1; min-width: 120px; }
+.ws-browse-filters select { max-width: 100%; }
 
 .ws-browse-item {
   display: flex;
@@ -1461,10 +1466,9 @@ label.inline {
 
 /* ── Mobile: canvas-primary layout (U4 — UQ-013 §1.9.3) ── */
 @media (pointer: coarse), (max-width: 1024px) {
-  .alpha-banner { display: none; }
+  .alpha-banner-copy { display: none; }
   #productToolbar button:disabled { display: none; }
   #reportBugBtn { display: none; }
-  .registry-action-classifications { display: none; }
   /* Sidebar becomes transparent so fixed-position drawers can render (U5) */
   .ws-sidebar { display: contents; }
 
@@ -1693,9 +1697,7 @@ body.wb-viewport-mobile .wrap {
   margin-top: 48px;
   margin-bottom: 40px;
 }
-body.wb-viewport-mobile .alpha-banner,
 body.wb-viewport-mobile #reportBugBtn,
-body.wb-viewport-mobile .registry-action-classifications,
 body.wb-viewport-mobile #productToolbar button:disabled {
   display: none;
 }
@@ -1951,7 +1953,7 @@ body.wb-viewport-mobile .ws-frame-nav {
    toggle (body.ws-advanced). Desktop (fine pointer, wide) is untouched.
    Overlays (#bugReportModal) and the on-demand inspector are preserved. */
 @media (pointer: coarse), (max-width: 1024px) {
-  body.ws-session-loaded:not(.ws-advanced) .wrap > *:not(#wholeSheetPanel):not(#cellInspectorPanel):not(#bugReportModal):not(.ws-drawer):not(#sourceFramesRow):not(#runtimePreflightBanner):not(#draftRestoreBanner) {
+  body.ws-session-loaded:not(.ws-advanced) .wrap > *:not(#productShell):not(#productBrowsePanel):not(#uploadConvertPanel):not(.alpha-banner):not(#webbuildDockPanel):not(#wholeSheetPanel):not(#cellInspectorPanel):not(#bugReportModal):not(.ws-drawer):not(#sourceFramesRow):not(#runtimePreflightBanner):not(#draftRestoreBanner) {
     display: none !important;
   }
 
@@ -2350,6 +2352,26 @@ body {
 .runtime-preflight-title,
 .alpha-inline-banner {
   color: #000000;
+}
+
+.alpha-banner-title {
+  color: #b00020;
+  font-weight: 900;
+}
+
+.sprite-editing-subheader {
+  font-weight: 800;
+  margin: 8px 0;
+}
+
+#productActionNavigation { margin-top: 8px; }
+#productActionNavigation > summary,
+#wbRunOutShell > summary { cursor: pointer; font-weight: 700; }
+#wbRunOutShell:not([open]) {
+  height: auto !important;
+  min-height: 0;
+  padding: 8px;
+  resize: none;
 }
 
 .overlay {
@@ -2753,11 +2775,9 @@ body > span[style*="line-height:11px"] {
   html:not(.ws-force-desktop) body:not(.ws-advanced) .ws-sidebar {
     display: flex !important;
     flex-direction: column;
-    position: fixed;
-    left: env(safe-area-inset-left, 0px);
-    top: calc(44px + env(safe-area-inset-top, 0px));
-    bottom: 0;
+    position: static;
     width: 200px;
+    max-height: 75dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     background: var(--panel, #161616);
@@ -2785,9 +2805,9 @@ body > span[style*="line-height:11px"] {
     flex-direction: column;
   }
 
-  /* Offset canvas layout left edge to clear the sidebar */
+  /* The sidebar participates in layout; it must not cover product navigation. */
   html:not(.ws-force-desktop) body:not(.ws-advanced) .ws-layout {
-    padding-left: calc(200px + env(safe-area-inset-left, 0px));
+    padding-left: 0;
   }
 
   /* Give the canvas full height minus the mobile top bar */

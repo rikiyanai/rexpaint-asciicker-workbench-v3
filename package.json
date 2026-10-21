@@ -8,7 +8,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "node tests/web/workbench-template-gating.test.js && node tests/web/workbench-action-navigation.test.js && node --test tests/web/browse-first-product-shell.test.mjs tests/web/whole-sheet-action-contracts.test.mjs tests/web/whole-sheet-history-ownership.test.mjs tests/web/whole-sheet-input-policy.test.mjs && node --experimental-vm-modules tests/web/rexpaint-editor-adaptive-stroke.test.mjs"
+    "test": "node tests/web/workbench-template-gating.test.js && node tests/web/workbench-action-navigation.test.js && node --test tests/web/browse-first-product-shell.test.mjs tests/web/browse-viewport-toggle.test.mjs tests/web/whole-sheet-action-contracts.test.mjs tests/web/whole-sheet-history-ownership.test.mjs tests/web/whole-sheet-input-policy.test.mjs && node --experimental-vm-modules --test tests/web/canvas-transparency.test.mjs tests/web/rexpaint-editor-adaptive-stroke.test.mjs"
   },
   "repository": {
     "type": "git",

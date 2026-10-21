@@ -6,6 +6,10 @@ const _colorCache = new Map();
 const _fallbackBaseAtlasCache = new Map();
 const _fallbackTintedAtlasCache = new Map();
 
+function _isTransparentKey(bg) {
+  return bg[0] === 255 && ((bg[1] === 0 && bg[2] === 255) || (bg[1] === 255 && bg[2] === 0));
+}
+
 function _rgb(r, g, b) {
   const key = (r << 16) | (g << 8) | b;
   if (!_colorCache.has(key)) {
@@ -566,11 +570,11 @@ export class Canvas {
         const cell = layer.getCell(x, y);
         if (!cell) continue;
         // A cell is "truly empty" only when glyph=0 AND bg is BLACK.
-        // glyph=0 with bg=MAG = explicit transparent paint (af1e799 erase semantics) — must surface.
+        // Empty transparent-key cells reveal lower layers, just as rendering does.
         // glyph=0 with any non-black bg = bg-only paint — must surface.
         const isTrulyEmpty = cell.glyph === 0
           && cell.bg[0] === 0 && cell.bg[1] === 0 && cell.bg[2] === 0;
-        if (isTrulyEmpty) continue;
+        if (isTrulyEmpty || (cell.glyph === 0 && _isTransparentKey(cell.bg))) continue;
         return {
           glyph: cell.glyph,
           fg: [...cell.fg],
@@ -701,14 +705,13 @@ export class Canvas {
   _drawCellToContext(ctx, cell, x, y) {
     const pixelCoords = this.cellToPixelCoords(x, y);
 
-    const bgColor = _rgb(cell.bg[0], cell.bg[1], cell.bg[2]);
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(
-      pixelCoords.x,
-      pixelCoords.y,
-      this.cellSizePixels,
-      this.cellSizePixels
-    );
+    // REXPaint's magenta/yellow keys must not become opaque layer surfaces.
+    // Glyphs on a keyed background still draw; only their background is clear.
+    if (!_isTransparentKey(cell.bg)) {
+      const bgColor = _rgb(cell.bg[0], cell.bg[1], cell.bg[2]);
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(pixelCoords.x, pixelCoords.y, this.cellSizePixels, this.cellSizePixels);
+    }
 
     if (cell.glyph === 0) {
       return;

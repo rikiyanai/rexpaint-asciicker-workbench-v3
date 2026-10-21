@@ -1,0 +1,2590 @@
+{
+  "repository": "rikiyanai/asciicker-Y9-2",
+  "commit": "52d008f583d22f22884245c698b8e1e0f47f785a",
+  "source_directory": "assets/sprites",
+  "assets": [
+    {
+      "asset_id": "2026-05-28-gromit.xp",
+      "source_path": "assets/sprites/2026-05-28-gromit.xp",
+      "sha256": "6a4f859e6068fe349557abb62156887c949982d3fa5d748f04cdf64cbfdd529b",
+      "bytes": 3886,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "2026-05-28-wallace.xp",
+      "source_path": "assets/sprites/2026-05-28-wallace.xp",
+      "sha256": "98226307a81f70e527975cd9f432d16b303a9403b890ef78a7e50c7fe2c0c5ea",
+      "bytes": 2474,
+      "grid_cols": 126,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "2026-08-12-030327-gromit.xp",
+      "source_path": "assets/sprites/2026-08-12-030327-gromit.xp",
+      "sha256": "e2e2a4212fb57c70ffc615c4c8539e336f7a9bc08b88e6c3648f37ec2a9b5bb5",
+      "bytes": 4280,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "2026-08-12-030327-wallace.xp",
+      "source_path": "assets/sprites/2026-08-12-030327-wallace.xp",
+      "sha256": "0e2bd7823d3aab79007df8a1c6c58150b5bb3c7718a75ce0ae9df27e88adbc3a",
+      "bytes": 2426,
+      "grid_cols": 126,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "2026-10-08-dracula-body.xp",
+      "source_path": "assets/sprites/2026-10-08-dracula-body.xp",
+      "sha256": "b3127c8dbc156a6acba65f9ecf82a2c323ff6e7ded76e51192fa35c1f9926205",
+      "bytes": 2897,
+      "grid_cols": 126,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "2026-10-08-dracula-plydie.xp",
+      "source_path": "assets/sprites/2026-10-08-dracula-plydie.xp",
+      "sha256": "5a60cf64d1a7a838efedbd5dfe30dd0da89954333f7ce09f427883422c6f3206",
+      "bytes": 3945,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "2026-10-08-grandma-body.xp",
+      "source_path": "assets/sprites/2026-10-08-grandma-body.xp",
+      "sha256": "4d7d910e784e4e74990050af4d4fd365013cec21fa540dfbdbaaa501214da180",
+      "bytes": 2828,
+      "grid_cols": 126,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "2026-10-08-grandma-plydie.xp",
+      "source_path": "assets/sprites/2026-10-08-grandma-plydie.xp",
+      "sha256": "37dde6a79feef7face4af96f8adc47d0b211ce3f26aa9413a1ea2c66b21c35dd",
+      "bytes": 3931,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "2026-10-08-witch-body.xp",
+      "source_path": "assets/sprites/2026-10-08-witch-body.xp",
+      "sha256": "7ea87d660a9748e51988cf626b2b23b1bb3aac1507a57e4f5a4589465fdb30eb",
+      "bytes": 2429,
+      "grid_cols": 126,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "2026-10-08-witch-plydie.xp",
+      "source_path": "assets/sprites/2026-10-08-witch-plydie.xp",
+      "sha256": "84b45f1199374b29b65c7d2fdc2744e9b32c40b995a253961e916ee952b4fa65",
+      "bytes": 3331,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "asciicker.xp",
+      "source_path": "assets/sprites/asciicker.xp",
+      "sha256": "742a0776c786f637249b02f8ebc7b1a8ab3b5f64e6da728922ab6655f4024884",
+      "bytes": 360,
+      "grid_cols": 34,
+      "grid_rows": 9,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "attack-0001.xp",
+      "source_path": "assets/sprites/attack-0001.xp",
+      "sha256": "a2ebf074ff8bfd1ef94703c011f2b9b793429b889223afd55951a13400cd7538",
+      "bytes": 5101,
+      "grid_cols": 144,
+      "grid_rows": 80,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "attack-0011.xp",
+      "source_path": "assets/sprites/attack-0011.xp",
+      "sha256": "8e7989d7bbfed895da5043fa8575d31d63d98d4b81c5f22af69edfec733d5e58",
+      "bytes": 5616,
+      "grid_cols": 144,
+      "grid_rows": 80,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "attack-0101.xp",
+      "source_path": "assets/sprites/attack-0101.xp",
+      "sha256": "5861d7be3c5675d4ede8f20dd8754d87f27572e7977219a27a5bfb56f6de1db4",
+      "bytes": 5999,
+      "grid_cols": 144,
+      "grid_rows": 80,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "attack-0111.xp",
+      "source_path": "assets/sprites/attack-0111.xp",
+      "sha256": "d407b6a36fcf9ee1023ae24b4222fdf3f27bf3a3353448cbe305085d97ac9b5b",
+      "bytes": 6523,
+      "grid_cols": 144,
+      "grid_rows": 80,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "attack-1001.xp",
+      "source_path": "assets/sprites/attack-1001.xp",
+      "sha256": "2081940ff3db46c53878beb7f4cff3ebe44808c35ce0a47c787f79935172bfd8",
+      "bytes": 6796,
+      "grid_cols": 144,
+      "grid_rows": 80,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "attack-1011.xp",
+      "source_path": "assets/sprites/attack-1011.xp",
+      "sha256": "a91db53d43aeb1941b13eb0b647094a3e303a3fa80e001f682c2e2abc81d4082",
+      "bytes": 7243,
+      "grid_cols": 144,
+      "grid_rows": 80,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "attack-1101.xp",
+      "source_path": "assets/sprites/attack-1101.xp",
+      "sha256": "2ff3e2e8f4134b618bab667b66aff259ff9d7f9be137d806096004dd7de5b8d0",
+      "bytes": 7676,
+      "grid_cols": 144,
+      "grid_rows": 80,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "attack-1111.xp",
+      "source_path": "assets/sprites/attack-1111.xp",
+      "sha256": "bc599701f0d5898d075f0c2dbd1e84a15e01a13b27e2758fd957eddd1b34959c",
+      "bytes": 8097,
+      "grid_cols": 144,
+      "grid_rows": 80,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "attack-armor-regular.xp",
+      "source_path": "assets/sprites/attack-armor-regular.xp",
+      "sha256": "2d789147987f936756f767932a68b891dd25d198e059cdfe76d17fdfd1bc3bf3",
+      "bytes": 2372,
+      "grid_cols": 144,
+      "grid_rows": 80,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "attack-body.xp",
+      "source_path": "assets/sprites/attack-body.xp",
+      "sha256": "39235e35ba1dabcdb8b66e0a2fffa1b0806911e456424b940ebf160ed7d73672",
+      "bytes": 3388,
+      "grid_cols": 144,
+      "grid_rows": 80,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "attack-helmet-regular.xp",
+      "source_path": "assets/sprites/attack-helmet-regular.xp",
+      "sha256": "9dccece996f2e1e8ef71eeb6d6ca4edd710b4a1c099de03c2d5e96c74d97f15d",
+      "bytes": 1694,
+      "grid_cols": 144,
+      "grid_rows": 80,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "attack-weapon-sword.xp",
+      "source_path": "assets/sprites/attack-weapon-sword.xp",
+      "sha256": "fce6500b84974cc030ab457a96c72018945e18512bbbe62a8fadbe12c58e9f61",
+      "bytes": 3396,
+      "grid_cols": 144,
+      "grid_rows": 80,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "bigbee-0000.xp",
+      "source_path": "assets/sprites/bigbee-0000.xp",
+      "sha256": "981e2374d6789141e2865152e9ea9a65dd45449f9824eaa8467d7e21306b0df6",
+      "bytes": 4016,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "bigbee-0001.xp",
+      "source_path": "assets/sprites/bigbee-0001.xp",
+      "sha256": "23c5657269a0c7b414c1530dfd2cc700eb5d13cfbb89518ea04499b5c1ef15db",
+      "bytes": 4965,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "bigbee-0002.xp",
+      "source_path": "assets/sprites/bigbee-0002.xp",
+      "sha256": "2ce28bd80a0d57fdd9cc1ad195e207b68bfdcac226b9f7bb73ca17142d7b8078",
+      "bytes": 4997,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "bigbee-0010.xp",
+      "source_path": "assets/sprites/bigbee-0010.xp",
+      "sha256": "d54bfcdf5f5adcb4093e3e2d30aae57a21f004e5e7bf12f3967307bb8c3f91f0",
+      "bytes": 4358,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "bigbee-0011.xp",
+      "source_path": "assets/sprites/bigbee-0011.xp",
+      "sha256": "41693ccf8beafa10eaf7bfa69437f1821056744fb6753af113872bebaa24e50e",
+      "bytes": 6189,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "bigbee-0012.xp",
+      "source_path": "assets/sprites/bigbee-0012.xp",
+      "sha256": "7f666353583ca27d66f816a418b04edb18f92c25138d0489a245a31bd1f90cb6",
+      "bytes": 6216,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "bigbee-0100.xp",
+      "source_path": "assets/sprites/bigbee-0100.xp",
+      "sha256": "09585cc721739c81cddcfda15929c0824c8631d9b3e467cc81cf00814bbd404a",
+      "bytes": 4455,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "bigbee-0101.xp",
+      "source_path": "assets/sprites/bigbee-0101.xp",
+      "sha256": "05c9f0383e27f987b6144f2a68307bba1dd335dea47b82b7fbf1e051c037bd61",
+      "bytes": 5393,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "bigbee-0102.xp",
+      "source_path": "assets/sprites/bigbee-0102.xp",
+      "sha256": "0f4014e52115a0149fd660c731f5007d5083b25f09a8d0580644e2246e613e5c",
+      "bytes": 5431,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "bigbee-0110.xp",
+      "source_path": "assets/sprites/bigbee-0110.xp",
+      "sha256": "77b655b50fac395d9254fe887d59d41540c1107454df3873c9565615c96b159e",
+      "bytes": 4808,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "bigbee-0111.xp",
+      "source_path": "assets/sprites/bigbee-0111.xp",
+      "sha256": "7159b0ceff90e794204a40e2f342ea0f3ba27202a7f4594a672c22350d94b58c",
+      "bytes": 6635,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 7
+    },
+    {
+      "asset_id": "bigbee-0112.xp",
+      "source_path": "assets/sprites/bigbee-0112.xp",
+      "sha256": "ea3ecda3d1f1e23a06c1c145fbbe07bcf8668e5028c38a3c0ffbb1dcc04b5ace",
+      "bytes": 6659,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 7
+    },
+    {
+      "asset_id": "bigbee-1000.xp",
+      "source_path": "assets/sprites/bigbee-1000.xp",
+      "sha256": "054557c5557983e099518ccc08e522ff8a5a99e81eabb79ca4fec0085095dbff",
+      "bytes": 4802,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "bigbee-1001.xp",
+      "source_path": "assets/sprites/bigbee-1001.xp",
+      "sha256": "07a1920dd352c1c88435fd5122ca5392d8a8b098e44f3466522bc9c6653070c3",
+      "bytes": 5700,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "bigbee-1002.xp",
+      "source_path": "assets/sprites/bigbee-1002.xp",
+      "sha256": "e8e8db2cb9041853f42c80835afff21e0cf1d9303a4e859c6aa009e30a819a8e",
+      "bytes": 5704,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "bigbee-1010.xp",
+      "source_path": "assets/sprites/bigbee-1010.xp",
+      "sha256": "c0251fdda41f78f101dced752a17661eaaba46e67c749f0c9557e9e168c52646",
+      "bytes": 5494,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "bigbee-1011.xp",
+      "source_path": "assets/sprites/bigbee-1011.xp",
+      "sha256": "33e4dd2962eaba885c16de46faa31a5c66fbd4154a36ef7b772ab321ea33744d",
+      "bytes": 6386,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 7
+    },
+    {
+      "asset_id": "bigbee-1012.xp",
+      "source_path": "assets/sprites/bigbee-1012.xp",
+      "sha256": "8612c34d2332ea4267dd0f3fded5bf173da2db8df719074d21137b4b67320d46",
+      "bytes": 6389,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 7
+    },
+    {
+      "asset_id": "bigbee-1100.xp",
+      "source_path": "assets/sprites/bigbee-1100.xp",
+      "sha256": "4322f1ad9bcb9db5eb7fc54535cc6ef40a195acb416207202a45167228d0ea9b",
+      "bytes": 5221,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "bigbee-1101.xp",
+      "source_path": "assets/sprites/bigbee-1101.xp",
+      "sha256": "80ba8734526779600e5019287213103a34fc8e3677e138a7162c18c81f152628",
+      "bytes": 6119,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 7
+    },
+    {
+      "asset_id": "bigbee-1102.xp",
+      "source_path": "assets/sprites/bigbee-1102.xp",
+      "sha256": "948a201c02d59b5092248f495b1838ea3cb11f0d760a96607df0450381f5e711",
+      "bytes": 6128,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 7
+    },
+    {
+      "asset_id": "bigbee-1110.xp",
+      "source_path": "assets/sprites/bigbee-1110.xp",
+      "sha256": "0ba248b663e1bcbeba45ed0d0cd33495cad013ca5d5140300c009b4d1bd97675",
+      "bytes": 5903,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 7
+    },
+    {
+      "asset_id": "bigbee-1111.xp",
+      "source_path": "assets/sprites/bigbee-1111.xp",
+      "sha256": "3892267e74707dd832b1dda2c0ec932c6c16b57f26bc726a8531824fe18c2135",
+      "bytes": 6800,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 8
+    },
+    {
+      "asset_id": "bigbee-1112.xp",
+      "source_path": "assets/sprites/bigbee-1112.xp",
+      "sha256": "0cb9288786ea851bac4c1928e04348be3d335b0d34c984c530f4f9099e034a88",
+      "bytes": 6817,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 8
+    },
+    {
+      "asset_id": "bigbee.xp",
+      "source_path": "assets/sprites/bigbee.xp",
+      "sha256": "7bc083356f7787f959ed93db241484012b2627d8766cf4acdb220f45bf842330",
+      "bytes": 3027,
+      "grid_cols": 66,
+      "grid_rows": 104,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "character.xp",
+      "source_path": "assets/sprites/character.xp",
+      "sha256": "39052ac5ff4b176fa4c06c6bdca0bf45199a6ae603a0286a7642955622d3d9fe",
+      "bytes": 244,
+      "grid_cols": 14,
+      "grid_rows": 6,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "desert_plants.xp",
+      "source_path": "assets/sprites/desert_plants.xp",
+      "sha256": "d9a6cd1a7aaef11eec0d6970c21e1097408040c7f0800c582844da08d6988f65",
+      "bytes": 626,
+      "grid_cols": 10,
+      "grid_rows": 84,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "enemygen.xp",
+      "source_path": "assets/sprites/enemygen.xp",
+      "sha256": "399fbdbafb54fd64ad6242fe9aeee1476cb7d89a5eae091fd2f9d7ce0acd766b",
+      "bytes": 286,
+      "grid_cols": 14,
+      "grid_rows": 12,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "fire.xp",
+      "source_path": "assets/sprites/fire.xp",
+      "sha256": "dee9ade511dab8bbc7de89e4c59ff0401cad8ee60e77ad252beac53792998ec2",
+      "bytes": 908,
+      "grid_cols": 98,
+      "grid_rows": 15,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "font-1.xp",
+      "source_path": "assets/sprites/font-1.xp",
+      "sha256": "494ac5a6df7529dc2a6c6257e4207aafba04be5b9caf069b74026d22c787cd89",
+      "bytes": 837,
+      "grid_cols": 65,
+      "grid_rows": 20,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "gamepad.xp",
+      "source_path": "assets/sprites/gamepad.xp",
+      "sha256": "16e66814fc482b3deda9fb37ce32c650d5d502161b40f245832c438b39a4ae9e",
+      "bytes": 2817,
+      "grid_cols": 51,
+      "grid_rows": 60,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "grid-alpha-sword.xp",
+      "source_path": "assets/sprites/grid-alpha-sword.xp",
+      "sha256": "c78f3d36895f72a5def63d0c933a1daceefb2bf98e88327c828a537a65400a65",
+      "bytes": 109,
+      "grid_cols": 3,
+      "grid_rows": 11,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-apple.xp",
+      "source_path": "assets/sprites/grid-apple.xp",
+      "sha256": "ae8765e9a7d073995304e48a429f86021de4a13b83b60f9a1d194052ba1738d5",
+      "bytes": 158,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-beet.xp",
+      "source_path": "assets/sprites/grid-beet.xp",
+      "sha256": "7ae66ffeee645c37e582085bbdfe7e9444430f357e352274c0880500ab7d9c8e",
+      "bytes": 177,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-big-axe.xp",
+      "source_path": "assets/sprites/grid-big-axe.xp",
+      "sha256": "46c5d74fced1f5ad93bed9ac8f8e3e28de85ed17b36ed8e54d3ee42f0404a56c",
+      "bytes": 182,
+      "grid_cols": 7,
+      "grid_rows": 11,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-big-hammer.xp",
+      "source_path": "assets/sprites/grid-big-hammer.xp",
+      "sha256": "5a745c40de9ce1cc4c87221aa009e38631dc8d952b0ccacc2f15a13362956d89",
+      "bytes": 151,
+      "grid_cols": 7,
+      "grid_rows": 11,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-big-mace.xp",
+      "source_path": "assets/sprites/grid-big-mace.xp",
+      "sha256": "5ad45b365843593a6189fd444dda2a94cf0f66de52d011727c74a29076d68029",
+      "bytes": 171,
+      "grid_cols": 7,
+      "grid_rows": 11,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-blue-potion.xp",
+      "source_path": "assets/sprites/grid-blue-potion.xp",
+      "sha256": "44f542d33fea2b7b2e110363d66d925579f00b1be4fdec526c800d13ee8c3485",
+      "bytes": 181,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-bread.xp",
+      "source_path": "assets/sprites/grid-bread.xp",
+      "sha256": "db0c35c1c7109d0bb0835d9e70c9a6a4f44b9696993d74e5aa7c6e6ec39721d3",
+      "bytes": 178,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-carrot.xp",
+      "source_path": "assets/sprites/grid-carrot.xp",
+      "sha256": "a4e2bb6e6fc3fc6f28c4e84e29502909f80721eaf7d6b12f3080c718c40ed8d9",
+      "bytes": 141,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-cheese.xp",
+      "source_path": "assets/sprites/grid-cheese.xp",
+      "sha256": "3b85f2e6a817f1b3ad7528a1406c46b27f8c15b27f78d8afd64006c92c2b0429",
+      "bytes": 164,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-cherry.xp",
+      "source_path": "assets/sprites/grid-cherry.xp",
+      "sha256": "d53aeefdef10f81f9704cbf430c659a259f645016f9e2cb5fa70f16146b17dc3",
+      "bytes": 152,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-crossbow.xp",
+      "source_path": "assets/sprites/grid-crossbow.xp",
+      "sha256": "bdb03fe5f0ecbfc3a48b96f539d1601f6bfe7e16863ab0a73c8e9b2333de87a2",
+      "bytes": 158,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-cucumber.xp",
+      "source_path": "assets/sprites/grid-cucumber.xp",
+      "sha256": "4bf68996a7137d158b717ce92fb0e4b8079715da7f4f9d6a6b12a6ada3ecfd90",
+      "bytes": 136,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-cyan-potion.xp",
+      "source_path": "assets/sprites/grid-cyan-potion.xp",
+      "sha256": "64cb53bc26ccfdf8bacf14f6801860ad3c77d78c919aa1fe82be44492bd78e09",
+      "bytes": 183,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-cyan-ring.xp",
+      "source_path": "assets/sprites/grid-cyan-ring.xp",
+      "sha256": "da74dd65160165134bd3c5f2dc9901e6b67031dc0f1725198601fd861ec7de07",
+      "bytes": 76,
+      "grid_cols": 3,
+      "grid_rows": 3,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-egg.xp",
+      "source_path": "assets/sprites/grid-egg.xp",
+      "sha256": "9290f48194211ef6f2feb7dff6e6bf3b68ac68c8a72af4b928c6da144ef276e9",
+      "bytes": 149,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-flail.xp",
+      "source_path": "assets/sprites/grid-flail.xp",
+      "sha256": "43bd3d436d45985b593f19d3e70efc6df0489b59adbbeb0facdf00c6e830778a",
+      "bytes": 152,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-gold-potion.xp",
+      "source_path": "assets/sprites/grid-gold-potion.xp",
+      "sha256": "08d19687f47a5b7af600158047c03ae4391864e483e81602c2cd7d7491df480e",
+      "bytes": 182,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-gold-ring.xp",
+      "source_path": "assets/sprites/grid-gold-ring.xp",
+      "sha256": "345d7039d89e931140098211c91556ee3668c5080f6103b43f9fdc207758d1b0",
+      "bytes": 74,
+      "grid_cols": 3,
+      "grid_rows": 3,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-green-potion.xp",
+      "source_path": "assets/sprites/grid-green-potion.xp",
+      "sha256": "c303e0d874ae7d9eefbc97cc923ce897d9b56de6d449a990ab3b58e1cef245bb",
+      "bytes": 182,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-grey-potion.xp",
+      "source_path": "assets/sprites/grid-grey-potion.xp",
+      "sha256": "064aa700741dbb947f119f622af174065d6c88fb56b8aef3f82a0cadbe9c85c0",
+      "bytes": 182,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-heavy-armor.xp",
+      "source_path": "assets/sprites/grid-heavy-armor.xp",
+      "sha256": "42a512e846fb84eaefee689970168bb5c47d86f51cc6fd16297a0c299a995a07",
+      "bytes": 172,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-heavy-helmet.xp",
+      "source_path": "assets/sprites/grid-heavy-helmet.xp",
+      "sha256": "1fc21d63616e8398d1b4d05426bbf0cefbb4bdb58982dd416b073ce68c3f7ce3",
+      "bytes": 169,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-heavy-shield.xp",
+      "source_path": "assets/sprites/grid-heavy-shield.xp",
+      "sha256": "1e8704c163833aececce94d5788771dbb4573319a1ef96ab04c48c3c4f574343",
+      "bytes": 156,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-light-armor.xp",
+      "source_path": "assets/sprites/grid-light-armor.xp",
+      "sha256": "4a0a3eec89889388faa625013fbd17a0981849f68229858e446f41aac81c1fec",
+      "bytes": 169,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-light-helmet.xp",
+      "source_path": "assets/sprites/grid-light-helmet.xp",
+      "sha256": "572c306d4f6ca47f3c3a3c2a8d53ad8f6c52fa10852cf57c222734ac0c8797f4",
+      "bytes": 158,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-light-shield.xp",
+      "source_path": "assets/sprites/grid-light-shield.xp",
+      "sha256": "b8e9127acd7452fe060a0779ce9380f190c38d319ca499f1d76ba00866d2e00e",
+      "bytes": 154,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-lumber-axe.xp",
+      "source_path": "assets/sprites/grid-lumber-axe.xp",
+      "sha256": "aeebdf1bf41484eb722d7c131d93cf2be48ae33d158fccc891d51db55d9762a7",
+      "bytes": 108,
+      "grid_cols": 3,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-meat.xp",
+      "source_path": "assets/sprites/grid-meat.xp",
+      "sha256": "48a45e735330b13cd2fe15f9256efcf1e2a9c14b16722c86048252b38ee2b5b1",
+      "bytes": 156,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-milk.xp",
+      "source_path": "assets/sprites/grid-milk.xp",
+      "sha256": "78d088ca5f85c2b69a8d31bf4537aedad47540920c9bad391b7a5e4c66c56cec",
+      "bytes": 137,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-pink-potion.xp",
+      "source_path": "assets/sprites/grid-pink-potion.xp",
+      "sha256": "8d5b04275d6736d6dc985b380d439ebb1a773a74b2b4af237d83715f02cd6741",
+      "bytes": 185,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-pink-ring.xp",
+      "source_path": "assets/sprites/grid-pink-ring.xp",
+      "sha256": "0aa8827b212fce7ce44bff3064f1f01d9c114dfc1625aabffb24558d7a8847b2",
+      "bytes": 75,
+      "grid_cols": 3,
+      "grid_rows": 3,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-plum.xp",
+      "source_path": "assets/sprites/grid-plum.xp",
+      "sha256": "34e5c0d19740ef474ab0441064311e5c0a596955f8611f09e54d34ef87d3c466",
+      "bytes": 172,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-plus-sword.xp",
+      "source_path": "assets/sprites/grid-plus-sword.xp",
+      "sha256": "85e339c2db92f5687892d5b7290c03860197c380c531114fc37e4676e14330f4",
+      "bytes": 120,
+      "grid_cols": 3,
+      "grid_rows": 11,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-red-potion.xp",
+      "source_path": "assets/sprites/grid-red-potion.xp",
+      "sha256": "5a67d91a309c78955193d3d360e1ad49e0df0e656e3beae054eafeac9e539d21",
+      "bytes": 180,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-small-mace.xp",
+      "source_path": "assets/sprites/grid-small-mace.xp",
+      "sha256": "38fd431adfabc42b21a1a9f7f27603c51d0510f81c0ce15eeab9d61c623a97e2",
+      "bytes": 128,
+      "grid_cols": 3,
+      "grid_rows": 11,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-small-saber.xp",
+      "source_path": "assets/sprites/grid-small-saber.xp",
+      "sha256": "ad359ddd47700bf404b83a1800318edbe516621413a2b6883fab4aa4407c5648",
+      "bytes": 98,
+      "grid_cols": 3,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-small-sword.xp",
+      "source_path": "assets/sprites/grid-small-sword.xp",
+      "sha256": "3e8b5061d412c6f954b5d632fc8d8da9de70c289fa05ebf1eb0bc07dc75aeb88",
+      "bytes": 99,
+      "grid_cols": 3,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-water.xp",
+      "source_path": "assets/sprites/grid-water.xp",
+      "sha256": "03c122f6e52589d9565a11feb4db8fc0139d437357668d7f20cd4208f108ba8f",
+      "bytes": 141,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-white-ring.xp",
+      "source_path": "assets/sprites/grid-white-ring.xp",
+      "sha256": "e18d6aeaff262b0693b704967427951592fbb9d644cb29559e99fe591b2d9bd6",
+      "bytes": 73,
+      "grid_cols": 3,
+      "grid_rows": 3,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "grid-wine.xp",
+      "source_path": "assets/sprites/grid-wine.xp",
+      "sha256": "45eb4aac6949c0624fcb287eddd25c616da224ef9771921786ed6700e1ae6d35",
+      "bytes": 135,
+      "grid_cols": 7,
+      "grid_rows": 7,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "inventory.xp",
+      "source_path": "assets/sprites/inventory.xp",
+      "sha256": "183c2705ff212092c2b1a780178b65a91f5d35a4b98d50edc0c59d20b01366e8",
+      "bytes": 643,
+      "grid_cols": 39,
+      "grid_rows": 35,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-apple.xp",
+      "source_path": "assets/sprites/item-apple.xp",
+      "sha256": "8e0bec174edafa649ab3721bfc413e67b4030adc1759db2e090bad370b2730bd",
+      "bytes": 69,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-armor.xp",
+      "source_path": "assets/sprites/item-armor.xp",
+      "sha256": "a0ae26145b0ab091564c36147d72798d84b894292e0e21757f3dae1b24ab9f07",
+      "bytes": 173,
+      "grid_cols": 10,
+      "grid_rows": 5,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-axe.xp",
+      "source_path": "assets/sprites/item-axe.xp",
+      "sha256": "4bd83788af59712f7e834a0556ce962c7bae44883814fdd820bb2687e17b576e",
+      "bytes": 164,
+      "grid_cols": 10,
+      "grid_rows": 5,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-beet.xp",
+      "source_path": "assets/sprites/item-beet.xp",
+      "sha256": "a332f90d8469672ceb39a7d09ccd213b5563bdbe55b3e35d01ecf0693fe9501f",
+      "bytes": 66,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-blue-potion.xp",
+      "source_path": "assets/sprites/item-blue-potion.xp",
+      "sha256": "bd103dcd58a982baa7b945fd26e999582a4b374e8e156395c19f968ec10fb365",
+      "bytes": 65,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-bread.xp",
+      "source_path": "assets/sprites/item-bread.xp",
+      "sha256": "a970a0207cbe1af8c1a1d89f77c7523306fcb2047731c196142561892d11ec95",
+      "bytes": 65,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-carrot.xp",
+      "source_path": "assets/sprites/item-carrot.xp",
+      "sha256": "0caac514dc07ee607345540d3c4ac1311d7e816e1391a8c36dfdc0c14eb7d2be",
+      "bytes": 69,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-cheese.xp",
+      "source_path": "assets/sprites/item-cheese.xp",
+      "sha256": "1059253ef1efa13a033d8fd21f0ec117cf37e9548ef0c280a16368a8c447d60a",
+      "bytes": 67,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-cherry.xp",
+      "source_path": "assets/sprites/item-cherry.xp",
+      "sha256": "f858013c9d4ccaa5248cd710b10792e3b882544ead672edbdbcd68535e73c9e3",
+      "bytes": 67,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-crossbow.xp",
+      "source_path": "assets/sprites/item-crossbow.xp",
+      "sha256": "a22aa50042c0534517a3c7ad36ed0cef1f7e70b914f7689768648eb2a0f5751a",
+      "bytes": 178,
+      "grid_cols": 10,
+      "grid_rows": 5,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-cucumber.xp",
+      "source_path": "assets/sprites/item-cucumber.xp",
+      "sha256": "54c70054e6fa9f1f939709f06e4e59511dcf0334732774ba57e8f3bbfcfb452c",
+      "bytes": 66,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-cyan-potion.xp",
+      "source_path": "assets/sprites/item-cyan-potion.xp",
+      "sha256": "5255eef09f68f363dd35a6b1821afe1ee6a7a3ad5b856e618f2622a41e62ecac",
+      "bytes": 66,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-cyan-ring.xp",
+      "source_path": "assets/sprites/item-cyan-ring.xp",
+      "sha256": "8e3b0557b7e916033a266217a915e1389edb0bdd6897ec443d897d0579bf4766",
+      "bytes": 66,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-egg.xp",
+      "source_path": "assets/sprites/item-egg.xp",
+      "sha256": "066a27cd923e6674f97344ea990b424f2045f0de697cf7ef91aed7affae6b2ab",
+      "bytes": 65,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-flail.xp",
+      "source_path": "assets/sprites/item-flail.xp",
+      "sha256": "b46c4902c748c6761ecd82b210d6781ecc3206fca09e4b93e8469431682ff545",
+      "bytes": 177,
+      "grid_cols": 10,
+      "grid_rows": 5,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-gold-potion.xp",
+      "source_path": "assets/sprites/item-gold-potion.xp",
+      "sha256": "dcac05d15e26b0d3c5a3b1891ccb33191eac5f6d02cf89f4e104dc3350dc249b",
+      "bytes": 65,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-gold-ring.xp",
+      "source_path": "assets/sprites/item-gold-ring.xp",
+      "sha256": "1ca92339aad72bfea35d19f48c2a5b134a73a888bd29b5ed3ace8f6a217d3737",
+      "bytes": 66,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-green-potion.xp",
+      "source_path": "assets/sprites/item-green-potion.xp",
+      "sha256": "47ac7258a2afbe0e48e250b8119aab4888773398b16ba23aa2369838ff843706",
+      "bytes": 63,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-grey-potion.xp",
+      "source_path": "assets/sprites/item-grey-potion.xp",
+      "sha256": "8d2842fab21976b7722b12fa393610a48f47876ac0c52c6f6e5460df6f4f20c6",
+      "bytes": 65,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-hammer.xp",
+      "source_path": "assets/sprites/item-hammer.xp",
+      "sha256": "4f93d487096e4066f58e832e3818ec5ac0d590e64563a88035a9dfc3de60d934",
+      "bytes": 169,
+      "grid_cols": 10,
+      "grid_rows": 5,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-helmet.xp",
+      "source_path": "assets/sprites/item-helmet.xp",
+      "sha256": "d28fd9ae2dcd7a8386b3a50ee47f84e46494019dde67b741c6c084acba371bc7",
+      "bytes": 155,
+      "grid_cols": 10,
+      "grid_rows": 5,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-mace.xp",
+      "source_path": "assets/sprites/item-mace.xp",
+      "sha256": "27691c915239752ff940264cbbcdc1cbfc78fd1d6988fa2ba6a3490b287f9d6a",
+      "bytes": 166,
+      "grid_cols": 10,
+      "grid_rows": 5,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-meat.xp",
+      "source_path": "assets/sprites/item-meat.xp",
+      "sha256": "f5f8c5e233b0c04857760c96e271dcebc043206ef0a443f491bd77da791c14dd",
+      "bytes": 67,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-milk.xp",
+      "source_path": "assets/sprites/item-milk.xp",
+      "sha256": "e3f71f66e5492fd4ea4b5dcf1f575779eca54760c21563ca77e40288fa5ec487",
+      "bytes": 62,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-pink-potion.xp",
+      "source_path": "assets/sprites/item-pink-potion.xp",
+      "sha256": "1f7fbd5eb431d01cd93acf66d818afe7a8d5e0e11f5a0923e862140655587f25",
+      "bytes": 66,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-pink-ring.xp",
+      "source_path": "assets/sprites/item-pink-ring.xp",
+      "sha256": "df4da0af9d7c57ce842e34941dedafcbcfc14c3a8d5d52ef04e6733b3b860b9b",
+      "bytes": 66,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-plum.xp",
+      "source_path": "assets/sprites/item-plum.xp",
+      "sha256": "0f99828542ec28e9db7193a414b7b57d1306a1de1d51115b16b4a4372de64d77",
+      "bytes": 70,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-red-potion.xp",
+      "source_path": "assets/sprites/item-red-potion.xp",
+      "sha256": "b3858161bfb1349361aad970b0cfe89fc48e17945379ef82387ff4ded4ec7e41",
+      "bytes": 65,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-shield.xp",
+      "source_path": "assets/sprites/item-shield.xp",
+      "sha256": "46fdd785b38b1371cc5e26396eeab9f29de99afb82bd6eb2e6e36135499dff33",
+      "bytes": 147,
+      "grid_cols": 10,
+      "grid_rows": 5,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-sword.xp",
+      "source_path": "assets/sprites/item-sword.xp",
+      "sha256": "c54435cf4623720fb7970784cca09fb4064532a33b01ee6fcb632e743abec00a",
+      "bytes": 148,
+      "grid_cols": 10,
+      "grid_rows": 5,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-water.xp",
+      "source_path": "assets/sprites/item-water.xp",
+      "sha256": "6c91165f4806c0f3d9c3e872a53cabaaa5675f5c8891c8d5f68c924c296e3f55",
+      "bytes": 66,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-white-ring.xp",
+      "source_path": "assets/sprites/item-white-ring.xp",
+      "sha256": "85c1e29e62aef5fbc5cc6dc147212db3d26d592fddca742e7b92fe6844c5d102",
+      "bytes": 65,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "item-wine.xp",
+      "source_path": "assets/sprites/item-wine.xp",
+      "sha256": "62d83ffa7e87283329d4bae8ab6a4be8c75bd6f554109c81bd2136c76319185d",
+      "bytes": 65,
+      "grid_cols": 2,
+      "grid_rows": 2,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "keyb-07.xp",
+      "source_path": "assets/sprites/keyb-07.xp",
+      "sha256": "d78f3f3c970146d21bae4f6cedd433bbeafa9de609a98f84c4ec36918aff2315",
+      "bytes": 307,
+      "grid_cols": 21,
+      "grid_rows": 8,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "keyb-09.xp",
+      "source_path": "assets/sprites/keyb-09.xp",
+      "sha256": "a408d1fa8b91d54a13c32ee60c584549f2f59ad0a1196362d9c7d147d5317a4c",
+      "bytes": 346,
+      "grid_cols": 27,
+      "grid_rows": 8,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "keyb-11.xp",
+      "source_path": "assets/sprites/keyb-11.xp",
+      "sha256": "48e14064e5d74e5a26f1387b4e87ece0083f70f85888c0736a9b80ff201c89e4",
+      "bytes": 434,
+      "grid_cols": 33,
+      "grid_rows": 10,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "keyb-13.xp",
+      "source_path": "assets/sprites/keyb-13.xp",
+      "sha256": "08d53c80bbbe5ce95e442988e1f310fc3f66e3aaec7e7915f15066ece1f8d151",
+      "bytes": 514,
+      "grid_cols": 39,
+      "grid_rows": 13,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "keyb-15.xp",
+      "source_path": "assets/sprites/keyb-15.xp",
+      "sha256": "f3ec24581d0ddc39527bb7bc871e63ea1bb43e3266c4aee9d305e64b1bb0f932",
+      "bytes": 593,
+      "grid_cols": 45,
+      "grid_rows": 15,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "keyb-caps-a.xp",
+      "source_path": "assets/sprites/keyb-caps-a.xp",
+      "sha256": "867c972df1452335276d931940b1fc64790753ae84d4f680beafb37074ba855f",
+      "bytes": 561,
+      "grid_cols": 50,
+      "grid_rows": 15,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "keyb-caps-b.xp",
+      "source_path": "assets/sprites/keyb-caps-b.xp",
+      "sha256": "2b8165301fe0004cdfbf133aae5065d2b39937cdab1e4bbb1651297e55038c11",
+      "bytes": 576,
+      "grid_cols": 50,
+      "grid_rows": 15,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "keyb-caps-c.xp",
+      "source_path": "assets/sprites/keyb-caps-c.xp",
+      "sha256": "ff99dc48dc0d5daa4d8ed8465e405164b2923ecabcda24accd0ffef12fc88bf6",
+      "bytes": 615,
+      "grid_cols": 50,
+      "grid_rows": 15,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x10-house.xp",
+      "source_path": "assets/sprites/legacy-x10-house.xp",
+      "sha256": "c850e60c69ad30a5e9f387497bc138c6f07e983d1ed35de31f94f6af86bbff39",
+      "bytes": 21486,
+      "grid_cols": 265,
+      "grid_rows": 209,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x10-map.xp",
+      "source_path": "assets/sprites/legacy-x10-map.xp",
+      "sha256": "defcba017098f60138a0a3b31c978bbb116db0008afb6e9a503213104541d055",
+      "bytes": 620757,
+      "grid_cols": 512,
+      "grid_rows": 256,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x10-player.xp",
+      "source_path": "assets/sprites/legacy-x10-player.xp",
+      "sha256": "1fa3bea4343ff6cb18d51ca0b22da4986eb8cebfb5827ff625f79f0fbe49ee2e",
+      "bytes": 2537,
+      "grid_cols": 90,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x10-tree.xp",
+      "source_path": "assets/sprites/legacy-x10-tree.xp",
+      "sha256": "9e162e57ef3ead8745ea6e0fa12081fa3bd2ff4944c45a5b6980ba57f33db6bb",
+      "bytes": 2095,
+      "grid_cols": 108,
+      "grid_rows": 66,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x11-house.xp",
+      "source_path": "assets/sprites/legacy-x11-house.xp",
+      "sha256": "d8a8dea5b852114c81fb159fd2b6ccde9a1ae274ef5349916934d54b9b6e3016",
+      "bytes": 21486,
+      "grid_cols": 265,
+      "grid_rows": 209,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x11-map.xp",
+      "source_path": "assets/sprites/legacy-x11-map.xp",
+      "sha256": "ad9c428e6a12eb378c62133119cf8eefe8840f4d4838a58c24bb6f7338f6c731",
+      "bytes": 620757,
+      "grid_cols": 512,
+      "grid_rows": 256,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x11-player.xp",
+      "source_path": "assets/sprites/legacy-x11-player.xp",
+      "sha256": "5447383788ac56e03e26bbad499d69b33f5bcbe1070cfdef10af6807671ec173",
+      "bytes": 2537,
+      "grid_cols": 90,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x11-tree.xp",
+      "source_path": "assets/sprites/legacy-x11-tree.xp",
+      "sha256": "c0abbac68fb25369d40195245d9045fc61827d7f8bbf37756877377f82cb29f8",
+      "bytes": 2095,
+      "grid_cols": 108,
+      "grid_rows": 66,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x12-house.xp",
+      "source_path": "assets/sprites/legacy-x12-house.xp",
+      "sha256": "404da5160c7072463f1ab7077ab68d61d7464659a5492a448b5f163c9c2b29ca",
+      "bytes": 21486,
+      "grid_cols": 265,
+      "grid_rows": 209,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x12-map.xp",
+      "source_path": "assets/sprites/legacy-x12-map.xp",
+      "sha256": "61e95278c2c3921eaf5e73b6d710e776d8046117aeb6460b180b5f324e9600c2",
+      "bytes": 620757,
+      "grid_cols": 512,
+      "grid_rows": 256,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x12-player.xp",
+      "source_path": "assets/sprites/legacy-x12-player.xp",
+      "sha256": "237ad06fd487381ef1337e2310e7ab09d35a2cca3abf626083c92e7929fa3963",
+      "bytes": 2537,
+      "grid_cols": 90,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x12-sky.xp",
+      "source_path": "assets/sprites/legacy-x12-sky.xp",
+      "sha256": "bc20adf967a3a7713c13a4fbdea88790f6ab0b88ec3ea5db9ca3a1778e855938",
+      "bytes": 35849,
+      "grid_cols": 735,
+      "grid_rows": 180,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x12-tree.xp",
+      "source_path": "assets/sprites/legacy-x12-tree.xp",
+      "sha256": "2f3c730b25543d7d1478642178e413fdff3843dbb3b9629cefcac11462be36f9",
+      "bytes": 2095,
+      "grid_cols": 108,
+      "grid_rows": 66,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x13-house.xp",
+      "source_path": "assets/sprites/legacy-x13-house.xp",
+      "sha256": "24a401183605463ab939933173f9dee20037ba9b3dee31839e4eb256f04c476c",
+      "bytes": 21486,
+      "grid_cols": 265,
+      "grid_rows": 209,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x13-map2.xp",
+      "source_path": "assets/sprites/legacy-x13-map2.xp",
+      "sha256": "44974cdca4b443e74a0fb93c909b0783f7adff96459e6b5b2d63ae1c4c5aba05",
+      "bytes": 656971,
+      "grid_cols": 512,
+      "grid_rows": 256,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x13-player.xp",
+      "source_path": "assets/sprites/legacy-x13-player.xp",
+      "sha256": "6e6787a0b01ea56513643c0dbd4621ade4268824b30f59bc16454f490e593eda",
+      "bytes": 2537,
+      "grid_cols": 90,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x13-sky.xp",
+      "source_path": "assets/sprites/legacy-x13-sky.xp",
+      "sha256": "3497f29f9939be9e4a0e0ea3133236956e7ff5f9132424439daab24a4638b3db",
+      "bytes": 35849,
+      "grid_cols": 735,
+      "grid_rows": 180,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x13-tree.xp",
+      "source_path": "assets/sprites/legacy-x13-tree.xp",
+      "sha256": "b6a6ca49fdbf7ee96019f0dedcd282622e7f650a8193d57498308d8a7d7a3d26",
+      "bytes": 2095,
+      "grid_cols": 108,
+      "grid_rows": 66,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x3-house.xp",
+      "source_path": "assets/sprites/legacy-x3-house.xp",
+      "sha256": "c3fd2545f7fdf458dc73b6675bab7a4f48555fbdb1dffc3626a1df84c7ad9893",
+      "bytes": 21516,
+      "grid_cols": 265,
+      "grid_rows": 209,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x4-house.xp",
+      "source_path": "assets/sprites/legacy-x4-house.xp",
+      "sha256": "34932f2730c91d24fed452ff5e4d3e52e82f56c6735bccb806b94f93c5335677",
+      "bytes": 21516,
+      "grid_cols": 265,
+      "grid_rows": 209,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x5-house.xp",
+      "source_path": "assets/sprites/legacy-x5-house.xp",
+      "sha256": "3b4b31f027f27dbf416d3b368ba65bb9b2b8f0d0ce45c21d288162fbbb408861",
+      "bytes": 21516,
+      "grid_cols": 265,
+      "grid_rows": 209,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x5-map.xp",
+      "source_path": "assets/sprites/legacy-x5-map.xp",
+      "sha256": "3f64424d11ac9aa0fe9773f04e7a615831f997d6d24893892f309723b35fea1f",
+      "bytes": 819621,
+      "grid_cols": 512,
+      "grid_rows": 256,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x6-house.xp",
+      "source_path": "assets/sprites/legacy-x6-house.xp",
+      "sha256": "624764ad1a5bc14cb8cff2a4b4f3ec9e69dab52d8e8981481c1431f255f94648",
+      "bytes": 21516,
+      "grid_cols": 265,
+      "grid_rows": 209,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x6-map.xp",
+      "source_path": "assets/sprites/legacy-x6-map.xp",
+      "sha256": "e5c06ab67427c3ccea9a1f5eea2f844e1a3f4b57cef9a651d022dee45077948c",
+      "bytes": 819621,
+      "grid_cols": 512,
+      "grid_rows": 256,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x7-house.xp",
+      "source_path": "assets/sprites/legacy-x7-house.xp",
+      "sha256": "46a086c58874017f9f07552c2c647350736e0a0d7a78349f90f3e3abaac16753",
+      "bytes": 21516,
+      "grid_cols": 265,
+      "grid_rows": 209,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x7-map.xp",
+      "source_path": "assets/sprites/legacy-x7-map.xp",
+      "sha256": "cb431877d8a44badd2d4a0060f891a4a3189a83df5f77a875d2e68f99063b37e",
+      "bytes": 620756,
+      "grid_cols": 512,
+      "grid_rows": 256,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x7-temp.xp",
+      "source_path": "assets/sprites/legacy-x7-temp.xp",
+      "sha256": "fcb749f14c4b45dca6af246003fe0f408a03765ae99256fbbd9b7ee5a95e934f",
+      "bytes": 179,
+      "grid_cols": 7,
+      "grid_rows": 6,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x8-house.xp",
+      "source_path": "assets/sprites/legacy-x8-house.xp",
+      "sha256": "81ebf834cf424858a42a4f33df2f797d9a8bc71661c2da8b01df30778cca4e9c",
+      "bytes": 21516,
+      "grid_cols": 265,
+      "grid_rows": 209,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x8-map.xp",
+      "source_path": "assets/sprites/legacy-x8-map.xp",
+      "sha256": "d515edf0e8048eca0d1e27aa3aeae8233177fb7f6a87e88e1ddb95b8692e295e",
+      "bytes": 620756,
+      "grid_cols": 512,
+      "grid_rows": 256,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x8-player.xp",
+      "source_path": "assets/sprites/legacy-x8-player.xp",
+      "sha256": "cb87fdafc1968de3b2f63e81c01e04c67e4dd5e0a5b42bff439e69913249db0d",
+      "bytes": 1403,
+      "grid_cols": 45,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x9-house.xp",
+      "source_path": "assets/sprites/legacy-x9-house.xp",
+      "sha256": "44434eedcd6c37116ca8eef88eac7cb52f8d8dcb785fe9e54dd5ec34910d11c0",
+      "bytes": 21516,
+      "grid_cols": 265,
+      "grid_rows": 209,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x9-map.xp",
+      "source_path": "assets/sprites/legacy-x9-map.xp",
+      "sha256": "433d502f02f658de4dcd1074e43d34d4411436f9c8a1e98175942b35a47e9a50",
+      "bytes": 620756,
+      "grid_cols": 512,
+      "grid_rows": 256,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x9-player.xp",
+      "source_path": "assets/sprites/legacy-x9-player.xp",
+      "sha256": "a43bde49ceceb40e6765cd9c2e89ec1fbe25d1b854d1d1a63b07794366cdc6a3",
+      "bytes": 1403,
+      "grid_cols": 45,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-x9-tree.xp",
+      "source_path": "assets/sprites/legacy-x9-tree.xp",
+      "sha256": "6cf57fbe7d5a96493e97128c055ce30d37d019be5175d379584fcd2e80731244",
+      "bytes": 1021,
+      "grid_cols": 96,
+      "grid_rows": 29,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-xx-house.xp",
+      "source_path": "assets/sprites/legacy-xx-house.xp",
+      "sha256": "eb5ec63b7923ed262432acc2f01b47b7c9ec3d52c85198c3fe193b66141f3ec3",
+      "bytes": 21516,
+      "grid_cols": 265,
+      "grid_rows": 209,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-xx-map.xp",
+      "source_path": "assets/sprites/legacy-xx-map.xp",
+      "sha256": "bc003222533378b173d3cf15a2a02b3df158c966313fcafb4da89afb0a2e0c92",
+      "bytes": 620756,
+      "grid_cols": 512,
+      "grid_rows": 256,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-xx-player.xp",
+      "source_path": "assets/sprites/legacy-xx-player.xp",
+      "sha256": "d79c1ba0eec7b3e8854df38dbb9b7b22aaf9963ddee638909b29a418a5ac44cb",
+      "bytes": 1826,
+      "grid_cols": 90,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-xx-tree.xp",
+      "source_path": "assets/sprites/legacy-xx-tree.xp",
+      "sha256": "8508e7229831e0e60f5326bce0425a5b6ccb2f291ad97cbc08cb4e76739b0218",
+      "bytes": 279,
+      "grid_cols": 8,
+      "grid_rows": 29,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-yy-block-angles.xp",
+      "source_path": "assets/sprites/legacy-yy-block-angles.xp",
+      "sha256": "a43a4db9ce2e4a24c7d79ca476b132d36f46a8b587a2d9a6fcde2b802f4abedc",
+      "bytes": 2680,
+      "grid_cols": 26,
+      "grid_rows": 240,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-yy-block.xp",
+      "source_path": "assets/sprites/legacy-yy-block.xp",
+      "sha256": "5143572353a3f61324629f5a27e4b7c7885e20e9d83b3f363faf9f555f9b8c4a",
+      "bytes": 266,
+      "grid_cols": 13,
+      "grid_rows": 10,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-yy-house.xp",
+      "source_path": "assets/sprites/legacy-yy-house.xp",
+      "sha256": "afb4551e6ed900fdeead83ae38f55e6a0fe8e661c92fdd1bc4e908e430c200c3",
+      "bytes": 21485,
+      "grid_cols": 265,
+      "grid_rows": 209,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-yy-map2.xp",
+      "source_path": "assets/sprites/legacy-yy-map2.xp",
+      "sha256": "a41a84e022d0085bcefd63b14b3df5560672bd18e59b96cb50711551b508b745",
+      "bytes": 656970,
+      "grid_cols": 512,
+      "grid_rows": 256,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-yy-player.xp",
+      "source_path": "assets/sprites/legacy-yy-player.xp",
+      "sha256": "e7bad219dba94433242f5acf099d26361c6f3aadfc1b3ecf5c3f45acab37ccc5",
+      "bytes": 2394,
+      "grid_cols": 90,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-yy-sky.xp",
+      "source_path": "assets/sprites/legacy-yy-sky.xp",
+      "sha256": "37f69d5100ddbe7bec72e8d70107a5a86cbd32e39b1c79990cfa9dc9e901e498",
+      "bytes": 35848,
+      "grid_cols": 735,
+      "grid_rows": 180,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "legacy-yy-tree.xp",
+      "source_path": "assets/sprites/legacy-yy-tree.xp",
+      "sha256": "31115620cf851b0642f8abfd10ca3892499212a51d2a63b14ef83cf5a0f07d75",
+      "bytes": 294,
+      "grid_cols": 9,
+      "grid_rows": 33,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "player-0000.xp",
+      "source_path": "assets/sprites/player-0000.xp",
+      "sha256": "5cbb0d4ac1b9d0e0dc721ed5cd30bec8eafd6afcab98383a77b8116d0859acad",
+      "bytes": 3229,
+      "grid_cols": 126,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "player-0001.xp",
+      "source_path": "assets/sprites/player-0001.xp",
+      "sha256": "911fcad889478799ed7e6e1c7a59b6c056795ce3877f4567eda84969c51a1d96",
+      "bytes": 4313,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "player-0002.xp",
+      "source_path": "assets/sprites/player-0002.xp",
+      "sha256": "03bc082c651bc1fa53741b22baba66e63edd35a089df133b855d09e91af905ec",
+      "bytes": 5133,
+      "grid_cols": 126,
+      "grid_rows": 72,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "player-0010.xp",
+      "source_path": "assets/sprites/player-0010.xp",
+      "sha256": "96d3879f75cd017861b761a8a17391ade6099331be83010ecde6ef61e16b110d",
+      "bytes": 4286,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "player-0011.xp",
+      "source_path": "assets/sprites/player-0011.xp",
+      "sha256": "34f5b471fb774f2f55ebd89c13e42df1f338f929eb863fda8819d28dd2eb667d",
+      "bytes": 4535,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "player-0012.xp",
+      "source_path": "assets/sprites/player-0012.xp",
+      "sha256": "107d9454d56b3d94968e6347d993b88d3146b4eb9dc39cb79a87c083313c4673",
+      "bytes": 6121,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "player-0100.xp",
+      "source_path": "assets/sprites/player-0100.xp",
+      "sha256": "073bd74099536d9b2f0b1bab074a485060e2f135a1f309ec759d9a94f15c7e9c",
+      "bytes": 4158,
+      "grid_cols": 126,
+      "grid_rows": 80,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "player-0101.xp",
+      "source_path": "assets/sprites/player-0101.xp",
+      "sha256": "08d76bebeb2adac1402f560672ebdd5a08e9d0bc61ecea71aa36084eb194d07d",
+      "bytes": 5216,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "player-0102.xp",
+      "source_path": "assets/sprites/player-0102.xp",
+      "sha256": "d0ce7f1d18e31ef58be2788e0b6c12536d3cc73ea377a7e6bf701b8440c1f4d9",
+      "bytes": 6137,
+      "grid_cols": 126,
+      "grid_rows": 80,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "player-0110.xp",
+      "source_path": "assets/sprites/player-0110.xp",
+      "sha256": "90ee9129952b01ac9f16edaa0258e9af0442dc56ac8bc8c616db281d413f9388",
+      "bytes": 5199,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "player-0111.xp",
+      "source_path": "assets/sprites/player-0111.xp",
+      "sha256": "82c636cdda8de1cd6af60807b8f8e1bf3efdfd5c7cc7734be6eb160215bdfbfd",
+      "bytes": 5454,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "player-0112.xp",
+      "source_path": "assets/sprites/player-0112.xp",
+      "sha256": "e0e8100c5ad3e4542dac152db2b911f98ef119ab4be67dd220175d6637d9bf9d",
+      "bytes": 6963,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "player-1000.xp",
+      "source_path": "assets/sprites/player-1000.xp",
+      "sha256": "8f6b3eb6f94af62ae33befb9262f15faecf3a2ff917bbcf7f8eb6e0951a6949f",
+      "bytes": 4657,
+      "grid_cols": 126,
+      "grid_rows": 72,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "player-1001.xp",
+      "source_path": "assets/sprites/player-1001.xp",
+      "sha256": "5d49312cf9162759dde64faf822e5070a4003ce3225b0afbfb881cdd55ca54c5",
+      "bytes": 5906,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "player-1002.xp",
+      "source_path": "assets/sprites/player-1002.xp",
+      "sha256": "c4325ad69754d4538f0b7a7962519ba5601362b8f4c7c7738f086d5af6bfbc18",
+      "bytes": 6713,
+      "grid_cols": 126,
+      "grid_rows": 72,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "player-1010.xp",
+      "source_path": "assets/sprites/player-1010.xp",
+      "sha256": "06316b640b0a2e04fcb7bd66d0d1ce0f81deda3905eadf4be6284c9f38abed7e",
+      "bytes": 5800,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "player-1011.xp",
+      "source_path": "assets/sprites/player-1011.xp",
+      "sha256": "682cfc995959dc66fba3f88fd4bfdfeb109437d865115055853ed36bad1acdbb",
+      "bytes": 6029,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "player-1012.xp",
+      "source_path": "assets/sprites/player-1012.xp",
+      "sha256": "fa62ba2c9c7ddd58691920cb2f17bfd82356a921aced9a7e2942f710fd6dbf79",
+      "bytes": 7658,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "player-1100.xp",
+      "source_path": "assets/sprites/player-1100.xp",
+      "sha256": "9895deede51b6bfe2a0a054b165005d41154962cd1aee37490b04467018de37c",
+      "bytes": 5680,
+      "grid_cols": 126,
+      "grid_rows": 80,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "player-1101.xp",
+      "source_path": "assets/sprites/player-1101.xp",
+      "sha256": "be76c68b2422ce79d1e04bb04b714c798a888e7433e827911745772934a01631",
+      "bytes": 6781,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "player-1102.xp",
+      "source_path": "assets/sprites/player-1102.xp",
+      "sha256": "6c8464802699cda41d5f494a43ef3a812785404345d1486fe0c3cbb6b6028d0c",
+      "bytes": 7737,
+      "grid_cols": 126,
+      "grid_rows": 80,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "player-1110.xp",
+      "source_path": "assets/sprites/player-1110.xp",
+      "sha256": "cd4c3ac73bd359e75cf573f377495ed440e2612156481e05e9402ae6b311c85e",
+      "bytes": 6679,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "player-1111.xp",
+      "source_path": "assets/sprites/player-1111.xp",
+      "sha256": "dbd58630d3c8897cef3bc9c79c9f5008270be22251c0c1cf97806f031ee1eb86",
+      "bytes": 6906,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "player-1112.xp",
+      "source_path": "assets/sprites/player-1112.xp",
+      "sha256": "4002817c4c6ee420a3e57fa605bb6c4e9f244505a9a40d5952b3469fbbc9fe2a",
+      "bytes": 8509,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "player-armor-regular.xp",
+      "source_path": "assets/sprites/player-armor-regular.xp",
+      "sha256": "bcdef09c668dc54fbffdf4f1b749c4b0a25e733c640472547e169d6a3edda5a7",
+      "bytes": 1726,
+      "grid_cols": 126,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "player-body.xp",
+      "source_path": "assets/sprites/player-body.xp",
+      "sha256": "3994f4ad18856671e11316715557db6e4ba3994ba49a612068d4243ab73ce8d9",
+      "bytes": 2719,
+      "grid_cols": 126,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "player-helmet-regular.xp",
+      "source_path": "assets/sprites/player-helmet-regular.xp",
+      "sha256": "c73df398adbf891953d1a22671beac539dc59755521dffcd2de56dc478dae3ff",
+      "bytes": 1240,
+      "grid_cols": 126,
+      "grid_rows": 80,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "player-nude.xp",
+      "source_path": "assets/sprites/player-nude.xp",
+      "sha256": "5054a77f6d991b58e4e3fb326e71eea1d03135fd30127348ba4ee7be1cd8e39c",
+      "bytes": 3033,
+      "grid_cols": 126,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "player-shield-regular.xp",
+      "source_path": "assets/sprites/player-shield-regular.xp",
+      "sha256": "26be8acb2ff973b100b0d18954d296021fe5bda8bfc156a8db8b6c804a38eb12",
+      "bytes": 3560,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "player-weapon-crossbow.xp",
+      "source_path": "assets/sprites/player-weapon-crossbow.xp",
+      "sha256": "719a855d7b7805a9d2ad3b042160a11e3cd9a78231d746cfdbfa999ea0012089",
+      "bytes": 2028,
+      "grid_cols": 126,
+      "grid_rows": 72,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "player-weapon-sword.xp",
+      "source_path": "assets/sprites/player-weapon-sword.xp",
+      "sha256": "08313326106aa380f980b22784ab911f371964d46385605f29df3eaa351246a9",
+      "bytes": 3471,
+      "grid_cols": 162,
+      "grid_rows": 80,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "plydie-0000.xp",
+      "source_path": "assets/sprites/plydie-0000.xp",
+      "sha256": "29627bf1873555e2935ad8eaf31834fc7a6f9b0fe5694de398a1b2e351e45442",
+      "bytes": 3968,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "plydie-0001.xp",
+      "source_path": "assets/sprites/plydie-0001.xp",
+      "sha256": "6ed765f6ffd56ef8cfd7f6de5f13ff91a1438ae9cd7a9ac22775485ae350890c",
+      "bytes": 5411,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "plydie-0002.xp",
+      "source_path": "assets/sprites/plydie-0002.xp",
+      "sha256": "b1768a0fdf4ea4d61a2e840cbf69ce6fe5dc51b839581071c7f0bc145da0f859",
+      "bytes": 5433,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "plydie-0010.xp",
+      "source_path": "assets/sprites/plydie-0010.xp",
+      "sha256": "d535b8d446288924a0a714b9c96d5e11f30a075d6543bff40425af4f25c673c5",
+      "bytes": 5188,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "plydie-0011.xp",
+      "source_path": "assets/sprites/plydie-0011.xp",
+      "sha256": "f25d7fbf32242506c69c17ff791afa65bd1ba83293854d03eb8ad44b681c6bb5",
+      "bytes": 5988,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "plydie-0012.xp",
+      "source_path": "assets/sprites/plydie-0012.xp",
+      "sha256": "66755f091433f567273f47f8ab9c478543735615725ea011552ee4662c0585c0",
+      "bytes": 6552,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "plydie-0100.xp",
+      "source_path": "assets/sprites/plydie-0100.xp",
+      "sha256": "4a9700f3956979ab454b67c926ca2c1a806ae3cc5a4bc9f16c2153f1bcacbb08",
+      "bytes": 4987,
+      "grid_cols": 110,
+      "grid_rows": 96,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "plydie-0101.xp",
+      "source_path": "assets/sprites/plydie-0101.xp",
+      "sha256": "bbd74d61e66c236f7d155b73ffc6a20725beed5c82b4da3e4574bd2b41b7063a",
+      "bytes": 5745,
+      "grid_cols": 110,
+      "grid_rows": 96,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "plydie-0102.xp",
+      "source_path": "assets/sprites/plydie-0102.xp",
+      "sha256": "501e20a0a791b24c6e738dcb628665d65480313cf6268dbcfe3d8cb3898e6d00",
+      "bytes": 6494,
+      "grid_cols": 110,
+      "grid_rows": 96,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "plydie-0110.xp",
+      "source_path": "assets/sprites/plydie-0110.xp",
+      "sha256": "ad6d5d227c7adea43e844373041310485c311554ace08e06c17de2b86e53fac4",
+      "bytes": 5554,
+      "grid_cols": 110,
+      "grid_rows": 96,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "plydie-0111.xp",
+      "source_path": "assets/sprites/plydie-0111.xp",
+      "sha256": "cbfccb7079f5397515c25e2c2593691be0720d6a9b583d1d11420c50e0a2f53c",
+      "bytes": 6190,
+      "grid_cols": 110,
+      "grid_rows": 96,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "plydie-0112.xp",
+      "source_path": "assets/sprites/plydie-0112.xp",
+      "sha256": "0deeda5168e605d9746ebfd7737c12b19132fc6ab31bda4798aa627d272b133d",
+      "bytes": 6986,
+      "grid_cols": 110,
+      "grid_rows": 96,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "plydie-1000.xp",
+      "source_path": "assets/sprites/plydie-1000.xp",
+      "sha256": "b2e32ffed282f718aa52b237d20b9102fd19db85a4d5202001f91d73513e55e3",
+      "bytes": 5649,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "plydie-1001.xp",
+      "source_path": "assets/sprites/plydie-1001.xp",
+      "sha256": "2911d0c20c5bfa887bc870c3b3530c033cac1f2be3599a645e095fc005fb1275",
+      "bytes": 7129,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "plydie-1002.xp",
+      "source_path": "assets/sprites/plydie-1002.xp",
+      "sha256": "be0432822fabc9851ffa9da7d2c580b6c604fa19828e899aee5c743edb408f95",
+      "bytes": 7098,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "plydie-1010.xp",
+      "source_path": "assets/sprites/plydie-1010.xp",
+      "sha256": "a4decb01fecd6fbadb97cda5dfcb4b87d1fa519cc0e347ce61ff8fb06640ae54",
+      "bytes": 6773,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "plydie-1011.xp",
+      "source_path": "assets/sprites/plydie-1011.xp",
+      "sha256": "1a47da7a41fc387ed3a9c9f5015c815211993e02388e04e8a582345aeac1048a",
+      "bytes": 7606,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "plydie-1012.xp",
+      "source_path": "assets/sprites/plydie-1012.xp",
+      "sha256": "9b654eb5ba400824530f0f9abb07e62fa239f59d058d52f900971a818ffc74dc",
+      "bytes": 8118,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "plydie-1100.xp",
+      "source_path": "assets/sprites/plydie-1100.xp",
+      "sha256": "17334f2b3c582cc382779b1574ef87c99596a651b67ee737da7c63ea4c362e45",
+      "bytes": 5237,
+      "grid_cols": 110,
+      "grid_rows": 96,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "plydie-1101.xp",
+      "source_path": "assets/sprites/plydie-1101.xp",
+      "sha256": "a94a5be200a24b3e3183fba43b8c29b30e762395f018d85d4beda6da3ada767d",
+      "bytes": 5931,
+      "grid_cols": 110,
+      "grid_rows": 96,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "plydie-1102.xp",
+      "source_path": "assets/sprites/plydie-1102.xp",
+      "sha256": "0c78c90efb6c1e2063d707b1837392dbc045c726fb3bddc651d69c0d62616e03",
+      "bytes": 6732,
+      "grid_cols": 110,
+      "grid_rows": 96,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "plydie-1110.xp",
+      "source_path": "assets/sprites/plydie-1110.xp",
+      "sha256": "2a4f632a7a1e244ed1cc5b973bf8dcaa04c00318d2e687e5e0c96d4af41283e8",
+      "bytes": 5655,
+      "grid_cols": 110,
+      "grid_rows": 96,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "plydie-1111.xp",
+      "source_path": "assets/sprites/plydie-1111.xp",
+      "sha256": "749ecc5befab8143da2744b22ff2748f3f750a76b029c34731c508a225d25d66",
+      "bytes": 6256,
+      "grid_cols": 110,
+      "grid_rows": 96,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "plydie-1112.xp",
+      "source_path": "assets/sprites/plydie-1112.xp",
+      "sha256": "5ac7e95bd49fe4bfe12ce0ef94d5f4fd7be85b5f2a226f4d0b8a79234bcca4b7",
+      "bytes": 7006,
+      "grid_cols": 110,
+      "grid_rows": 96,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "plydie-armor-regular.xp",
+      "source_path": "assets/sprites/plydie-armor-regular.xp",
+      "sha256": "8e8e2645051073ffd7c3337209fb8cbe8627418983d09d997d12c3d148683402",
+      "bytes": 2446,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "plydie-body.xp",
+      "source_path": "assets/sprites/plydie-body.xp",
+      "sha256": "20b7a955c94491c55430b560e8869e3f3916055df4c64a87e6b0650cfe3fdb3f",
+      "bytes": 3563,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "plydie-helmet-regular.xp",
+      "source_path": "assets/sprites/plydie-helmet-regular.xp",
+      "sha256": "86b7227757ffafbac56c140e795489bea77f00a583695dc2430aa0ca0a315bbf",
+      "bytes": 1757,
+      "grid_cols": 110,
+      "grid_rows": 96,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "plydie-weapon-crossbow.xp",
+      "source_path": "assets/sprites/plydie-weapon-crossbow.xp",
+      "sha256": "0ba265ebd93b40118acb324a507fca9ac6b60d9504c94b8a932e79a21ed6a2fe",
+      "bytes": 2305,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "plydie-weapon-sword.xp",
+      "source_path": "assets/sprites/plydie-weapon-sword.xp",
+      "sha256": "bd51588ccdfa593c4f13623b0353ad9f274b4d2b22e2b7e998772740b29c1f94",
+      "bytes": 2223,
+      "grid_cols": 110,
+      "grid_rows": 88,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "ufo.xp",
+      "source_path": "assets/sprites/ufo.xp",
+      "sha256": "b44510f3c1f5a9591b75c65897a5c176b30d4d31125ff8c34295f9cc6dfa532a",
+      "bytes": 461,
+      "grid_cols": 84,
+      "grid_rows": 5,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "wolack-0001.xp",
+      "source_path": "assets/sprites/wolack-0001.xp",
+      "sha256": "20247d143b306be27a14a6a8034b4a70f1c5441912f5d13b5bcf8616fef084dc",
+      "bytes": 9780,
+      "grid_cols": 160,
+      "grid_rows": 104,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "wolack-0011.xp",
+      "source_path": "assets/sprites/wolack-0011.xp",
+      "sha256": "329e862e2173e67915f723ca39f0f5ba72d5af5f9060927ccec73a265d0ef599",
+      "bytes": 11232,
+      "grid_cols": 160,
+      "grid_rows": 104,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "wolack-0101.xp",
+      "source_path": "assets/sprites/wolack-0101.xp",
+      "sha256": "5320190045f0dc6c4d20d1f4e0e86cd0798dbe30934d58c432492ba1047d0623",
+      "bytes": 11186,
+      "grid_cols": 160,
+      "grid_rows": 104,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "wolack-0111.xp",
+      "source_path": "assets/sprites/wolack-0111.xp",
+      "sha256": "65d61249a4fb7100f59eb332097cde8abcdc41e0b9b4a22ace67cc91a6c8977d",
+      "bytes": 12637,
+      "grid_cols": 160,
+      "grid_rows": 104,
+      "layer_count": 7
+    },
+    {
+      "asset_id": "wolack-1001.xp",
+      "source_path": "assets/sprites/wolack-1001.xp",
+      "sha256": "13f57eb4521d52dc215ad08100c54147c0059d4083d2b4099e5f4dd301ded3e1",
+      "bytes": 11712,
+      "grid_cols": 160,
+      "grid_rows": 104,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "wolack-1011.xp",
+      "source_path": "assets/sprites/wolack-1011.xp",
+      "sha256": "e1624a916ca7ccef0d941908573eb6ccd0aade891ade7e1a21a231480bc6b922",
+      "bytes": 13110,
+      "grid_cols": 160,
+      "grid_rows": 104,
+      "layer_count": 7
+    },
+    {
+      "asset_id": "wolack-1101.xp",
+      "source_path": "assets/sprites/wolack-1101.xp",
+      "sha256": "6f8f0cb82ae2d10d75cf69e58e654c4e05e510eb511712ca96096e5c79661d4b",
+      "bytes": 13073,
+      "grid_cols": 160,
+      "grid_rows": 104,
+      "layer_count": 7
+    },
+    {
+      "asset_id": "wolack-1111.xp",
+      "source_path": "assets/sprites/wolack-1111.xp",
+      "sha256": "35db57518293bef2a25288b4baef41f74f7b0c84369429d77cb3d82187cc1a27",
+      "bytes": 14444,
+      "grid_cols": 160,
+      "grid_rows": 104,
+      "layer_count": 8
+    },
+    {
+      "asset_id": "wolack-armor-regular.xp",
+      "source_path": "assets/sprites/wolack-armor-regular.xp",
+      "sha256": "25749b4f472898ef9ba348983c26ec85b28cec709d445f1c7d1906d157f42347",
+      "bytes": 3272,
+      "grid_cols": 160,
+      "grid_rows": 104,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "wolack-helmet-regular.xp",
+      "source_path": "assets/sprites/wolack-helmet-regular.xp",
+      "sha256": "8385a04751d6d3e9bfcc49abe8610950ffb77dd867bdc2380faa2e7a28a14d78",
+      "bytes": 2640,
+      "grid_cols": 160,
+      "grid_rows": 104,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "wolack-weapon-sword.xp",
+      "source_path": "assets/sprites/wolack-weapon-sword.xp",
+      "sha256": "81e33cca1bf77f6c50505f15e552fd35e13ef1cf9688deab3783248a5d949fa5",
+      "bytes": 6014,
+      "grid_cols": 160,
+      "grid_rows": 104,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "wolfie-0000.xp",
+      "source_path": "assets/sprites/wolfie-0000.xp",
+      "sha256": "0a71765714abf3539828432330ab02a6875ae4f017be72316b086dc99e150eb8",
+      "bytes": 6987,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "wolfie-0001.xp",
+      "source_path": "assets/sprites/wolfie-0001.xp",
+      "sha256": "a9917ee5172cdc1ea335d07754f3b389653905bf7a4ad56701c94f00bd18496c",
+      "bytes": 6260,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "wolfie-0002.xp",
+      "source_path": "assets/sprites/wolfie-0002.xp",
+      "sha256": "d93d04c2045bfaebb8567993a6b18bb2b3d4ff22a0cf2cdf2d32ff629e13d9f0",
+      "bytes": 9067,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "wolfie-0010.xp",
+      "source_path": "assets/sprites/wolfie-0010.xp",
+      "sha256": "6fb0453741a12d7a784d42300b05a734505900e4d6747499675778c4ad484b67",
+      "bytes": 8464,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "wolfie-0011.xp",
+      "source_path": "assets/sprites/wolfie-0011.xp",
+      "sha256": "a42d90132aaf37c20c4ecfed7667fe3862a6307329846870412b23c9501815ea",
+      "bytes": 10313,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "wolfie-0012.xp",
+      "source_path": "assets/sprites/wolfie-0012.xp",
+      "sha256": "0a59de672c4b41053dedacf6433617080a0bee616096daf1f1f0d1fea0f85864",
+      "bytes": 10329,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "wolfie-0100.xp",
+      "source_path": "assets/sprites/wolfie-0100.xp",
+      "sha256": "930b9e3dc2482258c5b492e89bd083ee70fe2705ade2dd6b527f68190e54fe28",
+      "bytes": 7717,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "wolfie-0101.xp",
+      "source_path": "assets/sprites/wolfie-0101.xp",
+      "sha256": "400dc46472a8225c8918a61c0bef1aaee20b5f55ab9525fbb75bd9213757e00c",
+      "bytes": 8406,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "wolfie-0102.xp",
+      "source_path": "assets/sprites/wolfie-0102.xp",
+      "sha256": "1ca20e2732da8d8ec12289c6c65d2456c658281768422c8d1a2b4e7a7ce92da2",
+      "bytes": 9755,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "wolfie-0110.xp",
+      "source_path": "assets/sprites/wolfie-0110.xp",
+      "sha256": "5b6ade3f6ef3194c1e04ff61ddc4d6e2baacc6d9ef093a56f112a75e3a318661",
+      "bytes": 7805,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "wolfie-0111.xp",
+      "source_path": "assets/sprites/wolfie-0111.xp",
+      "sha256": "8e7d5c69ef463d8f359bb96723d61a81f91f865a67ee8456b3f06053ca684fb9",
+      "bytes": 8429,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "wolfie-0112.xp",
+      "source_path": "assets/sprites/wolfie-0112.xp",
+      "sha256": "2e70a1fc23f5923b3c930184d0d30f9702c5e9aae8c6861efb6ff6d5ed5c616d",
+      "bytes": 9620,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "wolfie-1000.xp",
+      "source_path": "assets/sprites/wolfie-1000.xp",
+      "sha256": "ff975c8af2797d9ee529f445557aa8560a63b4039076a9da0baac179acf6f319",
+      "bytes": 8856,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "wolfie-1001.xp",
+      "source_path": "assets/sprites/wolfie-1001.xp",
+      "sha256": "cead92c470e1469552845819efc92ac4638642edd303c3bac446a28e5538272c",
+      "bytes": 8209,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "wolfie-1002.xp",
+      "source_path": "assets/sprites/wolfie-1002.xp",
+      "sha256": "79e2d43871164d71bd5ffa4d4bcaea37308c69e03ef485ce46aa7044a93fb24d",
+      "bytes": 10818,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "wolfie-1010.xp",
+      "source_path": "assets/sprites/wolfie-1010.xp",
+      "sha256": "96cf7653b115027ea93d5d7fb02dcc1ea465d5da76c470eb8c1b3b07fd92f695",
+      "bytes": 10571,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 6
+    },
+    {
+      "asset_id": "wolfie-1011.xp",
+      "source_path": "assets/sprites/wolfie-1011.xp",
+      "sha256": "f7da4e858c7dae644a6a58d8e91fb7bfc15441462286f484b518e9e4a0a79911",
+      "bytes": 12057,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 7
+    },
+    {
+      "asset_id": "wolfie-1012.xp",
+      "source_path": "assets/sprites/wolfie-1012.xp",
+      "sha256": "7e28b908abdb8901a36b3c5df270e0ede7f704dd320cfe4f71756a62c586fb43",
+      "bytes": 12394,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 7
+    },
+    {
+      "asset_id": "wolfie-1100.xp",
+      "source_path": "assets/sprites/wolfie-1100.xp",
+      "sha256": "c37b4a30cd1f2de0f279c21439e9cdf2f23a0a440190c457918cd46bfb840a6c",
+      "bytes": 7899,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "wolfie-1101.xp",
+      "source_path": "assets/sprites/wolfie-1101.xp",
+      "sha256": "3c2c3634b8e7ff1f328070c8da519a24dcedaec052734e588c55e2942f2552f3",
+      "bytes": 8519,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "wolfie-1102.xp",
+      "source_path": "assets/sprites/wolfie-1102.xp",
+      "sha256": "2e22b3b63aa4742ac3b972b5dcf795e20783adec0e6106226d149b082f71cac2",
+      "bytes": 9883,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "wolfie-1110.xp",
+      "source_path": "assets/sprites/wolfie-1110.xp",
+      "sha256": "deb8177b81d19c50f3aab85d93b47c2b0057af0d8bab5fdd77117ff2c8238fc1",
+      "bytes": 7889,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "wolfie-1111.xp",
+      "source_path": "assets/sprites/wolfie-1111.xp",
+      "sha256": "d5ec3c6bdf07ec25caa89eba887c314d07540f44767eedb06e1c1e8850a8b499",
+      "bytes": 8494,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 4
+    },
+    {
+      "asset_id": "wolfie-1112.xp",
+      "source_path": "assets/sprites/wolfie-1112.xp",
+      "sha256": "c10b2051a1a15254b25038533dbea31a120a7f1d5c7c9a4d58abb5bea94b0586",
+      "bytes": 9722,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 5
+    },
+    {
+      "asset_id": "wolfie-armor-regular.xp",
+      "source_path": "assets/sprites/wolfie-armor-regular.xp",
+      "sha256": "495b4924e1c8f35b7973593ca54a51ef58e070fa583cc595cbc4e819ecbbbea7",
+      "bytes": 2996,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "wolfie-body-front.xp",
+      "source_path": "assets/sprites/wolfie-body-front.xp",
+      "sha256": "2625194c3f5f222cac78dfc1f010acc79e4e0049b215da3b987c8e3191952e59",
+      "bytes": 2995,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "wolfie-body-rear.xp",
+      "source_path": "assets/sprites/wolfie-body-rear.xp",
+      "sha256": "c40c113da18e4d75c90b685e33d6ef1e95ba24b4dd183bda146d7abb80172316",
+      "bytes": 3524,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "wolfie-helmet-regular.xp",
+      "source_path": "assets/sprites/wolfie-helmet-regular.xp",
+      "sha256": "5ab353fa1daa3fdbcbe8c176f33d5b695268928da3737f86581ea4551f5c4c7e",
+      "bytes": 2803,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "wolfie-mount-base-padded.xp",
+      "source_path": "assets/sprites/wolfie-mount-base-padded.xp",
+      "sha256": "5e29af7915c9c2fdc33ec8e2ff305a1268140ee6cd192afa8d7fecc27118ed33",
+      "bytes": 3987,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "wolfie-mounted-idle-rider-body.xp",
+      "source_path": "assets/sprites/wolfie-mounted-idle-rider-body.xp",
+      "sha256": "8a513b930f5e8840ceb51cb94457371e62df19fb3d2145974dbda0cc9bb55b01",
+      "bytes": 3378,
+      "grid_cols": 180,
+      "grid_rows": 104,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "wolfie-weapon-crossbow.xp",
+      "source_path": "assets/sprites/wolfie-weapon-crossbow.xp",
+      "sha256": "d57a52ad7dd0e90010ffbb08019a63785f2715393da6ace29daf643969f079d0",
+      "bytes": 3336,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "wolfie-weapon-sword.xp",
+      "source_path": "assets/sprites/wolfie-weapon-sword.xp",
+      "sha256": "15d28488381446bb5d33223af5dc6beda31b2080b3eeccdf5992ce14d722ac98",
+      "bytes": 4987,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 3
+    },
+    {
+      "asset_id": "wolfie.xp",
+      "source_path": "assets/sprites/wolfie.xp",
+      "sha256": "d9707a16369f43254c84a2f91ba3dce434cbc43c5e8d75b057c0622c5ab05859",
+      "bytes": 4603,
+      "grid_cols": 180,
+      "grid_rows": 96,
+      "layer_count": 3
+    }
+  ]
+}

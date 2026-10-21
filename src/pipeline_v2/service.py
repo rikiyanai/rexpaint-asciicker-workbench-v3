@@ -1808,7 +1808,7 @@ def _default_active_layer(sess_dict: dict[str, Any], layer_count: int) -> int:
     if layer_count <= 0:
         return 0
     if (
-        _session_kind(sess_dict) in {"pipeline_job", "template_owned"}
+        _session_kind(sess_dict) in {"root_blank", "pipeline_job", "template_owned"}
         or _raw_xp_prefers_visual_layer(sess_dict, layer_count)
     ) and layer_count > 2:
         return 2
@@ -1819,7 +1819,7 @@ def _default_visible_layers(sess_dict: dict[str, Any], layer_count: int) -> list
     if layer_count <= 0:
         return []
     if (
-        _session_kind(sess_dict) in {"pipeline_job", "template_owned"}
+        _session_kind(sess_dict) in {"root_blank", "pipeline_job", "template_owned"}
         or _raw_xp_prefers_visual_layer(sess_dict, layer_count)
     ) and layer_count > 2:
         return [2]
@@ -1978,10 +1978,57 @@ def workbench_list_sessions(req_id: str) -> dict[str, Any]:
             continue
         sessions.append(_browse_session_summary(sess_dict, sp, owners.get(session_id)))
     sessions.sort(key=lambda item: (-float(item.get("updated_at_epoch") or 0.0), str(item.get("label") or ""), str(item.get("session_id") or "")))
+    catalog = load_json(CONFIG_DIR / "upstream_sprite_catalog.json")
+    upstream = [{
+        "session_id": "upstream:" + asset["asset_id"],
+        "asset_id": asset["asset_id"],
+        "label": asset["asset_id"], "name": asset["asset_id"],
+        "session_kind": "upstream_xp", "document_source": "upstream",
+        "grid_cols": asset["grid_cols"], "grid_rows": asset["grid_rows"],
+        "layer_count": asset["layer_count"],
+        "source_commit": catalog["commit"], "sha256": asset["sha256"],
+    } for asset in catalog["assets"]]
     return {
-        "sessions": sessions,
-        "count": len(sessions),
+        "sessions": sessions + upstream,
+        "count": len(sessions) + len(upstream),
+        "saved_count": len(sessions), "upstream_count": len(upstream),
+        "upstream_commit": catalog["commit"],
     }
+
+
+def _upstream_sprite_bytes(asset_id: str, req_id: str) -> bytes:
+    catalog = load_json(CONFIG_DIR / "upstream_sprite_catalog.json")
+    asset = next((item for item in catalog["assets"] if item["asset_id"] == asset_id), None)
+    if asset is None:
+        raise ApiError("unknown upstream sprite", "sprite_not_found", "workbench", req_id, 404)
+    root = (SPRITES_DIR / "upstream-y9-2").resolve()
+    path = (root / asset_id).resolve()
+    if not path.is_relative_to(root) or not path.is_file():
+        raise ApiError("upstream sprite is unavailable", "sprite_not_found", "workbench", req_id, 404)
+    data = path.read_bytes()
+    if hashlib.sha256(data).hexdigest() != asset["sha256"]:
+        raise ApiError("upstream sprite checksum mismatch", "sprite_checksum_mismatch", "workbench", req_id, 409)
+    return data
+
+
+def workbench_preview_upstream_sprite(asset_id: str, req_id: str) -> dict[str, Any]:
+    """Read-only whole-sheet preview. Does not manufacture an editing session."""
+    parsed = read_xp(_upstream_sprite_bytes(asset_id, req_id))
+    # Metadata stays out of art previews. Return a single visual layer rather
+    # than serializing every layer of all the library's files for thumbnails.
+    layer_index = min(2, parsed["layers"] - 1)
+    return {
+        "grid_cols": parsed["width"], "grid_rows": parsed["height"],
+        "layers": [[{"glyph": g, "fg": list(fg), "bg": list(bg)}
+                    for g, fg, bg in parsed["cells"][layer_index]]],
+    }
+
+
+def workbench_open_upstream_sprite(asset_id: str, req_id: str) -> dict[str, Any]:
+    """Open an editable raw-XP copy. Never write back to the vendored asset."""
+    data = _upstream_sprite_bytes(asset_id, req_id)
+    ensure_dirs()
+    return workbench_upload_xp(data, req_id, source_name=asset_id)
 
 
 def workbench_rename_session(session_id: str, name: str, req_id: str) -> dict[str, Any]:

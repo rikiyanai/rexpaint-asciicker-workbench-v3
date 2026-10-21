@@ -37,7 +37,7 @@ test('Browse is the front door and product actions stay in persistent chrome', (
     assert.doesNotMatch(html, new RegExp(`data-action="${action}"`), `${action} should not be duplicated in mobile chrome`);
   }
   assert.match(html, /id="productBrowsePanel"[\s\S]*?id="productBrowseSurface"/);
-  assert.match(html, /id="productActionNavigation"[^>]*data-integration-hook="registry-action-navigation"/);
+  assert.match(html, /<details id="productActionNavigation"[^>]*data-integration-hook="registry-action-navigation"/);
   assert.match(html, /<script src="\/workbench-action-navigation\.js"><\/script>[\s\S]*?<script src="\/workbench\.js"><\/script>/);
 });
 

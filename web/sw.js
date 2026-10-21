@@ -4,7 +4,7 @@
 
 // DEPLOY: bump this version string on each deployment to evict old cached assets.
 // Without a build system, this is the manual cache-bust mechanism.
-var CACHE_NAME = 'rexpaint-web-v2-20261014';
+var CACHE_NAME = 'rexpaint-web-v2-20261021-editor-usability';
 
 var STATIC_ASSET_PATHS = [
   'workbench',

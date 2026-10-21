@@ -53,6 +53,8 @@ from .service import (
     load_template_registry,
     get_registry_status,
     workbench_list_sessions,
+    workbench_preview_upstream_sprite,
+    workbench_open_upstream_sprite,
     workbench_rename_session,
     workbench_duplicate_session,
     workbench_delete_session,
@@ -698,6 +700,23 @@ def create_app() -> Flask:
         req_id = str(uuid.uuid4())
         try:
             return jsonify(workbench_list_sessions(req_id)), 200
+        except ApiError as e:
+            return _err(e)
+
+    @bp.get("/api/workbench/sprites/preview")
+    def api_wb_sprite_preview():
+        req_id = str(uuid.uuid4())
+        try:
+            return jsonify(workbench_preview_upstream_sprite(request.args.get("asset_id", ""), req_id)), 200
+        except ApiError as e:
+            return _err(e)
+
+    @bp.post("/api/workbench/sprites/open")
+    def api_wb_sprite_open():
+        req_id = str(uuid.uuid4())
+        try:
+            payload = request.get_json(silent=True) or {}
+            return jsonify(workbench_open_upstream_sprite(str(payload.get("asset_id", "")), req_id)), 201
         except ApiError as e:
             return _err(e)
 

@@ -25,6 +25,22 @@ Open:
 - Local (default): `http://127.0.0.1:5071/` (redirects to `/workbench`)
 - Local (direct): `http://127.0.0.1:5071/workbench`
 
+## Browse and edit sprites
+
+In **Browse**, choose **Asciicker-Y9-2 sprites** and search by XP filename.
+The library includes all 287 tracked XPs from upstream commit `52d008f`.
+**Open editable copy** preserves the upstream file and opens a raw XP document
+in **Edit**. **My documents** lists your saved copies and new documents.
+
+On phones, choose **Browse sprites & documents** on the opening screen. Use
+**Tools** for glyphs/colors/brushes and **Layers** for layer controls. Desktop
+users can switch to those controls with **Mobile view** in the document toolbar.
+
+**Skin / action** and **Convert JSON** start collapsed. Raw documents select
+**Raw XP / no template**. Selecting a template warns about layer 0 metadata;
+**Apply selected template** creates a new template document, rather than
+silently rewriting the original raw XP or transferring its artwork.
+
 ## Production deployment
 
 The live editor runs on Google Cloud Run service `asciicker-xpedit` in
