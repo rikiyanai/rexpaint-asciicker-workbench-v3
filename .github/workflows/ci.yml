@@ -32,8 +32,23 @@ jobs:
           python3 -m py_compile src/pipeline_v2/storage.py
           python3 -m py_compile wsgi.py
 
-      - name: Run pytest (excluding e2e)
-        run: python3 -m pytest --ignore=tests/e2e -q
+      - name: Run pytest (excluding e2e and Y9-2-data-dependent tests)
+        run: |
+          python3 -m pytest --ignore=tests/e2e \
+            --ignore=tests/test_bundle_compile_output.py \
+            --ignore=tests/test_render_plan_table.py \
+            --ignore=tests/test_rig_compiler_math.py \
+            --ignore=tests/test_rig_contract_schema.py \
+            --ignore=tests/test_rig_dimension.py \
+            --ignore=tests/test_rig_seam_visual_proof.py \
+            --ignore=tests/test_semantic_socket_anchors.py \
+            --ignore=tests/glyph_assignment \
+            --ignore=tests/test_xp_uv_body_viewer_skin_discovery.py \
+            --ignore=tests/test_source_layer_contract_viewer.py \
+            --ignore=tests/test_runtime_contract_fail_closed.py \
+            --ignore=tests/test_retract_upstream_xp_cell_role_decision.py \
+            --ignore=tests/test_record_upstream_xp_coordinate_cell_decision.py \
+            -q
 
       - name: Validate semantic maps
         run: python3 scripts/validate_semantic_maps.py
