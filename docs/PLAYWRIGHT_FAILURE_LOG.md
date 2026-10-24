@@ -17720,3 +17720,22 @@ tested. All attempt receipts, screenshots, and exported test XPs are preserved
 under the artifact directory. The follow-up commit changes only the verifier
 and evidence/log, not deployed product code. `.planning` and the unrelated
 `artifacts/wb-skin-run-3s/` remain outside this task's commits.
+
+## 2026-10-24 — Preserve authoring-demo work in progress
+
+The operator requested committing and pushing all current work, including the
+previously unrelated `.planning` symlink and `artifacts/wb-skin-run-3s/` media.
+The new `scripts/record-authoring-demos.mjs` targets three edited-time UI demos:
+stroke-to-Skin-Dock runtime, upstream XP browsing, and PNG conversion with Rich
+CP437 font-mask matching. It is a work-in-progress recorder, not an accepted
+three-GIF deliverable.
+
+The first attempt timed out during Browse initialization and template apply;
+its receipt, failure screenshots, sampled frames, and server log are preserved
+in `artifacts/2026-10-21-authoring-demos/`. The second attempt added isolated
+backend storage and initialization guards, then started successfully before
+the turn was interrupted. Its startup log is under `run-2/`. No finished new
+GIFs exist, and no claim is made that these capture flows passed. The older
+`wb-skin-run-3s` media are preserved separately and do not substitute for the
+three requested new captures. Recorder JavaScript syntax checking passed;
+this checkpoint does not change or deploy application behavior.

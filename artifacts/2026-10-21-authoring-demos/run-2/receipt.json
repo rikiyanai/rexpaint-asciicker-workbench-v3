@@ -1,0 +1,18 @@
+{
+  "sourceCommit": "c459690fd122cf0e3a548c806064646165b91c90",
+  "url": "http://127.0.0.1:5073/xpedit/workbench",
+  "browser": "headed system Chrome",
+  "timing": "edited-time; 8 sampled screenshots per output second; waits between commands omitted",
+  "runtimeScope": "embedded legacy termpp-web-flat Skin Dock, not the external Y9-2 game or Godot",
+  "stages": [
+    {
+      "step": "close",
+      "started": "2026-10-24T21:58:10.647Z",
+      "passed": true,
+      "finished": "2026-10-24T21:58:10.673Z"
+    }
+  ],
+  "flows": {},
+  "errors": [],
+  "serverPid": 43945
+}
