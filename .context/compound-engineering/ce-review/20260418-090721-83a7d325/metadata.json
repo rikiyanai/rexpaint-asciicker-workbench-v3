@@ -1,9 +1,0 @@
-{
-  "run_id": "20260418-090721-83a7d325",
-  "branch": "v3-refactor-start",
-  "head_sha": "5b7ef4a992f78f715321b0748290dc9f6d7e0b10",
-  "scope": "8c7860f..5b7ef4a",
-  "verdict": "Not ready",
-  "reviewers": ["correctness","testing","maintainability","project-standards","api-contract","adversarial","kieran-python","agent-native","learnings"],
-  "completed_at": "2026-04-18T09:15:00Z"
-}

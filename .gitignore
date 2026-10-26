@@ -12,6 +12,25 @@ SMALLTESTPNGs/
 # Durable agent working directory (not /tmp, which gets emptied)
 .scratch/
 
+# Local development records and generated dependencies
+AGENTS.md
+.context/
+.planning
+.conductor/
+.mcp.json
+artifacts/
+node_modules/
+playwright-report/
+durdraw.log
+docs/agent/
+docs/agents/
+docs/plans/
+docs/brainstorms/
+docs/artifacts/
+docs/audit-*.md
+docs/PLAYWRIGHT_FAILURE_LOG.md
+docs/WORKBENCH_DOCS_ARCHIVE.md
+
 # Local media/tooling scratch (untracked)
 .venv*/
 .venv-media311/

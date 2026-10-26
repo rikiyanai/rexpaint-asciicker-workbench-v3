@@ -1,6 +1,9 @@
-# Asciicker XPEdit ( PRE-ALPHA, PLEASE REPORT ANY BUGS )
+# Asciicker XPEdit
 
-Greenfield rebuild of main sprite-sheet pipeline features currently still broken in the main Asciicker-Y9-2 Fork. This repo is intentionally independent of the main Asciicker and Asciicker-Y9-2 Fork codebase. This is a browser-based XP sprite editor and functional alternative to the Windows-only REXPaint Editor, adapted specifically for the Asciicker Game Engine. Features include: convert PNG sprite sheets to `.xp` files, edit cells in a whole-sheet editor with true REXPaint parity, and test skins live in the game engine. More features to come, please report any bugs or complaints.
+A browser based editor for REXPaint `.xp` artwork and Asciicker sprites.
+Convert PNG sprite sheets, edit character cells and layers, preview animations,
+and test character skins in the game. This project is under active development;
+please report bugs through GitHub Issues.
 
 ## Demo
 
@@ -8,7 +11,6 @@ Upload PNG sprite sheet → Convert/slice → XP Preview animation → Test This
 
 ![Knight skin full workflow: upload, slice, preview, world run](docs/demo-skin-run.gif)
 
-Recorded end-to-end with `scripts/wb-full-skin-run.mjs` (Playwright + CDP screencast). Source MP4 and step screenshots: `artifacts/wb-skin-run-3s/` (untracked build output).
 
 ## Run
 
@@ -41,30 +43,10 @@ users can switch to those controls with **Mobile view** in the document toolbar.
 **Apply selected template** creates a new template document, rather than
 silently rewriting the original raw XP or transferring its artwork.
 
-## Production deployment
+## Saving your work
 
-The live editor runs on Google Cloud Run service `asciicker-xpedit` in
-`yuzu-agent` / `us-central1`. A Cloudflare Worker routes
-[`rikiworld.com/xpedit`](https://rikiworld.com/xpedit) to that service.
-The editor is not deployed by GitHub Pages.
-
-Push changes to `main`, then manually run **Deploy to Cloud Run**. A push alone
-does not deploy the endpoint. Deploy an exact commit with:
-
-```bash
-gh workflow run deploy-cloudrun.yml \
-  --repo rikiyanai/rexpaint-asciicker-workbench-v3 \
-  --ref main -f target_ref="$(git rev-parse HEAD)"
-```
-
-The workflow runs tests, builds a commit-tagged container, deploys it, and runs
-health and upload checks. The repository requires a
-`GCP_WORKLOAD_IDENTITY_PROVIDER` Actions secret and Google Cloud trust for this
-repository; secrets and trust from `rikiyanai/asciicker-xpedit` do not transfer
-automatically. See [deployment setup and verification](deploy/README.md).
-
-Cloud Run storage is ephemeral: a deployment or restart discards uploaded files
-and editor sessions. Export work before deploying.
+Export your `.xp` documents before leaving the editor. Server uploads and
+editor sessions are temporary and can be lost when the service restarts.
 
 ## Required Inputs
 
@@ -77,14 +59,9 @@ and editor sessions. Export work before deploying.
 - `bg_mode` (`key_color|alpha|none`, default `key_color`)
 - `bg_tolerance` (int, default `8`)
 
-## Required Outputs
+## Outputs
 
-- `.xp` file path
-- preview PNG path
-- run report JSON
-- gates JSON with G7/G8/G9
-- workbench session with `populated_cells > 0`
-- exported `.xp` from workbench
+Export edited artwork as `.xp` files and generate PNG previews.
 
 ## API
 
@@ -117,7 +94,6 @@ PYTHONPATH=src python3 -m pytest
 - The XP codec implemented here writes/reads classic REXPaint-style layers.
 - This MVP uses deterministic grayscale glyph mapping; it is not final art-quality conversion.
 
-## Docs
+## Documentation
 
-- Reference spec (pipeline-v3 subproject scope only): `docs/plans/2026-03-23-workbench-canonical-spec.md`
-- Failure log: [docs/PLAYWRIGHT_FAILURE_LOG.md](docs/PLAYWRIGHT_FAILURE_LOG.md)
+See [the documentation index](docs/INDEX.md) for editor controls and file formats.
